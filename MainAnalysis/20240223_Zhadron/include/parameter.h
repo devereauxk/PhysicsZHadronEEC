@@ -8,10 +8,11 @@ public:
     string input;          // Input file name
     string output;         // Output file name
     string mixFile;        // Mix File name
+    string residualCor;    // Alternative Residual Cor File name
     float MinZPT;          // Lower limit of Z pt
     float MaxZPT;          // Upper limit of Z pt
-    float MinZY;          // Lower limit of Z rapidity
-    float MaxZY;          // Upper limit of Z rapidity
+    float MinZY;           // Lower limit of Z rapidity
+    float MaxZY;           // Upper limit of Z rapidity
     float MinTrackPT;      // Lower limit of track pt
     float MaxTrackPT;      // Upper limit of track pt
     float scaleFactor;     // Scale factor
@@ -33,11 +34,14 @@ public:
     bool isJewel;             // Flag to check if this is a Jewel analysis
     int ExtraZWeight;
     bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
-
+    bool useLeadingTrk;    // Flag to see if we use leading track direction as the reference, replacing the role of Z.
+    bool useResidualCor;   // Flag to see if we use alterative tracking correction table.
+    
    void printParameters() const {
        cout << "Input file: " << input << endl;
        cout << "Output file: " << output << endl;
        cout << "Mix File: " << mixFile << endl;
+       cout << "ResidualCor Tag: " << residualCor << endl;
        cout << "MinZPT: " << MinZPT << " GeV/c" << endl;
        cout << "MaxZPT: " << MaxZPT << " GeV/c" << endl;
        cout << "MinZY: " << MinZY << "" << endl;
@@ -48,6 +52,8 @@ public:
        cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
        cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
        cout << "isPP: " << (isPP ? "true" : "false") << endl;
+       cout << "useLeadingTrk: " << (useLeadingTrk ? "true" : "false") << endl;
+       cout << "useResidualCor: " << (useResidualCor ? "true" : "false") << endl;
        cout << "Scale factor: " << scaleFactor << endl;
        cout << "SumHF shift: " << shift << endl;
        cout << "MinHiBin: " << MinHiBin << endl;

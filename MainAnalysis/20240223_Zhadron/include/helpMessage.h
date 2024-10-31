@@ -37,6 +37,7 @@ int printHelpMessage(int argc, char *argv[]) {
               << "  --IsHiBinUp            Flag to use the hiBinUp value for event selection.\n"
               << "  --IsHiBinDown          Flag to use the hiBinDown value for event selection.\n\n"
               << "  --Shift                Shift of sumHF in MB matching\n\n"
+              << "  --UseLeadingTrk        Flag to see if we use leading track direction as the reference, replacing the role of Z.\n\n"
               << "Example:\n"
               << "  " << argv[0] << " --Input sample/HISingleMuon.root --Output output.root --MinZPT 20 --MaxZPT 100\n";
            return 1;
