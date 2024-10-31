@@ -17,6 +17,8 @@ using namespace std;
 #include "Messenger.h"     // Yi's Messengers for reading data files
 #include "CommandLine.h"   // Yi's Commandline bundle
 #include "ProgressBar.h"   // Yi's fish progress bar
+#include "TrackResidualCorrector.h" // Residual correction
+
 
 //============================================================//
 // Function to check for configuration errors
@@ -84,15 +86,8 @@ bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
 
 // ======= Define mixed event matching criteria
 bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
-
-// 1036 is the maxima of SignalHF in pythia
-//   double shift = 1018.0541;
-//   double shift = //1268.69;
-//    if (a->hiHF<97.13&&b->hiHF<97.13) return 1;
     if (a->SignalHF<shift*1.04&&b->SignalHF<shift*1.04) return 1;
     if ((b->SignalHF/(a->SignalHF-shift))<1.04&&b->SignalHF/(a->SignalHF-shift)>0.96) return 1;
-//    if (int((a->SignalHF-shift)/180)==int((b->SignalHF)/180)) return 1;
-//    if (fabs(b->SignalHF-a->SignalHF+shift)<300) return 1;
     return 0;
 }
 
@@ -114,6 +109,18 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
     unsigned long mixstart_i = mix_i;
     int deltaI = (iEnd-iStart)/100+1;              
     float dPhi_threshold=2*M_PI/3;
+
+    TrackResidualCorrector *corrector;
+    TrackResidualCorrector *corrector_0_20;
+    TrackResidualCorrector *corrector_20_60;
+    TrackResidualCorrector *corrector_60_100;
+    TrackResidualCorrector *corrector_100_200;
+    if (par.useResidualCor) {
+       corrector_0_20    = new TrackResidualCorrector(Form("%s_0_20.root",par.residualCor.c_str()));              
+       corrector_20_60   = new TrackResidualCorrector(Form("%s_20_60.root",par.residualCor.c_str()));              
+       corrector_60_100  = new TrackResidualCorrector(Form("%s_60_100.root",par.residualCor.c_str()));              
+       corrector_100_200 = new TrackResidualCorrector(Form("%s_100_200.root",par.residualCor.c_str()));              
+    }
 
     for (unsigned long i = iStart; i < iEnd; i++) {
        MZSignal->GetEntry(i);
@@ -140,12 +147,10 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
 	        }
 	     }
 	      
-	     if (maxTrkIdx>-1&&maxTrkPt>6) {
+	     if (maxTrkIdx>-1&&maxTrkPt>10) {
 	  	// replace the Z position by leaing track direction
 	  	zY=(*MZSignal->trackEta)[maxTrkIdx];
 	  	zPhi=(*MZSignal->trackPhi)[maxTrkIdx]+M_PI;
-	     } else {
-//	        continue;
 	     }
 	     
 	  }	 
@@ -179,25 +184,35 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
                 float trackDphi2 = par.mix ? DeltaPhi(zPhi, (*MMix->trackPhi)[j]) : DeltaPhi(zPhi, (*MZSignal->trackPhi)[j]);
                 float trackDeta  = par.mix ? fabs((*MMix->trackEta)[j] - zY) : fabs((*MZSignal->trackEta)[j] - zY);
                 float weight = (par.mix&&par.isSelfMixing) ? (MMix->ZWeight*MMix->EventWeight)*(MZSignal->ZWeight*MZSignal->EventWeight) : (MZSignal->ZWeight*MZSignal->EventWeight);
-		weight*= (par.ExtraZWeight==-1) ? 1 : ((par.mix&&par.isSelfMixing) ? MMix->ExtraZWeight[par.ExtraZWeight]*MZSignal->ExtraZWeight[par.ExtraZWeight] : MZSignal->ExtraZWeight[par.ExtraZWeight]);
-//                weight*= (par.mix ? ((*MMix->trackWeight)[j]/(*MMix->trackResidualWeight)[j]*(1-0.33*par.isJewel*((*MMix->trackWeight)[j]<0))) : ((*MZSignal->trackWeight)[j]/(*MZSignal->trackResidualWeight)[j]*(1-0.33*par.isJewel*((*MZSignal->trackWeight)[j]<0))) );
-                weight*= (par.mix ? ((*MMix->trackWeight)[j]*(1-0.33*par.isJewel*((*MMix->trackWeight)[j]<0))) : ((*MZSignal->trackWeight)[j]*(1-0.33*par.isJewel*((*MZSignal->trackWeight)[j]<0))) );
+		                  weight*= (par.ExtraZWeight==-1) ? 1 : ((par.mix&&par.isSelfMixing) ? MMix->ExtraZWeight[par.ExtraZWeight]*MZSignal->ExtraZWeight[par.ExtraZWeight] : MZSignal->ExtraZWeight[par.ExtraZWeight]);
+                if (par.useResidualCor) {
+                   float trackPhi  = par.mix ? (*MMix->trackPhi)[j] : (*MZSignal->trackPhi)[j];
+                   float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
+                   float trackPt   = par.mix ? (*MMix->trackPt) [j] : (*MZSignal->trackPt) [j];
+                   float hiBin = par.mix ? MMix->hiBin : MZSignal->hiBin;
+                   if (hiBin<20) corrector = corrector_0_20;
+                   else if (hiBin<60) corrector = corrector_20_60;
+                   else if (hiBin<100) corrector = corrector_60_100;
+                   else corrector = corrector_100_200;
+                   float residualCorrection = corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
+                   
+                   weight*= (par.mix ? ((*MMix->trackWeight)[j]/(*MMix->trackResidualWeight)[j]*(1-0.33*par.isJewel*((*MMix->trackWeight)[j]<0))) : ((*MZSignal->trackWeight)[j]/(*MZSignal->trackResidualWeight)[j]*(1-0.33*par.isJewel*((*MZSignal->trackWeight)[j]<0))) );
+                   weight*=residualCorrection;
+                } else {
+                   weight*= (par.mix ? ((*MMix->trackWeight)[j]*(1-0.33*par.isJewel*((*MMix->trackWeight)[j]<0))) : ((*MZSignal->trackWeight)[j]*(1-0.33*par.isJewel*((*MZSignal->trackWeight)[j]<0))) );
+                }
                 h->Fill( trackDeta, trackDphi , weight);
                 h->Fill(-trackDeta, trackDphi , weight);
                 h->Fill( trackDeta, trackDphi2, weight);
                 h->Fill(-trackDeta, trackDphi2, weight);
-		//cout <<j<<"/"<<(par.mix ? MMix->trackPhi->size() : MZSignal->trackPhi->size())<<weight<<" "<<trackDeta<<" "<<trackDphi<<" "<<endl;
 		
 		if (!par.mix && (*MZSignal->subevent)[j]==0) {
-		   //cout <<"Event:"<<i<<" "<<trackDeta<<" "<<trackDphi2<<" "<<(*MZSignal->trackPt)[j]<<weight<<endl;
                    hSub0->Fill( trackDeta, trackDphi , weight);
                    hSub0->Fill(-trackDeta, trackDphi , weight);
                    hSub0->Fill( trackDeta, trackDphi2, weight);
                    hSub0->Fill(-trackDeta, trackDphi2, weight);
 		}
              }
-             //if (nt!=0) nt->Fill((*MZSignal->zPt)[0],MZSignal->trackPhi->size(),MZSignal->hiBin,MZSignal->SignalHF,MMix->trackPhi->size(),MMix->hiBin,MMix->SignalHF,nMix);
-	    // cout <<"good, good"<<endl;
 	  }
        }
     }
@@ -256,7 +271,6 @@ public:
     smartWrite(ntDiagnose);
   }
 
-  
   private:
   void deleteHistograms() {
     delete h, hSub0, hMix, hNZ, hNZMix;
@@ -271,17 +285,17 @@ int main(int argc, char *argv[])
    if (printHelpMessage(argc, argv)) return 0;
 
    CommandLine CL(argc, argv);
-   float MinZPT      = CL.GetDouble("MinZPT", 40);         // Minimum Z particle transverse momentum threshold for event selection.
-   float MaxZPT      = CL.GetDouble("MaxZPT", 200);        // Maximum Z particle transverse momentum threshold for event selection.
-   float MinTrackPT  = CL.GetDouble("MinTrackPT", 1);      // Minimum track transverse momentum threshold for track selection.
-   float MaxTrackPT  = CL.GetDouble("MaxTrackPT", 2);      // Maximum track transverse momentum threshold for track selection.
-   int   MinHiBin    = CL.GetInt   ("MinHiBin", 0);        // Minimum hiBin value for event selection.
-   int   MaxHiBin    = CL.GetInt   ("MaxHiBin", 200);      // Maximum hiBin value for event selection.
-   bool  IsData      = CL.GetBool  ("IsData", false);      // Determines whether the analysis is being run on actual data.
-   bool  IsPP        = CL.GetBool  ("IsPP", false);        // Flag to indicate if the analysis is for Proton-Proton collisions.
-   bool  IsJewel     = CL.GetBool  ("IsJewel", false);     // Flag to indicate if the analysis is for Jewel since the hole for Jewel is not hadronized
-   cout <<MinTrackPT<<" "<<MaxTrackPT<<endl;
-   if (IsPP) {
+   float MinZPT      = CL.GetDouble("MinZPT", 40);           // Minimum Z particle transverse momentum threshold for event selection.
+   float MaxZPT      = CL.GetDouble("MaxZPT", 200);          // Maximum Z particle transverse momentum threshold for event selection.
+   float MinTrackPT  = CL.GetDouble("MinTrackPT", 1);        // Minimum track transverse momentum threshold for track selection.
+   float MaxTrackPT  = CL.GetDouble("MaxTrackPT", 2);        // Maximum track transverse momentum threshold for track selection.
+   int   MinHiBin    = CL.GetInt   ("MinHiBin", 0);          // Minimum hiBin value for event selection.
+   int   MaxHiBin    = CL.GetInt   ("MaxHiBin", 200);        // Maximum hiBin value for event selection.
+   bool  IsData      = CL.GetBool  ("IsData", false);        // Determines whether the analysis is being run on actual data.
+   bool  IsPP        = CL.GetBool  ("IsPP", false);          // Flag to indicate if the analysis is for Proton-Proton collisions.
+   bool  IsJewel     = CL.GetBool  ("IsJewel", false);       // Flag to indicate if the analysis is for Jewel since the hole for Jewel is not hadronized
+
+   if (IsPP) {                                                                         
       MinHiBin=-2;
       MaxHiBin=0;
    }
@@ -289,23 +303,25 @@ int main(int argc, char *argv[])
    Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);
    par.input         = CL.Get      ("Input",   "mergedSample/HISingleMuon-v5.root");            // Input file
    par.mixFile       = CL.Get      ("MixFile", "mergedSample/HISingleMuon-v5.root");            // Input Mix file
-   par.output        = CL.Get      ("Output",  "output.root");                             	// Output file
-   par.isSelfMixing  = CL.GetBool  ("IsSelfMixing", true); // Determine if the analysis is self-mixing
-   par.isGenZ        = CL.GetBool  ("IsGenZ", false);      // Determine if the analysis is using Gen level Z     
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);  // Flag to reject PU sample for systemaitcs.
-   par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
-   par.isHiBinUp     = CL.GetBool  ("IsHiBinUp", false);   // Default is false
-   par.isHiBinDown   = CL.GetBool  ("IsHiBinDown", false); // Default is false
+   par.output        = CL.Get      ("Output",  "output.root");                                 	// Output file
+   par.residualCor   = CL.Get      ("ResidualCor",  "residualCor");                      	// Output file
+   par.isSelfMixing  = CL.GetBool  ("IsSelfMixing", true);   // Determine if the analysis is self-mixing
+   par.isGenZ        = CL.GetBool  ("IsGenZ", false);        // Determine if the analysis is using Gen level Z     
+   par.isPUReject    = CL.GetBool  ("IsPUReject", true);     // Flag to reject PU sample for systemaitcs.
+   par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
+   par.isHiBinUp     = CL.GetBool  ("IsHiBinUp", false);     // Default is false
+   par.isHiBinDown   = CL.GetBool  ("IsHiBinDown", false);   // Default is false
    par.useLeadingTrk = CL.GetBool  ("UseLeadingTrk", false); // Default is false
-   par.scaleFactor   = CL.GetDouble("Fraction", 1.00);     // Fraction of event processed in the sample
-   par.nThread       = CL.GetInt   ("nThread", 1);         // The number of threads to be used for parallel processing.
-   par.nChunk        = CL.GetInt   ("nChunk", 1);          // Specifies which chunk (segment) of the data to process, used in parallel processing.
-   par.nMix          = CL.GetInt   ("nMix", 10);           // Number of mixed events to be considered in the analysis.
-   par.shift         = CL.GetDouble("Shift", 971.74);       // Shift of sumHF in MB matching
-   par.MinZY         = CL.GetDouble("MinZY", 0);           // Minimum Z particle rapidity threshold for event selection.
-   par.MaxZY         = CL.GetDouble("MaxZY", 200);         // Maximum Z particle rapidity threshold for event selection.
-   par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);    // Do Muon systematics, -1 means no extraweight.
-   par.includeHole   = CL.GetBool  ("includeHole",true);   // Include hole particle or not
+   par.useResidualCor= CL.GetBool  ("UseResidualCor", false);// Default is false
+   par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
+   par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
+   par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.
+   par.nMix          = CL.GetInt   ("nMix", 10);             // Number of mixed events to be considered in the analysis.
+   par.shift         = CL.GetDouble("Shift", 971.74);        // Shift of sumHF in MB matching
+   par.MinZY         = CL.GetDouble("MinZY", 0);             // Minimum Z particle rapidity threshold for event selection.
+   par.MaxZY         = CL.GetDouble("MaxZY", 200);           // Maximum Z particle rapidity threshold for event selection.
+   par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);      // Do Muon systematics, -1 means no extraweight.
+   par.includeHole   = CL.GetBool  ("includeHole",true);     // Include hole particle or not
    par.mix = 0;
    par.isPP = IsPP;
    par.isJewel = IsJewel;
@@ -316,9 +332,6 @@ int main(int argc, char *argv[])
    DataAnalyzer analyzer(par.input.c_str(), par.mixFile.c_str(), par.output.c_str(), "Data");
    analyzer.analyze(par);
    analyzer.writeHistograms(analyzer.outf);
-   cout <<endl<<endl<<"Good good"<<endl;
    saveParametersToHistograms(par, analyzer.outf);
-   
-   
    cout << "done!" << analyzer.outf->GetName() << endl;
 }
