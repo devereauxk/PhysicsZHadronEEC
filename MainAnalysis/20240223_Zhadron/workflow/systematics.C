@@ -9,8 +9,18 @@
 #include <iostream>
 #include <cmath>
 
+//=======================================================================================================//
+// This code provides a framework for analyzing systematic uncertainties in histograms from a ROOT file. 
+// It calculates the maximum absolute deviation and the total systematic contribution between a nominal 
+// histogram and variations representing systematic uncertainties. The analysis is visualized and saved in 
+// PDF files, and the results are stored in a new ROOT file.
+//=======================================================================================================//
+
+
+//============================================================================//
+//Generates names for systematic variation files based on a nominal file name
+//============================================================================//
 std::vector<std::string> generateSystematicFiles(const std::string& nominalFile, std::vector<std::string>& systematics, std::vector<std::string>& systematicNames) {
-//    std::vector<std::string> systematics = {"HiBinDown", "HiBinUp", "MuTagged"};
     std::vector<std::string> systematicFiles;
 
     // Remove the ".root" extension from the nominal file
@@ -25,6 +35,9 @@ std::vector<std::string> generateSystematicFiles(const std::string& nominalFile,
     return systematicFiles;
 }
 
+//===========================================================================================//
+//Fits a histogram with a constant function and replaces the bin contents with the fit result
+//===========================================================================================//
 void replaceWithConstantFit(TH1D *h)
 {
    TF1 *f = new TF1("f","[0]");
@@ -34,6 +47,9 @@ void replaceWithConstantFit(TH1D *h)
    }
 }
 
+//=====================================================================================================//
+//Calculates the maximum absolute deviation between the nominal and each systematic variation histogram
+//=====================================================================================================//
 void maxDeviation(const char* nominalFile, const std::vector<std::string>& histNames, std::vector<std::string> systematics = {"HiBinDown","HiBinUp"}, const std::string outputname = "sys", bool doSmoothFit=0) {
     std::vector<std::string> systematicNames;
     std::vector<std::string> variationFiles = generateSystematicFiles(nominalFile, systematics, systematicNames);
@@ -141,6 +157,10 @@ void maxDeviation(const char* nominalFile, const std::vector<std::string>& histN
 
 }
 
+//=========================================================================================//
+// Computes the total systematic contribution by adding absolute deviations in quadrature 
+// and includes an optional tracking uncertainty.
+//=========================================================================================//
 void compareHistograms(const char* nominalFile, const std::vector<std::string>& histNames, std::vector<std::string> systematics = {"HiBinDown","HiBinUp"}, const std::string outputname = "sys", double trackingUncertainty=0.024) {
     std::vector<std::string> systematicNames;
     std::vector<std::string> variationFiles = generateSystematicFiles(nominalFile, systematics, systematicNames);
@@ -287,6 +307,10 @@ void compareHistograms(const char* nominalFile, const std::vector<std::string>& 
     fileNominal->Close();
 }
 
+
+//=========================================//
+// Main function of the systamtics analysis
+//=========================================//
 void systematics(const char* nominalFile = "PbPb0_30-result.root", double trackingUncertainty=0.02) {
     // Define the nominal file and histogram names
     
@@ -303,7 +327,7 @@ void systematics(const char* nominalFile = "PbPb0_30-result.root", double tracki
     
     std::vector<std::string> systematicsHiBin={"HiBinUp","HiBinDown"};
     maxDeviation(nominalFile, histNames, systematicsMuon,"Muon",0);
-    maxDeviation(nominalFile, histNames, systematicsHiBin,"HiBin",0);
+    maxDeviation(nominalFile, histNames, systematicsHiBin,"HiBin",1);
 
     std::vector<std::string> systematics={"PU","HiBin","Muon","MuTagged"};
     compareHistograms(nominalFile, histNames, systematics, "sys", trackingUncertainty);
