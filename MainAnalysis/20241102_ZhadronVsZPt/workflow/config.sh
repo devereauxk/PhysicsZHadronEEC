@@ -1,0 +1,4 @@
+PT_RANGES=("1_2" "2_4" "4_10")
+HIBIN_RANGES=("0_30" "0_50")
+ZPT_RANGES=("40_60" "60_80" "80__350" "40_350")
+UseLeadingTrk=1
