@@ -37,17 +37,37 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     TH1D *hMixData = (TH1D*)file->Get("hMixData"); // Replace with your histogram name
     TH1D *hNZMixData = (TH1D*)file->Get("hNZMixData"); // Replace with your histogram name
 
-    // Check if histograms are loaded
+    hNZData->SetName(Form("hNZData_%s",tag));
+    hNZMixData->SetName(Form("hNZMixData_%s",tag));
+
+    // Verify that all required histograms are loaded successfully from the file
     if (!hData || !hNZData || !hMixData || !hNZMixData) {
-        std::cerr << "Error: Histogram not found in file" << std::endl;
+        // Check each histogram individually to provide a specific error message
+        if (!hData) {
+            std::cerr << "Error: Histogram 'hData' not found in file. Ensure the histogram is correctly loaded and the file path is accurate." << std::endl;
+        }
+        if (!hNZData) {
+            std::cerr << "Error: Histogram 'hNZData' not found in file. Verify that this histogram is defined in the input file." << std::endl;
+        }
+        if (!hMixData) {
+            std::cerr << "Error: Histogram 'hMixData' not found in file. Check that the histogram name matches what is expected." << std::endl;
+        }
+        if (!hNZMixData) {
+            std::cerr << "Error: Histogram 'hNZMixData' not found in file. Confirm that this histogram is included in the file." << std::endl;
+        }
+    
+        // If any of the histograms are missing, log a general error and exit the function
+        std::cerr << "Error: One or more required histograms could not be loaded from the file. Exiting function." << std::endl;
         return;
     }
 
     // Scale histograms
     hData->SetName(Form("hData_%s",tag));
     hData->Scale(1. / hNZData->GetBinContent(1));
+    hMixData->SetName(Form("hMixData_%s",tag));
     hMixData->Scale(1. / hNZMixData->GetBinContent(1));
-
+    TH1D *hDataAll = (TH1D*) hData->Clone(Form("hDataAll_%s",tag));
+    
     // Subtract hMixData from hData
     if (doSub) hData->Add(hMixData, -1);
 
@@ -69,8 +89,12 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     // Optionally: Save the canvas as an image and write histograms to a file
     TFile *outf = new TFile(outfname, "RECREATE");
     hData->Write();
+    hDataAll->Write();
+    hMixData->Write();
     hProjY->Write();
     hProjX->Write();
+    hNZData->Write();
+    hNZMixData->Write();
     
     // Cleanup: Close the file
     //file->Close();
