@@ -1,10 +1,8 @@
 #!/bin/bash
 
 # Define common arguments
-COMMON_ARGS="--Input mergedSample/HISingleMuon-v6.root --MixFile mergedSample/HISingleMuon-v6.root --IsPP false --IsGenZ false --nMix 10"
-PT_RANGES=("1_2" "2_4" "4_10")
-HIBIN_RANGES=("0_50")
-ZPT_RANGES=("30_40" "40_60" "60_100" "100_350")
+source config.sh
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/HISingleMuon-v7-30GeV.root --MixFile mergedSample/HISingleMuon-v7-30GeV.root --IsPP false --IsGenZ false --nMix 10"
 
 # Loop over HiBin ranges, Pt ranges, and ZPT ranges, running analysis and combining results
 for hibin in "${HIBIN_RANGES[@]}"; do
@@ -22,9 +20,7 @@ for hibin in "${HIBIN_RANGES[@]}"; do
          min_pt=${pt_range/_*/}
          max_pt=${pt_range/*_/}
 
-         ./finalAnalysis.sh "output/$1PbPb${suffix}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" \
-            $COMMON_ARGS --MinTrackPT "$min_pt" --MaxTrackPT "$max_pt" --MinHiBin "$min_hibinX2" --MaxHiBin "$max_hibinX2" \
-            --MinZPT "$min_zpt" --MaxZPT "$max_zpt"
+         ./finalAnalysis.sh "output/$1PbPb${suffix}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$2" "$3" "$4" "$5" "$6" "$7" --MinZPT "$min_zpt" --MaxZPT "$max_zpt" $COMMON_ARGS --MinTrackPT "$min_pt" --MaxTrackPT "$max_pt" --MinHiBin "$min_hibinX2" --MaxHiBin "$max_hibinX2" 
       done
 
       # Combine results for the current HiBin and ZPT range

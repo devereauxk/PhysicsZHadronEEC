@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # Define common arguments
-COMMON_ARGS="--Input mergedSample/pp-v6.root --MixFile mergedSample/pp-v6.root --IsPP true --IsGenZ false --nMix 10"
-PT_RANGES=("1_2" "2_4" "4_10")
-ZPT_RANGES=("30_40" "40_60" "60_100" "100_350")
+source config.sh
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/pp-v7-30GeV.root --MixFile mergedSample/pp-v7-30GeV.root --IsPP true --IsGenZ false --nMix 1"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}
