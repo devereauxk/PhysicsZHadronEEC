@@ -101,7 +101,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
    unsigned long mix_i = iStart;
    unsigned long mixstart_i = mix_i;
    int deltaI = (iEnd - iStart) / 100 + 1;
-   float dPhi_threshold = 2 * M_PI / 3;
+   float dPhi_threshold = M_PI / 2;
 
    TrackResidualCorrector *corrector;
    TrackResidualCorrector *corrector_0_20;
