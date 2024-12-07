@@ -46,6 +46,7 @@ int main(int argc, char *argv[])
    bool DoTrackResidual               = DoGenLevel ? false : CL.GetBool("DoTrackResidual", false);
    vector<string> TrackResidualPath   = (DoTrackResidual == true) ? CL.GetStringVector("TrackResidualPath") : vector<string>();
    bool DoInterSampleZWeight          = CL.GetBool("DoInterSampleZWeight", (IsPP == true && IsData == false));
+   bool RedoHiBin                     = CL.GetBool("RedoHiBin", false);
 
    string PFTreeName                  = IsPP ? "pfcandAnalyzer/pfTree" : "particleFlowAnalyser/pftree";
    PFTreeName                         = CL.Get("PFTree", PFTreeName);
@@ -144,10 +145,25 @@ int main(int argc, char *argv[])
          MZHadron.Lumi  = MEvent.Lumi;
          MZHadron.Event = MEvent.Event;
          MZHadron.hiBin = MEvent.hiBin;
+         if(RedoHiBin == true && IsPP == false)
+         {
+            if(Year == 2023)
+               MZHadron.hiBin   = GetHiBin2023(MEvent.hiHF, IsData ? 0 : 100);
+            else   // 2018
+               MZHadron.hiBin   = GetHiBin(MEvent.hiHF, IsData ? 0 : 100);
+         }
          if(IsPP == false && IsData == true)   // need hiBin shifts!
          {
-            MZHadron.hiBinUp   = GetHiBin(MEvent.hiHF, 1);
-            MZHadron.hiBinDown = GetHiBin(MEvent.hiHF, -1);
+            if(Year == 2023)
+            {
+               MZHadron.hiBinUp   = GetHiBin2023(MEvent.hiHF, 1);
+               MZHadron.hiBinDown = GetHiBin2023(MEvent.hiHF, -1);
+            }
+            else
+            {
+               MZHadron.hiBinUp   = GetHiBin(MEvent.hiHF, 1);
+               MZHadron.hiBinDown = GetHiBin(MEvent.hiHF, -1);
+            }
          }
          MZHadron.hiHF  = MEvent.hiHF;
          MZHadron.NPU   = 0;
@@ -241,7 +257,7 @@ int main(int argc, char *argv[])
                MZHadron.NCollWeight = 1;
             }
             else
-               MZHadron.NCollWeight = FindNColl(MEvent.hiBin);
+               MZHadron.NCollWeight = FindNColl(MZHadron.hiBin);
          }
 
          ///////////////////////////
