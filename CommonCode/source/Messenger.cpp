@@ -2030,10 +2030,14 @@ bool ZHadronMessenger::Initialize(bool SkipTrack)
       Tree->SetBranchStatus("trackCharge", false);
       Tree->SetBranchStatus("subevent", false);
    }
-   Tree->SetBranchAddress("neutralPt", &neutralPt);
-   Tree->SetBranchAddress("neutralEta", &neutralEta);
-   Tree->SetBranchAddress("neutralPhi", &neutralPhi);
-   Tree->SetBranchAddress("neutralPDGId", &neutralPDGId);
+   if(Tree->GetBranch("neutralPt") != nullptr)
+      Tree->SetBranchAddress("neutralPt", &neutralPt);
+   if(Tree->GetBranch("neutralEta") != nullptr)
+      Tree->SetBranchAddress("neutralEta", &neutralEta);
+   if(Tree->GetBranch("neutralPhi") != nullptr)
+      Tree->SetBranchAddress("neutralPhi", &neutralPhi);
+   if(Tree->GetBranch("neutralPDGId") != nullptr)
+      Tree->SetBranchAddress("neutralPDGId", &neutralPDGId);
 
    Tree->SetBranchAddress("muEta1", &muEta1);
    Tree->SetBranchAddress("muEta2", &muEta2);
