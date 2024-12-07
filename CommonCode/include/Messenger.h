@@ -553,6 +553,10 @@ public:
    std::vector<float> *trackResidualWeight;
    std::vector<int> *trackCharge;
    std::vector<int> *subevent;
+   std::vector<float> *neutralPt;   // these are from PF candidates
+   std::vector<float> *neutralEta;
+   std::vector<float> *neutralPhi;
+   std::vector<int> *neutralPDGId;
    
    std::vector<float> *muEta1;
    std::vector<float> *muEta2;
