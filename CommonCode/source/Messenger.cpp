@@ -2192,7 +2192,7 @@ bool ZHadronMessenger::SetBranch(TTree *T)
    Tree->Branch("trackEta",               &trackEta);
    Tree->Branch("trackY",                 &trackY);
    Tree->Branch("trackMuTagged",          &trackMuTagged);
-   // Tree->Branch("trackMuDR",              &trackMuDR);
+   Tree->Branch("trackMuDR",              &trackMuDR);
    Tree->Branch("trackWeight",            &trackWeight);
    Tree->Branch("trackResidualWeight",    &trackResidualWeight);
    Tree->Branch("trackCharge",            &trackCharge);
