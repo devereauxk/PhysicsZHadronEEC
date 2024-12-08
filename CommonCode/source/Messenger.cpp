@@ -1867,6 +1867,10 @@ ZHadronMessenger::~ZHadronMessenger()
       delete trackY;
       delete trackPhi;
       delete trackCharge;
+      delete neutralPt;
+      delete neutralEta;
+      delete neutralPhi;
+      delete neutralPDGId;
 
       delete muEta1;
       delete muEta2;
@@ -1928,6 +1932,10 @@ bool ZHadronMessenger::Initialize(bool SkipTrack)
    trackResidualWeight = nullptr;
    trackCharge = nullptr;
    subevent = nullptr;
+   neutralPt = nullptr;
+   neutralEta = nullptr;
+   neutralPhi = nullptr;
+   neutralPDGId = nullptr;
 
    muEta1 = nullptr;
    muEta2 = nullptr;
@@ -2022,6 +2030,14 @@ bool ZHadronMessenger::Initialize(bool SkipTrack)
       Tree->SetBranchStatus("trackCharge", false);
       Tree->SetBranchStatus("subevent", false);
    }
+   if(Tree->GetBranch("neutralPt") != nullptr)
+      Tree->SetBranchAddress("neutralPt", &neutralPt);
+   if(Tree->GetBranch("neutralEta") != nullptr)
+      Tree->SetBranchAddress("neutralEta", &neutralEta);
+   if(Tree->GetBranch("neutralPhi") != nullptr)
+      Tree->SetBranchAddress("neutralPhi", &neutralPhi);
+   if(Tree->GetBranch("neutralPDGId") != nullptr)
+      Tree->SetBranchAddress("neutralPDGId", &neutralPDGId);
 
    Tree->SetBranchAddress("muEta1", &muEta1);
    Tree->SetBranchAddress("muEta2", &muEta2);
@@ -2119,6 +2135,10 @@ bool ZHadronMessenger::SetBranch(TTree *T)
    trackResidualWeight = new std::vector<float>();
    trackCharge = new std::vector<int>();
    subevent = new std::vector<int>();
+   neutralPt = new std::vector<float>();
+   neutralEta = new std::vector<float>();
+   neutralPhi = new std::vector<float>();
+   neutralPDGId = new std::vector<int>();
 
    muEta1 = new std::vector<float>();
    muEta2 = new std::vector<float>();
@@ -2197,6 +2217,10 @@ bool ZHadronMessenger::SetBranch(TTree *T)
    Tree->Branch("trackResidualWeight",    &trackResidualWeight);
    Tree->Branch("trackCharge",            &trackCharge);
    Tree->Branch("subevent",               &subevent);
+   Tree->Branch("neutralPt",              &neutralPt);
+   Tree->Branch("neutralEta",             &neutralEta);
+   Tree->Branch("neutralPhi",             &neutralPhi);
+   Tree->Branch("neutralPDGId",           &neutralPDGId);
    
    Tree->Branch("muEta1",                 &muEta1);
    Tree->Branch("muEta2",                 &muEta2);
@@ -2274,6 +2298,10 @@ void ZHadronMessenger::Clear()
    trackResidualWeight->clear();
    trackCharge->clear();
    subevent->clear();
+   neutralPt->clear();
+   neutralEta->clear();
+   neutralPhi->clear();
+   neutralPDGId->clear();
 
    muEta1->clear();
    muEta2->clear();
