@@ -81,35 +81,39 @@ void plotResult() {
 
     c2->cd(1);
     for(int i = 0; i < nptbins; i++) {
-        hLeadingVsZ[i]->ProjectionX()->SetLineColor(i + 1); // Set color
+        TH1D *hProjX = hLeadingVsZ[i]->ProjectionX();
+        hProjX->SetLineColor(i + 1); // Set color
         if (i == 0) {
-            hLeadingVsZ[i]->ProjectionX()->Draw(); // Draw the first histogram
+            hProjX->Draw(); // Draw the first histogram
         } else {
-            hLeadingVsZ[i]->ProjectionX()->Draw("SAME"); // Overlay subsequent histograms
+            hProjX->Draw("SAME"); // Overlay subsequent histograms
         }
     }
 
     TLegend *leg1 = new TLegend(0.1, 0.7, 0.3, 0.9);
     leg1->SetBorderSize(0); // Remove legend box
     for(int i = 0; i < nptbins; i++) {
-        leg1->AddEntry(hLeadingVsZ[i]->ProjectionX(), Form("p_{T} > %g GeV", ptbinlo[i]), "l");
+        TH1D *hProjX = hLeadingVsZ[i]->ProjectionX();
+        leg1->AddEntry(hProjX, Form("p_{T} > %g GeV", ptbinlo[i]), "l");
     }
     leg1->Draw();
 
     c2->cd(2);
     for(int i = 0; i < nptbins; i++) {
-        hLeadingVsZ[i]->ProjectionY()->SetLineColor(i + 1); // Set color
+        TH1D *hProjY = hLeadingVsZ[i]->ProjectionY();
+        hProjY->SetLineColor(i + 1); // Set color
         if (i == 0) {
-            hLeadingVsZ[i]->ProjectionY()->Draw(); // Draw the first histogram
+            hProjY->Draw(); // Draw the first histogram
         } else {
-            hLeadingVsZ[i]->ProjectionY()->Draw("SAME"); // Overlay subsequent histograms
+            hProjY->Draw("SAME"); // Overlay subsequent histograms
         }
     }
 
     TLegend *leg2 = new TLegend(0.1, 0.7, 0.3, 0.9);
     leg2->SetBorderSize(0); // Remove legend box
     for(int i = 0; i < nptbins; i++) {
-        leg2->AddEntry(hLeadingVsZ[i]->ProjectionY(), Form("p_{T} > %g GeV", ptbinlo[i]), "l");
+        TH1D *hProjY = hLeadingVsZ[i]->ProjectionY();
+        leg2->AddEntry(hProjY, Form("p_{T} > %g GeV", ptbinlo[i]), "l");
     }
     leg2->Draw();
 
