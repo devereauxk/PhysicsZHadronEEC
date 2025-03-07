@@ -212,7 +212,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
 //============================================================//
 // leading track angular distribution wrt Z calculation
 //============================================================//
-float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, vector<TH2D*> hLeadingVsZ, TH1D *hTrkPt, TH1D *hLeadingPt, TH1D *hZPt, TH1D *hZMass, float *ptbinlo, const Parameters& par, TNtuple *nt = 0) {
+void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, vector<TH3D*> hLeadingVsZ, vector<TH1D*> hNZ, TH1D *hTrkPt, TH1D *hLeadingPt, TH1D *hZPt, TH1D *hZMass, float *ptbinlo, const Parameters& par, TNtuple *nt = 0) {
 
    float nZ = 0;
    hTrkPt->Sumw2();
@@ -250,7 +250,6 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
 
       hZPt->Fill(zPt);
       hZMass->Fill(zMass);
-      nZ++;
 
       // sum over parts in the mixed (resp signal) events
       float maxTrkPt = -1;
@@ -270,18 +269,26 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
 
       }
 
-      // do calculations with the leading track
+      // do calculations with the leading track and Z
       hLeadingPt->Fill(maxTrkPt);
 
       float trackDphi  = par.mix ? DeltaPhi((*MMix->trackPhi)[maxTrkIdx], zPhi) : DeltaPhi((*MZSignal->trackPhi)[maxTrkIdx], zPhi);
+      float trackDphi2 = par.mix ? DeltaPhi(zPhi, (*MMix->trackPhi)[maxTrkIdx]) : DeltaPhi(zPhi, (*MZSignal->trackPhi)[maxTrkIdx]);
       float trackDeta  = par.mix ? fabs((*MMix->trackEta)[maxTrkIdx] - zY) : fabs((*MZSignal->trackEta)[maxTrkIdx] - zY);
+      float trackDr = sqrt(trackDeta * trackDeta + (trackDphi - M_PI) * (trackDphi - M_PI));
 
       for (int i = 0; i<hLeadingVsZ.size(); i++) {
-         if (maxTrkPt > ptbinlo[i]) hLeadingVsZ[i]->Fill(trackDeta, trackDphi);
+         if (maxTrkPt > ptbinlo[i]) {
+            hLeadingVsZ[i]->Fill(trackDeta, trackDphi, trackDr);
+            hLeadingVsZ[i]->Fill(-trackDeta, trackDphi, trackDr);
+            hLeadingVsZ[i]->Fill(trackDeta, trackDphi2, trackDr);
+            hLeadingVsZ[i]->Fill(-trackDeta, trackDphi2, trackDr);
+
+            hNZ[i]->Fill(0.5);
+         }
       }
 
    }
-   return nZ;
 }
 
 class DataAnalyzer {
@@ -289,8 +296,8 @@ public:
    TFile *inf, *mixFile, *mixFileClone, *outf;
    TNtuple *ntDiagnose;
    TH1D *hTrkPt = 0, *hLeadingPt = 0, *hZPt = 0, *hZMass = 0;
-   vector<TH2D*> hLeadingVsZ;
-   TH1D *hNz;
+   vector<TH3D*> hLeadingVsZ;
+   vector<TH1D*> hNZ;
    ZHadronMessenger *MZHadron, *MMix, *MMixEvt;
    string title;
 
@@ -319,17 +326,19 @@ public:
       int nptbins = 4;
       float ptbinlo[nptbins] = {4, 5, 6, 10};
       for (int i = 0; i < nptbins; i++) {
-         TH2D* this_hLeadingVsZ = new TH2D(Form("hLeadingVsZ%s_%i", title.c_str(), static_cast<int>(ptbinlo[i])), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2); // 2D: (deta, dphi)
+         TH3D* this_hLeadingVsZ = new TH3D(Form("hLeadingVsZ%s_%i", title.c_str(), static_cast<int>(ptbinlo[i])), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4); // 2D: (deta, dphi, dr)
          hLeadingVsZ.push_back(this_hLeadingVsZ);
+
+         TH1D* this_hNZ = new TH1D(Form("hNZ%s_%i", title.c_str(), static_cast<int>(ptbinlo[i])), "", 1, 0, 1);
+         hNZ.push_back(this_hNZ);
       }
 
       hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 40, 0, 20);
       hLeadingPt = new TH1D(Form("hLeadingPt%s", title.c_str()), "", 40, 0, 20);
       hZPt = new TH1D(Form("hZPt%s", title.c_str()), "", 40, 40, 200);
       hZMass = new TH1D(Form("hZMass%s", title.c_str()), "", 40, 60, 120);
-      hNz = new TH1D(Form("hNz%s", title.c_str()), "", 1, 0, 1);
       
-      hNz->SetBinContent(1, getLeadingVsZ(MZHadron, MMix, MMixEvt, hLeadingVsZ, hTrkPt, hLeadingPt, hZPt, hZMass, ptbinlo, par)); // analysis
+      getLeadingVsZ(MZHadron, MMix, MMixEvt, hLeadingVsZ, hNZ, hTrkPt, hLeadingPt, hZPt, hZMass, ptbinlo, par); // analysis
 
       // Second histogram with mix=true
       /*
@@ -346,17 +355,17 @@ public:
       smartWrite(hLeadingPt);
       smartWrite(hZPt);
       smartWrite(hZMass);
-      smartWrite(hNz);
 
       for (int i=0; i<hLeadingVsZ.size(); i++) {
          smartWrite(hLeadingVsZ[i]);
+         smartWrite(hNZ[i]);
       }
       
    }
 
 private:
    void deleteHistograms() {
-      delete hTrkPt, hLeadingPt, hZPt, hZMass, hNz, hLeadingVsZ;
+      delete hTrkPt, hLeadingPt, hZPt, hZMass, hLeadingVsZ, hNZ;
    }
 };
 
@@ -384,6 +393,8 @@ int main(int argc, char *argv[])
    }
 
    Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);
+   //par.input         = CL.Get      ("Input",   "/home/kdeverea/zdata/pp-v11-Zpt0.root");            // Input file
+   //par.mixFile       = CL.Get      ("MixFile", "/home/kdeverea/zdata/pp-v11-Zpt0.root");            // Input Mix file
    par.input         = CL.Get      ("Input",   "/home/kdeverea/zdata/HISingleMuon-v11-Zpt0.root");            // Input file
    par.mixFile       = CL.Get      ("MixFile", "/home/kdeverea/zdata/HISingleMuon-v11-Zpt0.root");            // Input Mix file
    par.output        = CL.Get      ("Output",  "output.root");                                 	// Output file
