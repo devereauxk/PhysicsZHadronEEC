@@ -1,1 +1,0 @@
-./testAnalysis.sh output/DY-Gen       0-20      --Input mergedSample/DY-gen-v6.root --MixFile mergedSample/hydjet-gen-v6.root --IsPP false --IsGenZ true --nMix 1 --IsSelfMixing false 

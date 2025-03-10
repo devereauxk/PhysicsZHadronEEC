@@ -3,8 +3,9 @@
 #include <TCanvas.h>
 
 const int rcolors[4] = {kRed-4, kOrange+1, kSpring-8, kTeal-2};
+const int ccolors[3] = {kBlack, kGreen, kViolet};
 
-void plotOverlay() {
+void overlay_pt() {
 
     const int nptbins = 3;
     float ptbinlo[nptbins] = {4, 6, 10};
@@ -223,4 +224,238 @@ void plotOverlay() {
     file_PbPb->Close();
     delete file_pp;
     delete file_PbPb;
+}
+
+
+void overlay_generators() {
+
+    int ptlo_select = 10;
+
+    const int ncontours = 4;
+    const char * names[ncontours] = {"pp", "PbPb", "pythia", "pythia+hydjet"};
+    const char * file_names[ncontours] = {"output_pp.root", "output_PbPb.root", "output_pythia.root", "output_DY_HYDJET.root"};
+
+    TH3D* hLeadingVsZ[ncontours];
+    TH1D* hNZ[ncontours];
+
+    for (int i = 0; i < ncontours; i++) {
+        // Open the ROOT files
+        TFile *file = new TFile(file_names[i], "READ");
+
+        hLeadingVsZ[i] = (TH3D*)file->Get(Form("hLeadingVsZData_%i", static_cast<int>(ptlo_select)));
+        hNZ[i] = (TH1D*)file->Get(Form("hNZData_%i", static_cast<int>(ptlo_select)));
+
+        // apply normalization
+        hLeadingVsZ[i]->Scale(1. / hNZ[i]->GetBinContent(1));
+    }
+
+    // Create a canvas to draw the histogram
+    TCanvas *c2 = new TCanvas("c2", "Canvas", 2400, 800);
+    c2->Divide(3);
+
+    // Plot for #Delta#eta
+    c2->cd(1);
+    TLegend *leg1 = new TLegend(0.15, 0.65, 0.35, 0.85);
+    leg1->SetBorderSize(0); // Remove legend box
+    leg1->SetTextSize(0.04); // Reduce font size
+
+    TPad *pad1 = new TPad("pad1","pad1",0,0.3,1,1);
+    pad1->SetBottomMargin(0);
+    pad1->Draw();
+    TPad *pad2 = new TPad("pad2","pad2",0,0,1,0.3);
+    pad2->SetTopMargin(0);
+    pad2->Draw();
+
+    for (int i = 0; i < ncontours; i++) {
+        pad1->cd();
+        TH1D* hProjX = hLeadingVsZ[i]->ProjectionX(Form("%s_eta", names[i]));
+        hProjX->Scale(1. / hProjX->GetBinWidth(1)); // Scale by 1/binsize
+        if (i == 0 || i == 1) {
+            hProjX->SetLineColor(ccolors[0]); // Set color
+            if (i == 1) hProjX->SetLineStyle(2); // Set line style for PbPb
+        } else {
+            hProjX->SetLineColor(ccolors[1]); // Set color
+            if (i == 3) hProjX->SetLineStyle(2); // Set line style for pythia+hydjet
+        }
+        hProjX->SetTitle("deta");
+        hProjX->SetStats(0); // Turn off statistics box
+        hProjX->GetXaxis()->SetTitle("#Delta#eta");
+        hProjX->GetYaxis()->SetTitle("(1/N_{Z})dN/d(#Delta#eta)");
+        hProjX->GetXaxis()->SetTitleSize(0.05); // Increase font size
+        hProjX->GetYaxis()->SetTitleSize(0.05); // Increase font size
+        hProjX->GetYaxis()->SetRangeUser(0, 1.5); // Set plot range
+        hProjX->Draw("HIST SAME");
+        leg1->AddEntry(hProjX, names[i], "l");
+    }
+    leg1->Draw("SAME");
+
+    pad2->cd();
+    TH1D* hRatio1 = (TH1D*)hLeadingVsZ[1]->ProjectionX("PbPb1_eta")->Clone("ratio1_eta");
+    hRatio1->Divide(hLeadingVsZ[0]->ProjectionX("pp1_eta"));
+    hRatio1->SetTitle("");
+    hRatio1->SetStats(0);
+    hRatio1->GetXaxis()->SetTitle("#Delta#eta");
+    hRatio1->GetXaxis()->SetTitleSize(0.1); // Increase font size
+    hRatio1->GetXaxis()->SetLabelSize(0.08); // Increase label size
+    hRatio1->GetXaxis()->SetTitleOffset(0.4); // Decrease distance between axis label and axis
+    hRatio1->GetYaxis()->SetTitle("PbPb/pp");
+    hRatio1->GetYaxis()->SetTitleSize(0.1); // Increase font size
+    hRatio1->GetYaxis()->SetLabelSize(0.06); // Increase label size
+    hRatio1->GetYaxis()->SetTitleOffset(0.4); // Decrease distance between axis label and axis
+    hRatio1->GetYaxis()->SetRangeUser(0, 3);
+    hRatio1->SetLineColor(ccolors[0]);
+    hRatio1->SetLineStyle(1);
+    hRatio1->Draw("HIST SAME");
+
+    TH1D* hRatio2 = (TH1D*)hLeadingVsZ[3]->ProjectionX("pythia1_hydjet_eta")->Clone("ratio2_eta");
+    hRatio2->Divide(hLeadingVsZ[2]->ProjectionX("pythia1_eta"));
+    hRatio2->SetLineColor(ccolors[1]);
+    hRatio2->SetLineStyle(1);
+    hRatio2->Draw("HIST SAME");
+
+    TLine *line = new TLine(hRatio1->GetXaxis()->GetXmin(), 1, hRatio1->GetXaxis()->GetXmax(), 1);
+    line->SetLineColor(kGray+2);
+    line->SetLineStyle(2);
+    line->Draw("SAME");
+
+    // Plot for #Delta#phi
+    c2->cd(2);
+    TLegend *leg2 = new TLegend(0.15, 0.65, 0.35, 0.85);
+    leg2->SetBorderSize(0); // Remove legend box
+    leg2->SetTextSize(0.04); // Reduce font size
+
+    TPad *pad3 = new TPad("pad3","pad3",0,0.3,1,1);
+    pad3->SetBottomMargin(0);
+    pad3->Draw();
+    TPad *pad4 = new TPad("pad4","pad4",0,0,1,0.3);
+    pad4->SetTopMargin(0);
+    pad4->Draw();
+
+    for (int i = 0; i < ncontours; i++) {
+        pad3->cd();
+        TH1D* hProjY = hLeadingVsZ[i]->ProjectionY(Form("%s_phi", names[i]));
+        hProjY->Scale(1. / hProjY->GetBinWidth(1)); // Scale by 1/binsize
+        if (i == 0 || i == 1) {
+            hProjY->SetLineColor(ccolors[0]); // Set color
+            if (i == 1) hProjY->SetLineStyle(2); // Set line style for PbPb
+        } else {
+            hProjY->SetLineColor(ccolors[1]); // Set color
+            if (i == 3) hProjY->SetLineStyle(2); // Set line style for pythia+hydjet
+        }
+        hProjY->SetTitle("dphi");
+        hProjY->SetStats(0); // Turn off statistics box
+        hProjY->GetXaxis()->SetTitle("#Delta#phi");
+        hProjY->GetYaxis()->SetTitle("(1/N_{Z})dN/d(#Delta#phi)");
+        hProjY->GetXaxis()->SetTitleSize(0.05); // Increase font size
+        hProjY->GetYaxis()->SetTitleSize(0.05); // Increase font size
+        hProjY->GetYaxis()->SetRangeUser(0, 4); // Set plot range
+        hProjY->Draw("HIST SAME");
+        leg2->AddEntry(hProjY, names[i], "l");
+    }
+    leg2->Draw("SAME");
+
+    pad4->cd();
+    TH1D* hRatioY1 = (TH1D*)hLeadingVsZ[1]->ProjectionY("PbPb1_phi")->Clone("ratio1_phi");
+    hRatioY1->Divide(hLeadingVsZ[0]->ProjectionY("pp1_phi"));
+    hRatioY1->SetTitle("");
+    hRatioY1->SetStats(0);
+    hRatioY1->GetXaxis()->SetTitle("#Delta#phi");
+    hRatioY1->GetXaxis()->SetTitleSize(0.1); // Increase font size
+    hRatioY1->GetXaxis()->SetLabelSize(0.08); // Increase label size
+    hRatioY1->GetXaxis()->SetTitleOffset(0.4); // Decrease distance between axis label and axis
+    hRatioY1->GetYaxis()->SetTitle("PbPb/pp");
+    hRatioY1->GetYaxis()->SetTitleSize(0.1); // Increase font size
+    hRatioY1->GetYaxis()->SetLabelSize(0.06); // Increase label size
+    hRatioY1->GetYaxis()->SetTitleOffset(0.4); // Decrease distance between axis label and axis
+    hRatioY1->GetYaxis()->SetRangeUser(0, 10);
+    hRatioY1->SetLineColor(ccolors[0]);
+    hRatioY1->SetLineStyle(1);
+    hRatioY1->Draw("HIST SAME");
+
+    TH1D* hRatioY2 = (TH1D*)hLeadingVsZ[3]->ProjectionY("pythia1_hydjet_phi")->Clone("ratio2_phi");
+    hRatioY2->Divide(hLeadingVsZ[2]->ProjectionY("pythia1_phi"));
+    hRatioY2->SetLineColor(ccolors[1]);
+    hRatioY2->SetLineStyle(1);
+    hRatioY2->Draw("HIST SAME");
+
+    TLine *lineY = new TLine(hRatioY1->GetXaxis()->GetXmin(), 1, hRatioY1->GetXaxis()->GetXmax(), 1);
+    lineY->SetLineColor(kGray+2);
+    lineY->SetLineStyle(2);
+    lineY->Draw("SAME");
+
+    // Plot for #Delta R
+    c2->cd(3);
+    TLegend *leg3 = new TLegend(0.65, 0.65, 0.85, 0.85);
+    leg3->SetBorderSize(0); // Remove legend box
+    leg3->SetTextSize(0.04); // Reduce font size
+
+    TPad *pad5 = new TPad("pad5","pad5",0,0.3,1,1);
+    pad5->SetBottomMargin(0);
+    pad5->Draw();
+    TPad *pad6 = new TPad("pad6","pad6",0,0,1,0.3);
+    pad6->SetTopMargin(0);
+    pad6->Draw();
+
+    for (int i = 0; i < ncontours; i++) {
+        pad5->cd();
+        TH1D* hProjZ = hLeadingVsZ[i]->ProjectionZ(Form("%s_R", names[i]));
+        hProjZ->Scale(1. / hProjZ->GetBinWidth(1)); // Scale by 1/binsize
+        if (i == 0 || i == 1) {
+            hProjZ->SetLineColor(ccolors[0]); // Set color
+            if (i == 1) hProjZ->SetLineStyle(2); // Set line style for PbPb
+        } else {
+            hProjZ->SetLineColor(ccolors[1]); // Set color
+            if (i == 3) hProjZ->SetLineStyle(2); // Set line style for pythia+hydjet
+        }
+        hProjZ->SetTitle("R");
+        hProjZ->SetStats(0); // Turn off statistics box
+        hProjZ->GetXaxis()->SetTitle("#Delta R");
+        hProjZ->GetYaxis()->SetTitle("(1/N_{Z})dN/d(#Delta R)");
+        hProjZ->GetXaxis()->SetTitleSize(0.05); // Increase font size
+        hProjZ->GetYaxis()->SetTitleSize(0.05); // Increase font size
+        hProjZ->GetXaxis()->SetRangeUser(0, 4); // Set plot range
+        hProjZ->GetYaxis()->SetRangeUser(0, 2.4); // Set plot range
+        hProjZ->Draw("HIST SAME");
+        leg3->AddEntry(hProjZ, names[i], "l");
+    }
+    leg3->Draw("SAME");
+
+    pad6->cd();
+    TH1D* hRatioZ1 = (TH1D*)hLeadingVsZ[1]->ProjectionZ("PbPb1_R")->Clone("ratio1_R");
+    hRatioZ1->Divide(hLeadingVsZ[0]->ProjectionZ("pp1_R"));
+    hRatioZ1->SetTitle("");
+    hRatioZ1->SetStats(0);
+    hRatioZ1->GetXaxis()->SetTitle("#Delta R");
+    hRatioZ1->GetXaxis()->SetTitleSize(0.1); // Increase font size
+    hRatioZ1->GetXaxis()->SetLabelSize(0.08); // Increase label size
+    hRatioZ1->GetXaxis()->SetTitleOffset(0.4); // Decrease distance between axis label and axis
+    hRatioZ1->GetYaxis()->SetTitle("PbPb/pp");
+    hRatioZ1->GetYaxis()->SetTitleSize(0.1); // Increase font size
+    hRatioZ1->GetYaxis()->SetLabelSize(0.06); // Increase label size
+    hRatioZ1->GetYaxis()->SetTitleOffset(0.4); // Decrease distance between axis label and axis
+    hRatioZ1->GetXaxis()->SetRangeUser(0, 4);
+    hRatioZ1->GetYaxis()->SetRangeUser(0, 6);
+    hRatioZ1->SetLineColor(ccolors[0]);
+    hRatioZ1->SetLineStyle(1);
+    hRatioZ1->Draw("HIST SAME");
+
+    TH1D* hRatioZ2 = (TH1D*)hLeadingVsZ[3]->ProjectionZ("pythia1_hydjet_R")->Clone("ratio2_R");
+    hRatioZ2->Divide(hLeadingVsZ[2]->ProjectionZ("pythia1_R"));
+    hRatioZ2->SetLineColor(ccolors[1]);
+    hRatioZ2->SetLineStyle(1);
+    hRatioZ2->Draw("HIST SAME");
+
+    TLine *lineZ = new TLine(0, 1, hRatioZ1->GetXaxis()->GetXmax(), 1);
+    lineZ->SetLineColor(kGray+2);
+    lineZ->SetLineStyle(2);
+    lineZ->Draw("SAME");
+
+    // Optionally: Save the canvas as an image
+    c2->SaveAs("overlay_histogram_generators.png");
+
+}
+
+void plotOverlay() {
+    overlay_pt();
+    overlay_generators();
 }

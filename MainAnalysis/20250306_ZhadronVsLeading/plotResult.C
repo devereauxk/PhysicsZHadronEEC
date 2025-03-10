@@ -4,9 +4,9 @@
 
 const int rcolors[4] = {kRed-4, kOrange+1, kSpring-8, kTeal-2};
 
-void plotResult(const char* output_suffix) {
+void plotResult(const char* input) {
     // Open the ROOT file
-    TFile *file = new TFile(Form("output_%s.root", output_suffix), "READ");
+    TFile *file = new TFile(input, "READ");
 
     // Retrieve histograms from the file
     TH1D *hTrkPt = (TH1D*)file->Get("hTrkPtData");
@@ -75,7 +75,7 @@ void plotResult(const char* output_suffix) {
     hZMass->Draw();
 
     // Optionally: Save the canvas as an image
-    c1->SaveAs(Form("randoinfo_histogram_%s.png", output_suffix));
+    c1->SaveAs("randoinfo_histogram.png");
 
     // Create a canvas to draw the histogram
     TCanvas *c2 = new TCanvas("c2", "Canvas", 1600, 1200);
@@ -142,7 +142,7 @@ void plotResult(const char* output_suffix) {
     leg3->Draw();
 
     // Optionally: Save the canvas as an image
-    c2->SaveAs(Form("output_histogram_%s.png", output_suffix));
+    c2->SaveAs("output_histogram.png");
 
     // Cleanup: Close the file
     //file->Close();

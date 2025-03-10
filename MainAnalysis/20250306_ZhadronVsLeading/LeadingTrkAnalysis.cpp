@@ -239,6 +239,7 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
          Bar.Update(i - iStart);
          Bar.Print();
       }
+
       // Check if the event passes the selection criteria
       if (!eventSelection(MZSignal, par)) continue;
 
@@ -289,6 +290,7 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       }
 
    }
+   
 }
 
 class DataAnalyzer {
@@ -393,8 +395,6 @@ int main(int argc, char *argv[])
    }
 
    Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);
-   //par.input         = CL.Get      ("Input",   "/home/kdeverea/zdata/pp-v11-Zpt0.root");            // Input file
-   //par.mixFile       = CL.Get      ("MixFile", "/home/kdeverea/zdata/pp-v11-Zpt0.root");            // Input Mix file
    par.input         = CL.Get      ("Input",   "/home/kdeverea/zdata/HISingleMuon-v11-Zpt0.root");            // Input file
    par.mixFile       = CL.Get      ("MixFile", "/home/kdeverea/zdata/HISingleMuon-v11-Zpt0.root");            // Input Mix file
    par.output        = CL.Get      ("Output",  "output.root");                                 	// Output file
