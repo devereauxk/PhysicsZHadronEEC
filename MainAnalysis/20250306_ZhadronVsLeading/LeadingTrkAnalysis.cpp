@@ -64,8 +64,14 @@ bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    int effectiveHiBin = par.isHiBinUp ? b->hiBinUp : (par.isHiBinDown ? b->hiBinDown : b->hiBin);   // The actual centrality bin used for centrality selection
    if (par.isPUReject && par.isPP && b->NVertex != 1) return 0;                                     // Only apply PU rejection (single vertex requirement) in pp analysis
+
+   //cout<<"effectiveHiBin: "<<effectiveHiBin<<endl;
+
    if (effectiveHiBin < par.MinHiBin) return 0;
    if (effectiveHiBin >= par.MaxHiBin) return 0;
+
+   //cout<<"nZs: "<<(par.isGenZ ? b->genZMass->size() : b->zMass->size())<<endl;
+
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size()) == 0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) < 60) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) > 120) return 0;
@@ -141,9 +147,10 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
          if (!trackSelection(MZSignal, par, j)) continue;
 
          float trackPt = (*MZSignal->trackPt)[j];
-         
+
          // event + track(not Z) weight
-         float eventtrk_weight = (par.mix ? (MMix->EventWeight) * ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : (MZSignal->EventWeight) * ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
+         //float eventtrk_weight = (par.mix ? (MMix->EventWeight) * ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : (MZSignal->EventWeight) * ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
+         float eventtrk_weight = (par.mix ? (MMix->EventWeight) * (*MMix->trackWeight)[j] : (MZSignal->EventWeight) * (*MZSignal->trackWeight)[j] );
          hTrkPt->Fill(trackPt, eventtrk_weight);
 
          if (trackPt > maxTrkPt) {
@@ -164,7 +171,8 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
 
       // event + Z + leading trk weight
       // the above is the weight applied to Z observables, the following line should be tacked on to the weight for the leading track and Z observables (the residual correction is applied on the track level, i.e., but rn its without residual correction)
-      float eventZlead_weight = eventZ_weight * (par.mix ? ((*MMix->trackWeight)[maxTrkPt] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[maxTrkPt] < 0))) : ((*MZSignal->trackWeight)[maxTrkPt] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[maxTrkPt] < 0))));
+      // float eventZlead_weight = eventZ_weight * (par.mix ? ((*MMix->trackWeight)[maxTrkPt] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[maxTrkPt] < 0))) : ((*MZSignal->trackWeight)[maxTrkPt] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[maxTrkPt] < 0))));
+      float eventZlead_weight = eventZ_weight * (par.mix ? (*MMix->trackWeight)[maxTrkIdx] : (*MZSignal->trackWeight)[maxTrkIdx]);
 
       // fill result histograms
       for (int i = 0; i<hLeadingVsZ.size(); i++) {

@@ -3,7 +3,7 @@
 #include <TCanvas.h>
 
 const int rcolors[4] = {kRed-4, kOrange+1, kSpring-8, kTeal-2};
-const int ccolors[3] = {kBlack, kGreen, kViolet};
+const int ccolors[4] = {kBlack,  kGreen, kViolet, kOrange+1};
 
 void overlay_pt() {
 
@@ -232,8 +232,13 @@ void overlay_generators() {
     int ptlo_select = 10;
 
     const int ncontours = 4;
-    const char * names[ncontours] = {"pp", "PbPb", "pythia", "pythia+hydjet"};
-    const char * file_names[ncontours] = {"output_pp.root", "output_PbPb.root", "output_pythia.root", "output_DY_HYDJET.root"};
+    const char * names[ncontours] = {"pp", "PbPb", "hybrid pp", "hybrid PbPb"};
+    // const char * names[ncontours] = {"pp", "PbPb", "jewel pp", "jewel PbPb"};
+    //const char * names[ncontours] = {"pp", "PbPb", "pythia", "pythia+hydjet"};
+
+    const char * file_names[ncontours] = {"output_pp.root", "output_PbPb.root", "output_hybrid_pp.root", "output_hybrid_PbPb.root"};
+    //const char * file_names[ncontours] = {"output_pp.root", "output_PbPb.root", "output_jewel_pp.root", "output_jewel_PbPb.root"};
+    //const char * file_names[ncontours] = {"output_pp.root", "output_PbPb.root", "output_pythia.root", "output_DY_HYDJET.root"};
 
     TH3D* hLeadingVsZ[ncontours];
     TH1D* hNZ[ncontours];
@@ -348,7 +353,7 @@ void overlay_generators() {
         hProjY->GetYaxis()->SetTitle("(1/N_{Z})dN/d(#Delta#phi)");
         hProjY->GetXaxis()->SetTitleSize(0.05); // Increase font size
         hProjY->GetYaxis()->SetTitleSize(0.05); // Increase font size
-        hProjY->GetYaxis()->SetRangeUser(0, 4); // Set plot range
+        hProjY->GetYaxis()->SetRangeUser(0, 5); // Set plot range
         hProjY->Draw("HIST SAME");
         leg2->AddEntry(hProjY, names[i], "l");
     }
@@ -414,7 +419,7 @@ void overlay_generators() {
         hProjZ->GetXaxis()->SetTitleSize(0.05); // Increase font size
         hProjZ->GetYaxis()->SetTitleSize(0.05); // Increase font size
         hProjZ->GetXaxis()->SetRangeUser(0, 4); // Set plot range
-        hProjZ->GetYaxis()->SetRangeUser(0, 2.4); // Set plot range
+        hProjZ->GetYaxis()->SetRangeUser(0, 2.8); // Set plot range
         hProjZ->Draw("HIST SAME");
         leg3->AddEntry(hProjZ, names[i], "l");
     }
@@ -455,7 +460,167 @@ void overlay_generators() {
 
 }
 
+void overlay_basic() {
+    const int ncontours = 4;
+    const char *names[ncontours] = {"data", "pythia", "jewel", "hybrid"};
+    const char *file_names_pp[ncontours] = {"output/pp-4_20.root", "output/pythia-4_20.root", "output/jewelPP-4_20.root", "output/hybridPP-4_20.root"};
+    const char *file_names_PbPb[ncontours] = {"output/PbPb0_30-4_20.root", "output/DY0_30-4_20.root", "output/jewelPbPb030-4_20.root", "output/hybridPbPb030-4_20.root"};
+
+    TH1D* hTrkPt[ncontours];
+    TH1D* hLeadingPt[ncontours];
+    TH1D* hZPt[ncontours];
+    TH1D* hZMass[ncontours];
+    TH1D* hNZ[ncontours];
+
+    int ptlo_select = 4;
+
+    // Load histograms for pp
+    for (int i = 0; i < ncontours; i++) {
+        TFile *file = new TFile(file_names_pp[i], "READ");
+        hTrkPt[i] = (TH1D*)file->Get("hTrkPtData");
+        hLeadingPt[i] = (TH1D*)file->Get("hLeadingPtData");
+        hZPt[i] = (TH1D*)file->Get("hZPtData");
+        hZMass[i] = (TH1D*)file->Get("hZMassData");
+
+        // Normalize histograms
+        cout << "file: " << file_names_pp[i] << endl;
+        double integral = hZPt[i]->Integral();
+        hTrkPt[i]->Scale(1. / integral);
+        hLeadingPt[i]->Scale(1. / integral);
+        hZPt[i]->Scale(1. / integral);
+        hZMass[i]->Scale(1. / integral);
+
+        // Set stats off
+        hTrkPt[i]->SetStats(0);
+        hLeadingPt[i]->SetStats(0);
+        hZPt[i]->SetStats(0);
+        hZMass[i]->SetStats(0);
+    }
+
+    // Create a canvas to draw the histograms for pp
+    TCanvas *c1 = new TCanvas("c1", "Canvas", 1600, 1200);
+    c1->Divide(2, 2);
+
+    // Draw each histogram in a separate pad with log scale on y-axis
+    c1->cd(1);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hTrkPt[i]->SetTitle("Track pT");
+        hTrkPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hTrkPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkPt[i]->SetLineColor(ccolors[i]);
+        hTrkPt[i]->Draw("HIST SAME");
+    }
+
+    c1->cd(2);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hLeadingPt[i]->SetTitle("Leading Track pT");
+        hLeadingPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hLeadingPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hLeadingPt[i]->SetLineColor(ccolors[i]);
+        hLeadingPt[i]->Draw("HIST SAME");
+    }
+
+    c1->cd(3);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hZPt[i]->SetTitle("Z pT Distribution");
+        hZPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hZPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hZPt[i]->SetLineColor(ccolors[i]);
+        hZPt[i]->Draw("HIST SAME");
+    }
+
+    c1->cd(4);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hZMass[i]->SetTitle("Z Mass");
+        hZMass[i]->GetXaxis()->SetTitle("Mass (GeV/c^2)");
+        hZMass[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hZMass[i]->SetLineColor(ccolors[i]);
+        hZMass[i]->Draw("HIST SAME");
+    }
+
+    // Optionally: Save the canvas as an image
+    c1->SaveAs("overlay_basic_pp.png");
+
+    // Load histograms for PbPb
+    for (int i = 0; i < ncontours; i++) {
+        TFile *file = new TFile(file_names_PbPb[i], "READ");
+        hTrkPt[i] = (TH1D*)file->Get("hTrkPtData");
+        hLeadingPt[i] = (TH1D*)file->Get("hLeadingPtData");
+        hZPt[i] = (TH1D*)file->Get("hZPtData");
+        hZMass[i] = (TH1D*)file->Get("hZMassData");
+
+        // Normalize histograms
+        cout << "file: " << file_names_PbPb[i] << endl;
+        double integral = hZPt[i]->Integral();
+        hTrkPt[i]->Scale(1. / integral);
+        hLeadingPt[i]->Scale(1. / integral);
+        hZPt[i]->Scale(1. / integral);
+        hZMass[i]->Scale(1. / integral);
+
+        // Set stats off
+        hTrkPt[i]->SetStats(0);
+        hLeadingPt[i]->SetStats(0);
+        hZPt[i]->SetStats(0);
+        hZMass[i]->SetStats(0);
+    }
+
+    // Create a canvas to draw the histograms for PbPb
+    TCanvas *c2 = new TCanvas("c2", "Canvas", 1600, 1200);
+    c2->Divide(2, 2);
+
+    // Draw each histogram in a separate pad with log scale on y-axis
+    c2->cd(1);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hTrkPt[i]->SetTitle("Track pT");
+        hTrkPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hTrkPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkPt[i]->SetLineColor(ccolors[i]);
+        hTrkPt[i]->Draw("HIST SAME");
+    }
+
+    c2->cd(2);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hLeadingPt[i]->SetTitle("Leading Track pT");
+        hLeadingPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hLeadingPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hLeadingPt[i]->SetLineColor(ccolors[i]);
+        hLeadingPt[i]->Draw("HIST SAME");
+    }
+
+    c2->cd(3);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hZPt[i]->SetTitle("Z pT Distribution");
+        hZPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hZPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hZPt[i]->SetLineColor(ccolors[i]);
+        hZPt[i]->Draw("HIST SAME");
+    }
+
+    c2->cd(4);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hZMass[i]->SetTitle("Z Mass");
+        hZMass[i]->GetXaxis()->SetTitle("Mass (GeV/c^2)");
+        hZMass[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hZMass[i]->SetLineColor(ccolors[i]);
+        hZMass[i]->Draw("HIST SAME");
+    }
+
+    // Optionally: Save the canvas as an image
+    c2->SaveAs("overlay_basic_PbPb.png");
+}
+
+
+
 void plotOverlay() {
-    overlay_pt();
-    overlay_generators();
+    //overlay_pt();
+    //overlay_generators();
+    overlay_basic();
 }
