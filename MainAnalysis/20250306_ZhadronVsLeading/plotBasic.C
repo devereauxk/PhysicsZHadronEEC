@@ -17,13 +17,12 @@ void plotBasic(const char* input, const char* output) {
     const int nptbins = 4;
     float ptbinlo[nptbins] = {4, 5, 6, 10};
     TH3D* hLeadingVsZ[nptbins];
-    TH1D* hNZ[nptbins];
+    TH1D* hNZ = (TH1D*)file->Get("hNZData");
     for (int i = 0; i < nptbins; i++) {
         hLeadingVsZ[i] = (TH3D*)file->Get(Form("hLeadingVsZData_%i", static_cast<int>(ptbinlo[i])));
-        hNZ[i] = (TH1D*)file->Get(Form("hNZData_%i", static_cast<int>(ptbinlo[i])));
 
         // apply normalization
-        hLeadingVsZ[i]->Scale(1. / hNZ[i]->GetBinContent(1));
+        hLeadingVsZ[i]->Scale(1. / hNZ->Integral());
     }
 
     // Check if histograms are loaded

@@ -11,22 +11,20 @@ void overlay_pt() {
     float ptbinlo[nptbins] = {4, 6, 10};
     TH3D* hLeadingVsZ_pp[nptbins];
     TH3D* hLeadingVsZ_PbPb[nptbins];
-    TH1D* hNZ_pp[nptbins];
-    TH1D* hNZ_PbPb[nptbins];
 
     // Open the ROOT files
-    TFile *file_pp = new TFile("output_pp.root", "READ");
-    TFile *file_PbPb = new TFile("output_PbPb.root", "READ");
+    TFile *file_pp = new TFile("output/pp-4_20.root", "READ");
+    TFile *file_PbPb = new TFile("output/PbPb0_30-4_20.root", "READ");
+    TH1D* hNZ_pp = (TH1D*)file_pp->Get("hNZData");
+    TH1D* hNZ_PbPb = (TH1D*)file_PbPb->Get("hNZData");
 
     for (int i = 0; i < nptbins; i++) {
         hLeadingVsZ_pp[i] = (TH3D*)file_pp->Get(Form("hLeadingVsZData_%i", static_cast<int>(ptbinlo[i])));
-        hNZ_pp[i] = (TH1D*)file_pp->Get(Form("hNZData_%i", static_cast<int>(ptbinlo[i])));
         hLeadingVsZ_PbPb[i] = (TH3D*)file_PbPb->Get(Form("hLeadingVsZData_%i", static_cast<int>(ptbinlo[i])));
-        hNZ_PbPb[i] = (TH1D*)file_PbPb->Get(Form("hNZData_%i", static_cast<int>(ptbinlo[i])));
 
         // apply normalization
-        hLeadingVsZ_pp[i]->Scale(1. / hNZ_pp[i]->GetBinContent(1));
-        hLeadingVsZ_PbPb[i]->Scale(1. / hNZ_PbPb[i]->GetBinContent(1));
+        hLeadingVsZ_pp[i]->Scale(1. / hNZ_pp->Integral());
+        hLeadingVsZ_PbPb[i]->Scale(1. / hNZ_PbPb->Integral());
     }
 
     // Create a canvas to draw the histogram
@@ -232,13 +230,13 @@ void overlay_generators() {
     int ptlo_select = 10;
 
     const int ncontours = 4;
-    const char * names[ncontours] = {"pp", "PbPb", "hybrid pp", "hybrid PbPb"};
-    // const char * names[ncontours] = {"pp", "PbPb", "jewel pp", "jewel PbPb"};
-    //const char * names[ncontours] = {"pp", "PbPb", "pythia", "pythia+hydjet"};
+    //const char * names[ncontours] = {"pp", "PbPb", "hybrid pp", "hybrid PbPb"};
+    //const char * names[ncontours] = {"pp", "PbPb", "jewel pp", "jewel PbPb"};
+    const char * names[ncontours] = {"pp", "PbPb", "pythia", "pythia+hydjet"};
 
-    const char * file_names[ncontours] = {"output_pp.root", "output_PbPb.root", "output_hybrid_pp.root", "output_hybrid_PbPb.root"};
-    //const char * file_names[ncontours] = {"output_pp.root", "output_PbPb.root", "output_jewel_pp.root", "output_jewel_PbPb.root"};
-    //const char * file_names[ncontours] = {"output_pp.root", "output_PbPb.root", "output_pythia.root", "output_DY_HYDJET.root"};
+    //const char * file_names[ncontours] = {"output/pp-4_20.root", "output/PbPb0_30-4_20.root", "output/hybridPP-4_20.root", "output/hybridPbPb030-4_20.root"};
+    //const char * file_names[ncontours] = {"output/pp-4_20.root", "output/PbPb0_30-4_20.root",  "output/jewelPP-4_20.root", "output/jewelPbPb030-4_20.root"};
+    const char * file_names[ncontours] = {"output/pp-4_20.root", "output/PbPb0_30-4_20.root",  "output/pythia-4_20.root", "output/DY0_30-4_20.root"};
 
     TH3D* hLeadingVsZ[ncontours];
     TH1D* hNZ[ncontours];
@@ -246,12 +244,11 @@ void overlay_generators() {
     for (int i = 0; i < ncontours; i++) {
         // Open the ROOT files
         TFile *file = new TFile(file_names[i], "READ");
-
         hLeadingVsZ[i] = (TH3D*)file->Get(Form("hLeadingVsZData_%i", static_cast<int>(ptlo_select)));
-        hNZ[i] = (TH1D*)file->Get(Form("hNZData_%i", static_cast<int>(ptlo_select)));
+        hNZ[i] = (TH1D*)file->Get("hNZData");
 
         // apply normalization
-        hLeadingVsZ[i]->Scale(1. / hNZ[i]->GetBinContent(1));
+        hLeadingVsZ[i]->Scale(1. / hNZ[i]->Integral());
     }
 
     // Create a canvas to draw the histogram
@@ -468,38 +465,47 @@ void overlay_basic() {
 
     TH1D* hTrkPt[ncontours];
     TH1D* hLeadingPt[ncontours];
+    TH1D* hTrkEta[ncontours];
+    TH1D* hLeadingEta[ncontours];
     TH1D* hZPt[ncontours];
     TH1D* hZMass[ncontours];
     TH1D* hNZ[ncontours];
 
-    int ptlo_select = 4;
+    int ptlo_select = 10;
 
     // Load histograms for pp
     for (int i = 0; i < ncontours; i++) {
         TFile *file = new TFile(file_names_pp[i], "READ");
         hTrkPt[i] = (TH1D*)file->Get("hTrkPtData");
         hLeadingPt[i] = (TH1D*)file->Get("hLeadingPtData");
+        hTrkEta[i] = (TH1D*)file->Get("hTrkEtaData");
+        hLeadingEta[i] = (TH1D*)file->Get("hLeadingEtaData");
         hZPt[i] = (TH1D*)file->Get("hZPtData");
         hZMass[i] = (TH1D*)file->Get("hZMassData");
+        hNZ[i] = (TH1D*)file->Get("hNZData");
 
         // Normalize histograms
         cout << "file: " << file_names_pp[i] << endl;
-        double integral = hZPt[i]->Integral();
+        double integral = hNZ[i]->GetBinContent(1);
         hTrkPt[i]->Scale(1. / integral);
         hLeadingPt[i]->Scale(1. / integral);
+        hTrkEta[i]->Scale(1. / integral);
+        hLeadingEta[i]->Scale(1. / integral);
         hZPt[i]->Scale(1. / integral);
         hZMass[i]->Scale(1. / integral);
 
         // Set stats off
         hTrkPt[i]->SetStats(0);
         hLeadingPt[i]->SetStats(0);
+        hTrkEta[i]->SetStats(0);
+        hLeadingEta[i]->SetStats(0);
         hZPt[i]->SetStats(0);
         hZMass[i]->SetStats(0);
     }
 
     // Create a canvas to draw the histograms for pp
-    TCanvas *c1 = new TCanvas("c1", "Canvas", 1600, 1200);
-    c1->Divide(2, 2);
+    TCanvas *c1 = new TCanvas("c1", "Canvas", 1600, 2000);
+    c1->Divide(2, 3);
 
     // Draw each histogram in a separate pad with log scale on y-axis
     c1->cd(1);
@@ -518,6 +524,7 @@ void overlay_basic() {
         hLeadingPt[i]->SetTitle("Leading Track pT");
         hLeadingPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
         hLeadingPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hLeadingPt[i]->GetYaxis()->SetRangeUser(1e-3, 2e-1);
         hLeadingPt[i]->SetLineColor(ccolors[i]);
         hLeadingPt[i]->Draw("HIST SAME");
     }
@@ -542,6 +549,26 @@ void overlay_basic() {
         hZMass[i]->Draw("HIST SAME");
     }
 
+    c1->cd(5);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hTrkEta[i]->SetTitle("Track Eta");
+        hTrkEta[i]->GetXaxis()->SetTitle("Eta");
+        hTrkEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkEta[i]->SetLineColor(ccolors[i]);
+        hTrkEta[i]->Draw("HIST SAME");
+    }
+
+    c1->cd(6);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hLeadingEta[i]->SetTitle("Leading Track Eta");
+        hLeadingEta[i]->GetXaxis()->SetTitle("Eta");
+        hLeadingEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hLeadingEta[i]->SetLineColor(ccolors[i]);
+        hLeadingEta[i]->Draw("HIST SAME");
+    }
+
     // Optionally: Save the canvas as an image
     c1->SaveAs("overlay_basic_pp.png");
 
@@ -550,27 +577,34 @@ void overlay_basic() {
         TFile *file = new TFile(file_names_PbPb[i], "READ");
         hTrkPt[i] = (TH1D*)file->Get("hTrkPtData");
         hLeadingPt[i] = (TH1D*)file->Get("hLeadingPtData");
+        hTrkEta[i] = (TH1D*)file->Get("hTrkEtaData");
+        hLeadingEta[i] = (TH1D*)file->Get("hLeadingEtaData");
         hZPt[i] = (TH1D*)file->Get("hZPtData");
         hZMass[i] = (TH1D*)file->Get("hZMassData");
+        hNZ[i] = (TH1D*)file->Get("hNZData");
 
         // Normalize histograms
         cout << "file: " << file_names_PbPb[i] << endl;
-        double integral = hZPt[i]->Integral();
+        double integral = hNZ[i]->GetBinContent(1);
         hTrkPt[i]->Scale(1. / integral);
         hLeadingPt[i]->Scale(1. / integral);
+        hTrkEta[i]->Scale(1. / integral);
+        hLeadingEta[i]->Scale(1. / integral);
         hZPt[i]->Scale(1. / integral);
         hZMass[i]->Scale(1. / integral);
 
         // Set stats off
         hTrkPt[i]->SetStats(0);
         hLeadingPt[i]->SetStats(0);
+        hTrkEta[i]->SetStats(0);
+        hLeadingEta[i]->SetStats(0);
         hZPt[i]->SetStats(0);
         hZMass[i]->SetStats(0);
     }
 
     // Create a canvas to draw the histograms for PbPb
-    TCanvas *c2 = new TCanvas("c2", "Canvas", 1600, 1200);
-    c2->Divide(2, 2);
+    TCanvas *c2 = new TCanvas("c2", "Canvas", 1600, 2000);
+    c2->Divide(2, 3);
 
     // Draw each histogram in a separate pad with log scale on y-axis
     c2->cd(1);
@@ -613,6 +647,26 @@ void overlay_basic() {
         hZMass[i]->Draw("HIST SAME");
     }
 
+    c2->cd(5);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hTrkEta[i]->SetTitle("Track Eta");
+        hTrkEta[i]->GetXaxis()->SetTitle("Eta");
+        hTrkEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkEta[i]->SetLineColor(ccolors[i]);
+        hTrkEta[i]->Draw("HIST SAME");
+    }
+
+    c2->cd(6);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hLeadingEta[i]->SetTitle("Leading Track Eta");
+        hLeadingEta[i]->GetXaxis()->SetTitle("Eta");
+        hLeadingEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hLeadingEta[i]->SetLineColor(ccolors[i]);
+        hLeadingEta[i]->Draw("HIST SAME");
+    }
+
     // Optionally: Save the canvas as an image
     c2->SaveAs("overlay_basic_PbPb.png");
 }
@@ -620,7 +674,7 @@ void overlay_basic() {
 
 
 void plotOverlay() {
-    //overlay_pt();
-    //overlay_generators();
+    overlay_pt();
+    overlay_generators();
     overlay_basic();
 }

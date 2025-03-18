@@ -1,2 +1,2 @@
-./finalAnalysis.sh output/$1DY0_30 4_20 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT 40 --MaxZPT 350 -MinTrackPT 4 --MaxTrackPT 20 --MinHiBin 0 --MaxHiBin 60  --Input mergedSample/DY-gen-v11-Zpt0.root --IsSelfMixing false  --IsPP false --IsGenZ false
+./finalAnalysis.sh output/$1DY0_30 4_20 $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT 40 --MaxZPT 350 -MinTrackPT 4 --MaxTrackPT 20 --MinHiBin 0 --MaxHiBin 60  --Input mergedSample/DY-v11-Zpt0.root --IsSelfMixing false  --IsPP false --IsGenZ false
 root -l -q -b "plotBasic.C(\"output/$1DY0_30-4_20.root\",\"plots/$1DY0_30\")"
