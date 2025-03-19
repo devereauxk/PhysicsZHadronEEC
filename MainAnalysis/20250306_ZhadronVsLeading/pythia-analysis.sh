@@ -1,2 +1,0 @@
-./finalAnalysis.sh output/$1pythia 4_20   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11}   --MinZPT 40 --MaxZPT 350 --MinTrackPT 4 --MaxTrackPT 40  --Input mergedSample/pythia-v11-Zpt0.root --IsSelfMixing false  --IsPP true --IsGenZ false
-root -l -q -b "plotBasic.C(\"output/$1pythia-4_20.root\",\"plots/$1pythia\")"

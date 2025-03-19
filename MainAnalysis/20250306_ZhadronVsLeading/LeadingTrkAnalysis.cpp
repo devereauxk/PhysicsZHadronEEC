@@ -158,7 +158,7 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       for (unsigned long j = 0; j < MZSignal->trackPt->size(); j++) {
 
          // Check if the track passes the selection criteria
-         if (!trackSelection(MZSignal, par, j)) continue;
+         if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
 
          float trackPhi  = par.mix ? (*MMix->trackPhi)[j] : (*MZSignal->trackPhi)[j];
          float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
@@ -166,7 +166,8 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
 
          // Check if track is too close to the Z hadron (might be a muon from Z->muon muon)
          // 0.0025 used in Zhadron study
-         if ( sqrt((trackPhi - zPhi) * (trackPhi - zPhi) + (trackEta - zY) * (trackEta - zY)) < 0.01 ) continue;
+         // if ( sqrt((trackPhi - zPhi) * (trackPhi - zPhi) + (trackEta - zY) * (trackEta - zY)) < 0.01 ) continue;
+         // trackselection seems like it already takes care of this
 
          // event + Z + track weight
          float eventZtrk_weight = eventZ_weight;
@@ -185,8 +186,6 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
             eventZtrk_weight *= (par.mix ? ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
          }
 
-         //float eventtrk_weight = (par.mix ? (MMix->EventWeight) * ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : (MZSignal->EventWeight) * ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
-         //float eventtrk_weight = (par.mix ? (MMix->EventWeight) * (*MMix->trackWeight)[j] : (MZSignal->EventWeight) * (*MZSignal->trackWeight)[j] );
          hTrkPt->Fill(trackPt, eventZtrk_weight);
          hTrkEta->Fill(trackEta, eventZtrk_weight);
 
@@ -204,7 +203,7 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       hZMass->Fill(zMass, eventZ_weight);
 
       // check if any suitable leading track is found
-      if (maxTrkPt < par.MinTrackPT) continue;
+      // if (maxTrkPt < par.MinTrackPT) continue;
 
       // fill basic trk histograms
       hLeadingPt->Fill(maxTrkPt, maxTrkWeight);
@@ -215,12 +214,6 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       float trackDphi2 = par.mix ? DeltaPhi(zPhi, (*MMix->trackPhi)[maxTrkIdx]) : DeltaPhi(zPhi, (*MZSignal->trackPhi)[maxTrkIdx]);
       float trackDeta  = par.mix ? fabs((*MMix->trackEta)[maxTrkIdx] - zY) : fabs((*MZSignal->trackEta)[maxTrkIdx] - zY);
       float trackDr = sqrt(trackDeta * trackDeta + (trackDphi - M_PI) * (trackDphi - M_PI));
-
-      // event + Z + leading trk weight
-      // the above is the weight applied to Z observables, the following line should be tacked on to the weight for the leading track and Z observables (the residual correction is applied on the track level, i.e., but rn its without residual correction)
-      // float eventZlead_weight = eventZ_weight * (par.mix ? ((*MMix->trackWeight)[maxTrkIdx] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[maxTrkIdx] < 0))) : ((*MZSignal->trackWeight)[maxTrkIdx] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[maxTrkIdx] < 0))));
-      //float eventZlead_weight = eventZ_weight * (par.mix ? (*MMix->trackWeight)[maxTrkIdx] : (*MZSignal->trackWeight)[maxTrkIdx]);
-      //cout<<"eventZlead_weight: "<<eventZlead_weight<<"eventZ_weight: "<<eventZ_weight<<endl;
       
       // fill result histograms
       for (int i = 0; i<hLeadingVsZ.size(); i++) {

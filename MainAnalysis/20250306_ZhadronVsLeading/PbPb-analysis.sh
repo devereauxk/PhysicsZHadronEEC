@@ -1,2 +1,0 @@
-./finalAnalysis.sh output/$1PbPb0_30 4_20  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT 40 --MaxZPT 350 --MinTrackPT 4 --MaxTrackPT 20  --MinHiBin 0 --MaxHiBin 60  --Input mergedSample/HISingleMuon-v11-Zpt0.root --IsSelfMixing false --IsPP false --IsGenZ false --UseResidualCor true --ResidualCor residualCorrection2023/20241022_2023_TrackResidualCorrection_V13
-root -l -q -b "plotBasic.C(\"output/$1PbPb0_30-4_20.root\",\"plots/$1PbPb0_30\")"
