@@ -1,0 +1,26 @@
+to run the "workflow" for this analysis follow these steps. Assume you are working in the "workflow" directory.
+
+1. Build the executable:
+   ```
+   make -C ..
+   ```
+
+2. Make the directiories for the output and plots:
+    ```
+    mkdir -p output
+    mkdir -p plots
+    ```
+
+3. Make soft links to the input files, residual correction files, and executable:
+    ```
+    ln -s /data/yjlee/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/workflow/mergedSample mergedSample
+    ln -s /data/yjlee/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/workflow/residualCorrection2023 residualCorrection2023
+    ln -s ../ExecuteCorrelationAnalysis ExecuteCorrelationAnalysis
+    ```
+
+4. Run the desired analysis code. For example, the pp analysis:
+    ```
+    ./pp-analysis.sh
+    ```
+  
+The main analysis script is `LeadingTrkAnalysis.cpp`, edits made to this should always be met with running `make` so that `ExecuteCorrelationAnalysis` is updated. The various .sh scripts in the workflow directory handle different types of analysis with different input files. Most of these .sh scripts call `finalAnalysis.sh`, which in turn calls the executable and handles paralelizing the code on multiple cpus - the thread count can be changed in that file, as well as calls to plotting scripts.
