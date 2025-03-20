@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
 
    if (IsPP) {                                                                         
       MinHiBin=-2;
-      MaxHiBin=0;
+      MaxHiBin=1000000;
    }
 
    Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);

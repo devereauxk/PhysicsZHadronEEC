@@ -1,4 +1,4 @@
-./finalAnalysis.sh output/$1pp 4_20   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11}   --MinZPT 40 --MaxZPT 350 --MinTrackPT 1 --MaxTrackPT 40  --Input mergedSample/pp-v11-Zpt0.root --IsSelfMixing false --IsPP true --IsGenZ false
+./finalAnalysis.sh output/$1pp 4_20   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11}   --MinZPT 20 --MaxZPT 60 --MinTrackPT 1 --MaxTrackPT 40  --Input mergedSample/pp-v11-Zpt0.root --IsSelfMixing false --IsPP true --IsGenZ false
 root -l -q -b "plotBasic.C(\"output/$1pp-4_20.root\",\"plots/$1pp\")"
 
 #./finalAnalysis.sh output/$1pp 1_2   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11}   --MinZPT 40 --MaxZPT 350 --MinTrackPT 1 --MaxTrackPT 2  --Input mergedSample/pp-v6.root --MixFile mergedSample/pp-v6.root  --IsPP true --IsGenZ false --nMix 20

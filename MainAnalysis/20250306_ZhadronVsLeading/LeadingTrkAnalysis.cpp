@@ -154,7 +154,7 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       float maxTrkPt = -1;
       float maxTrkEta = -1;
       int maxTrkIdx = -1;
-      float maxTrkWeight = 0;
+      float maxTrkWeight = -1;
       for (unsigned long j = 0; j < MZSignal->trackPt->size(); j++) {
 
          // Check if the track passes the selection criteria
@@ -186,8 +186,8 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
             eventZtrk_weight *= (par.mix ? ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
          }
 
-         hTrkPt->Fill(trackPt, eventZtrk_weight);
-         hTrkEta->Fill(trackEta, eventZtrk_weight);
+         hTrkPt->Fill(trackPt, (MZSignal->EventWeight)*(*MZSignal->trackWeight)[j]*(MZSignal->ZWeight)* (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0)));
+         hTrkEta->Fill(trackEta, (MZSignal->EventWeight)*(*MZSignal->trackWeight)[j]*(MZSignal->ZWeight)* (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0)));
 
          if (trackPt > maxTrkPt) {
             maxTrkPt = trackPt;
@@ -203,7 +203,8 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       hZMass->Fill(zMass, eventZ_weight);
 
       // check if any suitable leading track is found
-      // if (maxTrkPt < par.MinTrackPT) continue;
+      // use id to check instead of weight cuz weights for pythia can be negative!
+      if (maxTrkIdx < 0) continue;
 
       // fill basic trk histograms
       hLeadingPt->Fill(maxTrkPt, maxTrkWeight);
@@ -328,7 +329,7 @@ int main(int argc, char *argv[])
 
    if (IsPP) {                                                                         
       MinHiBin=-2;
-      MaxHiBin=0;
+      MaxHiBin=1000000;
    }
 
    Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);

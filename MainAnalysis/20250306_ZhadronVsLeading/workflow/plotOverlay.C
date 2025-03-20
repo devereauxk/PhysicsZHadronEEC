@@ -520,6 +520,9 @@ void overlay_basic() {
 
     c1->cd(2);
     gPad->SetLogy();
+    TLegend *leg = new TLegend(0.65, 0.65, 0.85, 0.85);
+    leg->SetBorderSize(0); // Remove legend box
+    leg->SetTextSize(0.05); // Reduce font size
     for (int i = 0; i < ncontours; i++) {
         hLeadingPt[i]->SetTitle("Leading Track pT");
         hLeadingPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
@@ -527,29 +530,11 @@ void overlay_basic() {
         hLeadingPt[i]->GetYaxis()->SetRangeUser(1e-3, 2e-1);
         hLeadingPt[i]->SetLineColor(ccolors[i]);
         hLeadingPt[i]->Draw("HIST SAME");
+        leg->AddEntry(hLeadingPt[i], names[i], "l");
     }
+    leg->Draw("SAME");
 
     c1->cd(3);
-    gPad->SetLogy();
-    for (int i = 0; i < ncontours; i++) {
-        hZPt[i]->SetTitle("Z pT Distribution");
-        hZPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
-        hZPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
-        hZPt[i]->SetLineColor(ccolors[i]);
-        hZPt[i]->Draw("HIST SAME");
-    }
-
-    c1->cd(4);
-    gPad->SetLogy();
-    for (int i = 0; i < ncontours; i++) {
-        hZMass[i]->SetTitle("Z Mass");
-        hZMass[i]->GetXaxis()->SetTitle("Mass (GeV/c^2)");
-        hZMass[i]->GetYaxis()->SetTitle("Entries / N_Z");
-        hZMass[i]->SetLineColor(ccolors[i]);
-        hZMass[i]->Draw("HIST SAME");
-    }
-
-    c1->cd(5);
     gPad->SetLogy();
     for (int i = 0; i < ncontours; i++) {
         hTrkEta[i]->SetTitle("Track Eta");
@@ -559,7 +544,7 @@ void overlay_basic() {
         hTrkEta[i]->Draw("HIST SAME");
     }
 
-    c1->cd(6);
+    c1->cd(4);
     gPad->SetLogy();
     for (int i = 0; i < ncontours; i++) {
         hLeadingEta[i]->SetTitle("Leading Track Eta");
@@ -568,6 +553,28 @@ void overlay_basic() {
         hLeadingEta[i]->SetLineColor(ccolors[i]);
         hLeadingEta[i]->Draw("HIST SAME");
     }
+
+
+    c1->cd(5);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hZPt[i]->SetTitle("Z pT Distribution");
+        hZPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hZPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hZPt[i]->SetLineColor(ccolors[i]);
+        hZPt[i]->Draw("HIST SAME");
+    }
+
+    c1->cd(6);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hZMass[i]->SetTitle("Z Mass");
+        hZMass[i]->GetXaxis()->SetTitle("Mass (GeV/c^2)");
+        hZMass[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hZMass[i]->SetLineColor(ccolors[i]);
+        hZMass[i]->Draw("HIST SAME");
+    }
+
 
     // Optionally: Save the canvas as an image
     c1->SaveAs("overlay_basic_pp.png");

@@ -2,7 +2,9 @@
 
 # Define common arguments
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/HISingleMuon-v7-30GeV.root --MixFile mergedSample/HISingleMuon-v7-30GeV.root --IsPP false --IsGenZ false --nMix 10"
+#COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/HISingleMuon-v7-30GeV.root --MixFile mergedSample/HISingleMuon-v7-30GeV.root --IsPP false --IsGenZ false --nMix 10"
+#COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/HISingleMuon-v10-trackPt05.root --MixFile mergedSample/HISingleMuon-v10-trackPt05.root --IsPP false --IsGenZ false --nMix 10"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/HISingleMuon-v11-Zpt0.root --MixFile mergedSample/HISingleMuon-v11-Zpt0.root --IsPP false --IsGenZ false --nMix 10"
 
 # Loop over HiBin ranges, Pt ranges, and ZPT ranges, running analysis and combining results
 for hibin in "${HIBIN_RANGES[@]}"; do
@@ -25,8 +27,8 @@ for hibin in "${HIBIN_RANGES[@]}"; do
 
       # Combine results for the current HiBin and ZPT range
       hadd -f "plots/$1PbPb${suffix}_ZPT${min_zpt}_${max_zpt}-result.root" \
-         "output/$1PbPb${suffix}_ZPT${min_zpt}_${max_zpt}-1_2-result.root" \
-         "output/$1PbPb${suffix}_ZPT${min_zpt}_${max_zpt}-2_4-result.root" \
-         "output/$1PbPb${suffix}_ZPT${min_zpt}_${max_zpt}-4_10-result.root"
+         $(for pt_range in "${PT_RANGES[@]}"; do
+            echo "output/$1PbPb${suffix}_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
+         done)
    done
 done
