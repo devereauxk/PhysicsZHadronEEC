@@ -97,7 +97,7 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 //============================================================//
 // leading track angular distribution wrt Z calculation
 //============================================================//
-void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, vector<TH3D*> hLeadingVsZ, TH1D* hNZ, TH1D *hTrkPt, TH1D *hLeadingPt, TH1D *hTrkEta, TH1D *hLeadingEta, TH1D *hZPt, TH1D *hZMass, float *ptbinlo, const Parameters& par, TNtuple *nt = 0) {
+void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, TH3D* hLeadingVsZ, TH1D* hNZ, TH1D *hTrkPt, TH1D *hLeadingPt, TH1D *hTrkEta, TH1D *hLeadingEta, TH1D *hZPt, TH1D *hZMass, const Parameters& par, TNtuple *nt = 0) {
 
    float nZ = 0;
    hTrkPt->Sumw2();
@@ -216,15 +216,11 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       float trackDeta  = par.mix ? fabs((*MMix->trackEta)[maxTrkIdx] - zY) : fabs((*MZSignal->trackEta)[maxTrkIdx] - zY);
       float trackDr = sqrt(trackDeta * trackDeta + (trackDphi - M_PI) * (trackDphi - M_PI));
       
-      // fill result histograms
-      for (int i = 0; i<hLeadingVsZ.size(); i++) {
-         if (maxTrkPt > ptbinlo[i]) {
-            hLeadingVsZ[i]->Fill(trackDeta, trackDphi, trackDr, maxTrkWeight);
-            hLeadingVsZ[i]->Fill(-trackDeta, trackDphi, trackDr, maxTrkWeight);
-            hLeadingVsZ[i]->Fill(trackDeta, trackDphi2, trackDr, maxTrkWeight);
-            hLeadingVsZ[i]->Fill(-trackDeta, trackDphi2, trackDr, maxTrkWeight);
-         }
-      }
+      // fill result histogram
+      hLeadingVsZ->Fill(trackDeta, trackDphi, trackDr, maxTrkWeight);
+      hLeadingVsZ->Fill(-trackDeta, trackDphi, trackDr, maxTrkWeight);
+      hLeadingVsZ->Fill(trackDeta, trackDphi2, trackDr, maxTrkWeight);
+      hLeadingVsZ->Fill(-trackDeta, trackDphi2, trackDr, maxTrkWeight);
 
    }
    
@@ -235,7 +231,7 @@ public:
    TFile *inf, *mixFile, *mixFileClone, *outf;
    TNtuple *ntDiagnose;
    TH1D *hTrkPt = 0, *hLeadingPt = 0, *hZPt = 0, *hZMass = 0, *hTrkEta = 0, *hLeadingEta = 0, *hNZ = 0;
-   vector<TH3D*> hLeadingVsZ;
+   TH3D* hLeadingVsZ = 0;
    ZHadronMessenger *MZHadron, *MMix, *MMixEvt;
    string title;
 
@@ -261,12 +257,7 @@ public:
       outf->cd();
       par.mix = false;
 
-      int nptbins = 4;
-      float ptbinlo[nptbins] = {4, 5, 6, 10};
-      for (int i = 0; i < nptbins; i++) {
-         TH3D* this_hLeadingVsZ = new TH3D(Form("hLeadingVsZ%s_%i", title.c_str(), static_cast<int>(ptbinlo[i])), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4); // 2D: (deta, dphi, dr)
-         hLeadingVsZ.push_back(this_hLeadingVsZ);
-      }
+      hLeadingVsZ = new TH3D(Form("hLeadingVsZ%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4); // 3D: (deta, dphi, dr)
 
       hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 40, 0, 20);
       hLeadingPt = new TH1D(Form("hLeadingPt%s", title.c_str()), "", 40, 0, 40);
@@ -276,7 +267,8 @@ public:
       hZMass = new TH1D(Form("hZMass%s", title.c_str()), "", 40, 60, 120);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
       
-      getLeadingVsZ(MZHadron, MMix, MMixEvt, hLeadingVsZ, hNZ, hTrkPt, hLeadingPt, hTrkEta, hLeadingEta, hZPt, hZMass, ptbinlo, par); // analysis
+      getLeadingVsZ(MZHadron, MMix, MMixEvt, hLeadingVsZ, hNZ, hTrkPt, hLeadingPt, hTrkEta, hLeadingEta, hZPt, hZMass
+      , par); // analysis
 
       // Second histogram with mix=true
       /*
@@ -296,11 +288,7 @@ public:
       smartWrite(hZPt);
       smartWrite(hZMass);
       smartWrite(hNZ);
-
-      for (int i=0; i<hLeadingVsZ.size(); i++) {
-         smartWrite(hLeadingVsZ[i]);
-      }
-      
+      smartWrite(hLeadingVsZ);
    }
 
 private:

@@ -458,10 +458,11 @@ void overlay_generators() {
 }
 
 void overlay_basic() {
+
+    const char *zpt_select = "ZPT40_350";
     const int ncontours = 4;
-    const char *names[ncontours] = {"data", "pythia", "jewel", "hybrid"};
-    const char *file_names_pp[ncontours] = {"output/pp-4_20.root", "output/pythia-4_20.root", "output/jewelPP-4_20.root", "output/hybridPP-4_20.root"};
-    const char *file_names_PbPb[ncontours] = {"output/PbPb0_30-4_20.root", "output/DY0_30-4_20.root", "output/jewelPbPb030-4_20.root", "output/hybridPbPb030-4_20.root"};
+    const char *pp_names[ncontours] = {"pp", "pythia", "jewelPP", "hybridPP"};
+    const char *PbPb_names[ncontours] = {"PbPb0_30", "DY0_30", "jewelPbPb030", "hybridPbPb030"};
 
     TH1D* hTrkPt[ncontours];
     TH1D* hLeadingPt[ncontours];
@@ -471,11 +472,11 @@ void overlay_basic() {
     TH1D* hZMass[ncontours];
     TH1D* hNZ[ncontours];
 
-    int ptlo_select = 10;
-
+    const char* pt_select = "5_40";
+    
     // Load histograms for pp
     for (int i = 0; i < ncontours; i++) {
-        TFile *file = new TFile(file_names_pp[i], "READ");
+        TFile *file = new TFile(Form("output/%s_%s-%s.root", pp_names[i], zpt_select, pt_select), "READ");
         hTrkPt[i] = (TH1D*)file->Get("hTrkPtData");
         hLeadingPt[i] = (TH1D*)file->Get("hLeadingPtData");
         hTrkEta[i] = (TH1D*)file->Get("hTrkEtaData");
@@ -485,7 +486,6 @@ void overlay_basic() {
         hNZ[i] = (TH1D*)file->Get("hNZData");
 
         // Normalize histograms
-        cout << "file: " << file_names_pp[i] << endl;
         double integral = hNZ[i]->GetBinContent(1);
         hTrkPt[i]->Scale(1. / integral);
         hLeadingPt[i]->Scale(1. / integral);
@@ -530,7 +530,7 @@ void overlay_basic() {
         hLeadingPt[i]->GetYaxis()->SetRangeUser(1e-3, 2e-1);
         hLeadingPt[i]->SetLineColor(ccolors[i]);
         hLeadingPt[i]->Draw("HIST SAME");
-        leg->AddEntry(hLeadingPt[i], names[i], "l");
+        leg->AddEntry(hLeadingPt[i], pp_names[i], "l");
     }
     leg->Draw("SAME");
 
@@ -581,7 +581,7 @@ void overlay_basic() {
 
     // Load histograms for PbPb
     for (int i = 0; i < ncontours; i++) {
-        TFile *file = new TFile(file_names_PbPb[i], "READ");
+        TFile *file = new TFile(Form("output/%s_%s-%s.root", PbPb_names[i], zpt_select, pt_select), "READ");
         hTrkPt[i] = (TH1D*)file->Get("hTrkPtData");
         hLeadingPt[i] = (TH1D*)file->Get("hLeadingPtData");
         hTrkEta[i] = (TH1D*)file->Get("hTrkEtaData");
@@ -591,7 +591,6 @@ void overlay_basic() {
         hNZ[i] = (TH1D*)file->Get("hNZData");
 
         // Normalize histograms
-        cout << "file: " << file_names_PbPb[i] << endl;
         double integral = hNZ[i]->GetBinContent(1);
         hTrkPt[i]->Scale(1. / integral);
         hLeadingPt[i]->Scale(1. / integral);
@@ -681,7 +680,7 @@ void overlay_basic() {
 
 
 void plotOverlay() {
-    overlay_pt();
-    overlay_generators();
+    //overlay_pt();
+    //overlay_generators();
     overlay_basic();
 }
