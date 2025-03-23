@@ -457,7 +457,7 @@ void overlay_generators() {
 
 }
 
-void overlay_basic() {
+void overlay_basic_pp() {
 
     const char *zpt_select = "ZPT40_350";
     const int ncontours = 4;
@@ -472,7 +472,7 @@ void overlay_basic() {
     TH1D* hZMass[ncontours];
     TH1D* hNZ[ncontours];
 
-    const char* pt_select = "5_40";
+    const char* pt_select = "1_40";
     
     // Load histograms for pp
     for (int i = 0; i < ncontours; i++) {
@@ -537,35 +537,15 @@ void overlay_basic() {
     c1->cd(3);
     gPad->SetLogy();
     for (int i = 0; i < ncontours; i++) {
-        hTrkEta[i]->SetTitle("Track Eta");
-        hTrkEta[i]->GetXaxis()->SetTitle("Eta");
-        hTrkEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
-        hTrkEta[i]->SetLineColor(ccolors[i]);
-        hTrkEta[i]->Draw("HIST SAME");
-    }
-
-    c1->cd(4);
-    gPad->SetLogy();
-    for (int i = 0; i < ncontours; i++) {
-        hLeadingEta[i]->SetTitle("Leading Track Eta");
-        hLeadingEta[i]->GetXaxis()->SetTitle("Eta");
-        hLeadingEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
-        hLeadingEta[i]->SetLineColor(ccolors[i]);
-        hLeadingEta[i]->Draw("HIST SAME");
-    }
-
-
-    c1->cd(5);
-    gPad->SetLogy();
-    for (int i = 0; i < ncontours; i++) {
         hZPt[i]->SetTitle("Z pT Distribution");
         hZPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
         hZPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hZPt[i]->SetLineColor(ccolors[i]);
+        //hZPt[i]->GetXaxis()->SetRangeUser(0, 100);
         hZPt[i]->Draw("HIST SAME");
     }
 
-    c1->cd(6);
+    c1->cd(4);
     gPad->SetLogy();
     for (int i = 0; i < ncontours; i++) {
         hZMass[i]->SetTitle("Z Mass");
@@ -575,9 +555,47 @@ void overlay_basic() {
         hZMass[i]->Draw("HIST SAME");
     }
 
+    c1->cd(5);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hTrkEta[i]->SetTitle("Track Eta");
+        hTrkEta[i]->GetXaxis()->SetTitle("Eta");
+        hTrkEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkEta[i]->SetLineColor(ccolors[i]);
+        hTrkEta[i]->Draw("HIST SAME");
+    }
+
+    c1->cd(6);
+    gPad->SetLogy();
+    for (int i = 0; i < ncontours; i++) {
+        hLeadingEta[i]->SetTitle("Leading Track Eta");
+        hLeadingEta[i]->GetXaxis()->SetTitle("Eta");
+        hLeadingEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hLeadingEta[i]->SetLineColor(ccolors[i]);
+        hLeadingEta[i]->Draw("HIST SAME");
+    }
 
     // Optionally: Save the canvas as an image
-    c1->SaveAs("overlay_basic_pp.png");
+    c1->SaveAs(Form("overlay_basic_pp_%s-%s.png", zpt_select, pt_select));
+
+}
+
+void overlay_basic_PbPb() {
+
+    const char *zpt_select = "ZPT20_60";
+    const int ncontours = 4;
+    const char *pp_names[ncontours] = {"pp", "pythia", "jewelPP", "hybridPP"};
+    const char *PbPb_names[ncontours] = {"PbPb0_30", "DY0_30", "jewelPbPb030", "hybridPbPb030"};
+
+    TH1D* hTrkPt[ncontours];
+    TH1D* hLeadingPt[ncontours];
+    TH1D* hTrkEta[ncontours];
+    TH1D* hLeadingEta[ncontours];
+    TH1D* hZPt[ncontours];
+    TH1D* hZMass[ncontours];
+    TH1D* hNZ[ncontours];
+
+    const char* pt_select = "5_40";
 
     // Load histograms for PbPb
     for (int i = 0; i < ncontours; i++) {
@@ -682,5 +700,6 @@ void overlay_basic() {
 void plotOverlay() {
     //overlay_pt();
     //overlay_generators();
-    overlay_basic();
+    overlay_basic_pp();
+    //overlay_basic_PbPb();
 }

@@ -186,8 +186,8 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
             eventZtrk_weight *= (par.mix ? ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
          }
 
-         hTrkPt->Fill(trackPt, (MZSignal->EventWeight)*(*MZSignal->trackWeight)[j]*(MZSignal->ZWeight)* (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0)));
-         hTrkEta->Fill(trackEta, (MZSignal->EventWeight)*(*MZSignal->trackWeight)[j]*(MZSignal->ZWeight)* (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0)));
+         hTrkPt->Fill(trackPt, eventZtrk_weight);
+         hTrkEta->Fill(trackEta, eventZtrk_weight);
 
          if (trackPt > maxTrkPt) {
             maxTrkPt = trackPt;
@@ -263,7 +263,7 @@ public:
       hLeadingPt = new TH1D(Form("hLeadingPt%s", title.c_str()), "", 40, 0, 40);
       hTrkEta = new TH1D(Form("hTrkEta%s", title.c_str()), "", 40, -3, 3);
       hLeadingEta = new TH1D(Form("hLeadingEta%s", title.c_str()), "", 40, -3, 3);
-      hZPt = new TH1D(Form("hZPt%s", title.c_str()), "", 40, 40, 200);
+      hZPt = new TH1D(Form("hZPt%s", title.c_str()), "", 40, 0, 200);
       hZMass = new TH1D(Form("hZMass%s", title.c_str()), "", 40, 60, 120);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
       

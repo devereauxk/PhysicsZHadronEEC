@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Number of threads per instance
-nThread=30
+nThread=1
 
 # Array to hold the names of the output files
 declare -a outputFileNames
@@ -12,8 +12,8 @@ do
     outputFileName="$1-$2_${chunk}.root"
     outputFileNames+=($outputFileName)
     echo "Starting analysis of chunk $chunk"
-    echo ./ExecuteCorrelationAnalysis $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30} --nThread $nThread --nChunk $chunk --Output $outputFileName &
-    ./ExecuteCorrelationAnalysis $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30} --nThread $nThread --nChunk $chunk --Output $outputFileName &
+    echo ./ExecuteCorrelationAnalysis $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30} ${31} ${32} --nThread $nThread --nChunk $chunk --Output $outputFileName &
+    ./ExecuteCorrelationAnalysis $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30} ${31} ${32} --nThread $nThread --nChunk $chunk --Output $outputFileName &
 done
 
 # Wait for all background processes to finish
