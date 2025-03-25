@@ -198,7 +198,7 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
 
       }
       // fill basic Z diagrams
-      hNZ->Fill(0.5, eventZ_weight);
+      
       hZPt->Fill(zPt, eventZ_weight);
       hZMass->Fill(zMass, eventZ_weight);
 
@@ -221,6 +221,8 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       hLeadingVsZ->Fill(-trackDeta, trackDphi, trackDr, maxTrkWeight);
       hLeadingVsZ->Fill(trackDeta, trackDphi2, trackDr, maxTrkWeight);
       hLeadingVsZ->Fill(-trackDeta, trackDphi2, trackDr, maxTrkWeight);
+
+      hNZ->Fill(0.5, eventZ_weight);
 
    }
    
