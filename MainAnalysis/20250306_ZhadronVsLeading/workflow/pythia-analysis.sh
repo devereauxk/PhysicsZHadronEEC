@@ -2,7 +2,7 @@
 
 # Define common arguments
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/pythia-gen-v11-Zpt0.root  --MixFile mergedSample/pythia-gen-v11-Zpt0.root  --IsPP true --IsGenZ false --nMix 1"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/pythia-gen-v11-Zpt0.root  --MixFile mergedSample/pythia-gen-v11-Zpt0.root  --IsPP true --IsGenZ true --nMix 1"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}

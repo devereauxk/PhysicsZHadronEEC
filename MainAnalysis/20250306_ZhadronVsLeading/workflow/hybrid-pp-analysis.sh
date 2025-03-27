@@ -2,7 +2,7 @@
 
 # Define common arguments
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/hybrid_pp-v8.root --MixFile mergedSample/hybrid_pp-v8.root --IsPP true --IsGenZ true --nMix 1 --MinHiBin 0 --MaxHiBin 600000"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/hybrid_pp-v9.root --MixFile mergedSample/hybrid_pp-v9.root --IsPP true --IsGenZ true --nMix 1 --MinHiBin 0 --MaxHiBin 600000"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}

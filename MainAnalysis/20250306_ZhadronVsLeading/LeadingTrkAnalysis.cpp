@@ -166,7 +166,7 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
 
          // Check if track is too close to the Z hadron (might be a muon from Z->muon muon)
          // 0.0025 used in Zhadron study
-         // if ( sqrt((trackPhi - zPhi) * (trackPhi - zPhi) + (trackEta - zY) * (trackEta - zY)) < 0.01 ) continue;
+         //if ( sqrt((trackPhi - zPhi) * (trackPhi - zPhi) + (trackEta - zY) * (trackEta - zY)) < 0.1 ) continue;
          // trackselection seems like it already takes care of this
 
          // event + Z + track weight
@@ -198,7 +198,7 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
 
       }
       // fill basic Z diagrams
-      
+      hNZ->Fill(0.5, eventZ_weight);
       hZPt->Fill(zPt, eventZ_weight);
       hZMass->Fill(zMass, eventZ_weight);
 
@@ -221,8 +221,6 @@ void getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMe
       hLeadingVsZ->Fill(-trackDeta, trackDphi, trackDr, maxTrkWeight);
       hLeadingVsZ->Fill(trackDeta, trackDphi2, trackDr, maxTrkWeight);
       hLeadingVsZ->Fill(-trackDeta, trackDphi2, trackDr, maxTrkWeight);
-
-      hNZ->Fill(0.5, eventZ_weight);
 
    }
    
@@ -261,7 +259,7 @@ public:
 
       hLeadingVsZ = new TH3D(Form("hLeadingVsZ%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4); // 3D: (deta, dphi, dr)
 
-      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 40, 0, 20);
+      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 50, 0, 35);
       hLeadingPt = new TH1D(Form("hLeadingPt%s", title.c_str()), "", 40, 0, 40);
       hTrkEta = new TH1D(Form("hTrkEta%s", title.c_str()), "", 40, -3, 3);
       hLeadingEta = new TH1D(Form("hLeadingEta%s", title.c_str()), "", 40, -3, 3);

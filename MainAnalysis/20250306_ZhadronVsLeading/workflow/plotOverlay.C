@@ -457,9 +457,8 @@ void overlay_generators() {
 
 }
 
-void overlay_basic_pp() {
+void overlay_basic_pp(const char *zpt_select, const char *pt_select) {
 
-    const char *zpt_select = "ZPT40_350";
     const int ncontours = 4;
     const char *pp_names[ncontours] = {"pp", "pythia", "jewelPP", "hybridPP"};
     const char *PbPb_names[ncontours] = {"PbPb0_30", "DY0_30", "jewelPbPb030", "hybridPbPb030"};
@@ -471,8 +470,6 @@ void overlay_basic_pp() {
     TH1D* hZPt[ncontours];
     TH1D* hZMass[ncontours];
     TH1D* hNZ[ncontours];
-
-    const char* pt_select = "1_40";
     
     // Load histograms for pp
     for (int i = 0; i < ncontours; i++) {
@@ -525,16 +522,16 @@ void overlay_basic_pp() {
         hTrkPt[i]->Draw("HIST SAME");
 
         pad2->cd();
-        if (i > 0) {
+        if (i != 1) { // Use pythia (index 1) as the baseline
             TH1D* hRatio = (TH1D*)hTrkPt[i]->Clone(Form("ratio_TrkPt_%d", i));
-            hRatio->Divide(hTrkPt[0]);
+            hRatio->Divide(hTrkPt[1]);
             hRatio->SetTitle("");
             hRatio->SetStats(0);
             hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("Ratio");
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -548,7 +545,6 @@ void overlay_basic_pp() {
             line->Draw("SAME");
         }
     }
-
     c1->cd(2);
     TPad *pad3 = new TPad("pad1_2", "pad1", 0, 0.3, 1, 1);
     pad3->SetBottomMargin(0);
@@ -558,6 +554,9 @@ void overlay_basic_pp() {
     pad4->SetTopMargin(0);
     pad4->SetBottomMargin(0.2);
     pad4->Draw();
+    TLegend *leg = new TLegend(0.65, 0.65, 0.85, 0.85);
+    leg->SetBorderSize(0); // Remove legend box
+    leg->SetTextSize(0.04); // Reduce font size
     for (int i = 0; i < ncontours; i++) {
         pad3->cd();
         hLeadingPt[i]->SetTitle("Leading Track pT");
@@ -565,18 +564,19 @@ void overlay_basic_pp() {
         hLeadingPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hLeadingPt[i]->SetLineColor(ccolors[i]);
         hLeadingPt[i]->Draw("HIST SAME");
+        leg->AddEntry(hLeadingPt[i], pp_names[i], "l");
 
         pad4->cd();
-        if (i > 0) {
+        if (i != 1) { // Use pythia (index 1) as the baseline
             TH1D* hRatio = (TH1D*)hLeadingPt[i]->Clone(Form("ratio_LeadingPt_%d", i));
-            hRatio->Divide(hLeadingPt[0]);
+            hRatio->Divide(hLeadingPt[1]);
             hRatio->SetTitle("");
             hRatio->SetStats(0);
             hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("Ratio");
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -590,6 +590,8 @@ void overlay_basic_pp() {
             line->Draw("SAME");
         }
     }
+    pad3->cd();
+    leg->Draw("SAME");
 
     c1->cd(3);
     TPad *pad5 = new TPad("pad1_3", "pad1", 0, 0.3, 1, 1);
@@ -609,16 +611,16 @@ void overlay_basic_pp() {
         hZPt[i]->Draw("HIST SAME");
 
         pad6->cd();
-        if (i > 0) {
+        if (i != 1) { // Use pythia (index 1) as the baseline
             TH1D* hRatio = (TH1D*)hZPt[i]->Clone(Form("ratio_ZPt_%d", i));
-            hRatio->Divide(hZPt[0]);
+            hRatio->Divide(hZPt[1]);
             hRatio->SetTitle("");
             hRatio->SetStats(0);
             hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("Ratio");
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -651,16 +653,16 @@ void overlay_basic_pp() {
         hZMass[i]->Draw("HIST SAME");
 
         pad8->cd();
-        if (i > 0) {
+        if (i != 1) { // Use pythia (index 1) as the baseline
             TH1D* hRatio = (TH1D*)hZMass[i]->Clone(Form("ratio_ZMass_%d", i));
-            hRatio->Divide(hZMass[0]);
+            hRatio->Divide(hZMass[1]);
             hRatio->SetTitle("");
             hRatio->SetStats(0);
             hRatio->GetXaxis()->SetTitle("Mass (GeV/c^2)");
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("Ratio");
+            hRatio->GetYaxis()->SetTitle("generator/pythia");
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -693,16 +695,16 @@ void overlay_basic_pp() {
         hTrkEta[i]->Draw("HIST SAME");
 
         pad10->cd();
-        if (i > 0) {
+        if (i != 1) { // Use pythia (index 1) as the baseline
             TH1D* hRatio = (TH1D*)hTrkEta[i]->Clone(Form("ratio_TrkEta_%d", i));
-            hRatio->Divide(hTrkEta[0]);
+            hRatio->Divide(hTrkEta[1]);
             hRatio->SetTitle("");
             hRatio->SetStats(0);
             hRatio->GetXaxis()->SetTitle("Eta");
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("Ratio");
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -735,16 +737,16 @@ void overlay_basic_pp() {
         hLeadingEta[i]->Draw("HIST SAME");
 
         pad12->cd();
-        if (i > 0) {
+        if (i != 1) { // Use pythia (index 1) as the baseline
             TH1D* hRatio = (TH1D*)hLeadingEta[i]->Clone(Form("ratio_LeadingEta_%d", i));
-            hRatio->Divide(hLeadingEta[0]);
+            hRatio->Divide(hLeadingEta[1]);
             hRatio->SetTitle("");
             hRatio->SetStats(0);
             hRatio->GetXaxis()->SetTitle("Eta");
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("Ratio");
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -764,9 +766,8 @@ void overlay_basic_pp() {
 
 }
 
-void overlay_basic_PbPb() {
+void overlay_basic_PbPb(const char *zpt_select, const char *pt_select) {
 
-    const char *zpt_select = "ZPT20_60";
     const int ncontours = 4;
     const char *pp_names[ncontours] = {"pp", "pythia", "jewelPP", "hybridPP"};
     const char *PbPb_names[ncontours] = {"PbPb0_30", "DY0_30", "jewelPbPb030", "hybridPbPb030"};
@@ -778,8 +779,6 @@ void overlay_basic_PbPb() {
     TH1D* hZPt[ncontours];
     TH1D* hZMass[ncontours];
     TH1D* hNZ[ncontours];
-
-    const char* pt_select = "5_40";
 
     // Load histograms for PbPb
     for (int i = 0; i < ncontours; i++) {
@@ -811,79 +810,449 @@ void overlay_basic_PbPb() {
     }
 
     // Create a canvas to draw the histograms for PbPb
-    TCanvas *c2 = new TCanvas("c2", "Canvas", 1600, 2000);
-    c2->Divide(2, 3);
+    TCanvas *c1 = new TCanvas("c1", "Canvas", 1600, 2000);
+    c1->Divide(2, 3);
 
-    // Draw each histogram in a separate pad with log scale on y-axis
-    c2->cd(1);
-    gPad->SetLogy();
+    c1->cd(1);
+    TPad *pad1 = new TPad("pad1_1", "pad1", 0, 0.3, 1, 1);
+    pad1->SetBottomMargin(0);
+    pad1->SetLogy();
+    pad1->Draw();
+    TPad *pad2 = new TPad("pad2_1", "pad2", 0, 0, 1, 0.3);
+    pad2->SetTopMargin(0);
+    pad2->SetBottomMargin(0.2);
+    pad2->Draw();
     for (int i = 0; i < ncontours; i++) {
+        pad1->cd();
         hTrkPt[i]->SetTitle("Track pT");
         hTrkPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
         hTrkPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hTrkPt[i]->SetLineColor(ccolors[i]);
         hTrkPt[i]->Draw("HIST SAME");
+
+        pad2->cd();
+        if (i != 1) {
+            TH1D* hRatio = (TH1D*)hTrkPt[i]->Clone(Form("ratio_TrkPt_%d", i));
+            hRatio->Divide(hTrkPt[1]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
     }
 
-    c2->cd(2);
-    gPad->SetLogy();
+    c1->cd(2);
+    TPad *pad3 = new TPad("pad1_2", "pad1", 0, 0.3, 1, 1);
+    pad3->SetBottomMargin(0);
+    pad3->SetLogy();
+    pad3->Draw();
+    TPad *pad4 = new TPad("pad2_2", "pad2", 0, 0, 1, 0.3);
+    pad4->SetTopMargin(0);
+    pad4->SetBottomMargin(0.2);
+    pad4->Draw();
+
+    TLegend *leg = new TLegend(0.65, 0.65, 0.85, 0.85);
+    leg->SetBorderSize(0); // Remove legend box
+    leg->SetTextSize(0.04); // Reduce font size
+
     for (int i = 0; i < ncontours; i++) {
+        pad3->cd();
         hLeadingPt[i]->SetTitle("Leading Track pT");
         hLeadingPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
         hLeadingPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hLeadingPt[i]->SetLineColor(ccolors[i]);
         hLeadingPt[i]->Draw("HIST SAME");
-    }
+        leg->AddEntry(hLeadingPt[i], PbPb_names[i], "l");
 
-    c2->cd(3);
-    gPad->SetLogy();
+        pad4->cd();
+        if (i != 1) {
+            TH1D* hRatio = (TH1D*)hLeadingPt[i]->Clone(Form("ratio_LeadingPt_%d", i));
+            hRatio->Divide(hLeadingPt[1]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
+    }
+    pad3->cd();
+    leg->Draw("SAME");
+
+    c1->cd(3);
+    TPad *pad5 = new TPad("pad1_3", "pad1", 0, 0.3, 1, 1);
+    pad5->SetBottomMargin(0);
+    pad5->SetLogy();
+    pad5->Draw();
+    TPad *pad6 = new TPad("pad2_3", "pad2", 0, 0, 1, 0.3);
+    pad6->SetTopMargin(0);
+    pad6->SetBottomMargin(0.2);
+    pad6->Draw();
     for (int i = 0; i < ncontours; i++) {
+        pad5->cd();
         hZPt[i]->SetTitle("Z pT Distribution");
         hZPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
         hZPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hZPt[i]->SetLineColor(ccolors[i]);
         hZPt[i]->Draw("HIST SAME");
+
+        pad6->cd();
+        if (i != 1) {
+            TH1D* hRatio = (TH1D*)hZPt[i]->Clone(Form("ratio_ZPt_%d", i));
+            hRatio->Divide(hZPt[1]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
     }
 
-    c2->cd(4);
-    gPad->SetLogy();
+    c1->cd(4);
+    TPad *pad7 = new TPad("pad1_4", "pad1", 0, 0.3, 1, 1);
+    pad7->SetBottomMargin(0);
+    pad7->SetLogy();
+    pad7->Draw();
+    TPad *pad8 = new TPad("pad2_4", "pad2", 0, 0, 1, 0.3);
+    pad8->SetTopMargin(0);
+    pad8->SetBottomMargin(0.2);
+    pad8->Draw();
     for (int i = 0; i < ncontours; i++) {
+        pad7->cd();
         hZMass[i]->SetTitle("Z Mass");
         hZMass[i]->GetXaxis()->SetTitle("Mass (GeV/c^2)");
         hZMass[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hZMass[i]->SetLineColor(ccolors[i]);
         hZMass[i]->Draw("HIST SAME");
+
+        pad8->cd();
+        if (i != 1) {
+            TH1D* hRatio = (TH1D*)hZMass[i]->Clone(Form("ratio_ZMass_%d", i));
+            hRatio->Divide(hZMass[1]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("Mass (GeV/c^2)");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
     }
 
-    c2->cd(5);
-    gPad->SetLogy();
+    c1->cd(5);
+    TPad *pad9 = new TPad("pad1_5", "pad1", 0, 0.3, 1, 1);
+    pad9->SetBottomMargin(0);
+    pad9->SetLogy();
+    pad9->Draw();
+    TPad *pad10 = new TPad("pad2_5", "pad2", 0, 0, 1, 0.3);
+    pad10->SetTopMargin(0);
+    pad10->SetBottomMargin(0.2);
+    pad10->Draw();
     for (int i = 0; i < ncontours; i++) {
+        pad9->cd();
         hTrkEta[i]->SetTitle("Track Eta");
         hTrkEta[i]->GetXaxis()->SetTitle("Eta");
         hTrkEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hTrkEta[i]->SetLineColor(ccolors[i]);
         hTrkEta[i]->Draw("HIST SAME");
+
+        pad10->cd();
+        if (i != 1) {
+            TH1D* hRatio = (TH1D*)hTrkEta[i]->Clone(Form("ratio_TrkEta_%d", i));
+            hRatio->Divide(hTrkEta[1]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("Eta");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
     }
 
-    c2->cd(6);
-    gPad->SetLogy();
+    c1->cd(6);
+    TPad *pad11 = new TPad("pad1_6", "pad1", 0, 0.3, 1, 1);
+    pad11->SetBottomMargin(0);
+    pad11->SetLogy();
+    pad11->Draw();
+    TPad *pad12 = new TPad("pad2_6", "pad2", 0, 0, 1, 0.3);
+    pad12->SetTopMargin(0);
+    pad12->SetBottomMargin(0.2);
+    pad12->Draw();
     for (int i = 0; i < ncontours; i++) {
+        pad11->cd();
         hLeadingEta[i]->SetTitle("Leading Track Eta");
         hLeadingEta[i]->GetXaxis()->SetTitle("Eta");
         hLeadingEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hLeadingEta[i]->SetLineColor(ccolors[i]);
         hLeadingEta[i]->Draw("HIST SAME");
+
+        pad12->cd();
+        if (i != 1) {
+            TH1D* hRatio = (TH1D*)hLeadingEta[i]->Clone(Form("ratio_LeadingEta_%d", i));
+            hRatio->Divide(hLeadingEta[1]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("Eta");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
     }
 
     // Optionally: Save the canvas as an image
-    c2->SaveAs("overlay_basic_PbPb.png");
+    c1->SaveAs(Form("overlay_basic_PbPb_%s-%s.png", zpt_select, pt_select));
+
 }
 
+void overlay_basic_PbPb_pp_ratio(const char *zpt_select, const char *pt_select) {
 
+    const int ncontours = 4;
+    const char *pp_names[ncontours] = {"pp", "pythia", "jewelPP", "hybridPP"};
+    const char *PbPb_names[ncontours] = {"PbPb0_30", "DY0_30", "jewelPbPb030", "hybridPbPb030"};
+
+    TH1D* hTrkPt[ncontours];
+    TH1D* hLeadingPt[ncontours];
+    TH1D* hTrkEta[ncontours];
+    TH1D* hLeadingEta[ncontours];
+    TH1D* hZPt[ncontours];
+    TH1D* hZMass[ncontours];
+    TH1D* hNZ_PbPb[ncontours];
+    TH1D* hNZ_pp[ncontours];
+
+    // Load histograms for PbPb and pp
+    for (int i = 0; i < ncontours; i++) {
+        TFile *file_PbPb = new TFile(Form("output/%s_%s-%s.root", PbPb_names[i], zpt_select, pt_select), "READ");
+        TFile *file_pp = new TFile(Form("output/%s_%s-%s.root", pp_names[i], zpt_select, pt_select), "READ");
+
+        hTrkPt[i] = (TH1D*)file_PbPb->Get("hTrkPtData");
+        hLeadingPt[i] = (TH1D*)file_PbPb->Get("hLeadingPtData");
+        hTrkEta[i] = (TH1D*)file_PbPb->Get("hTrkEtaData");
+        hLeadingEta[i] = (TH1D*)file_PbPb->Get("hLeadingEtaData");
+        hZPt[i] = (TH1D*)file_PbPb->Get("hZPtData");
+        hZMass[i] = (TH1D*)file_PbPb->Get("hZMassData");
+        hNZ_PbPb[i] = (TH1D*)file_PbPb->Get("hNZData");
+        hNZ_pp[i] = (TH1D*)file_pp->Get("hNZData");
+
+        // Normalize histograms
+        double integral_PbPb = hNZ_PbPb[i]->GetBinContent(1);
+        double integral_pp = hNZ_pp[i]->GetBinContent(1);
+        double scale_factor = integral_pp / integral_PbPb;
+
+        // Divide by corresponding pp histograms and scale by (N_Z_pp / N_Z_PbPb)
+        hTrkPt[i]->Divide((TH1D*)file_pp->Get("hTrkPtData"));
+        hTrkPt[i]->Scale(scale_factor);
+        hLeadingPt[i]->Divide((TH1D*)file_pp->Get("hLeadingPtData"));
+        hLeadingPt[i]->Scale(scale_factor);
+        hTrkEta[i]->Divide((TH1D*)file_pp->Get("hTrkEtaData"));
+        hTrkEta[i]->Scale(scale_factor);
+        hLeadingEta[i]->Divide((TH1D*)file_pp->Get("hLeadingEtaData"));
+        hLeadingEta[i]->Scale(scale_factor);
+        hZPt[i]->Divide((TH1D*)file_pp->Get("hZPtData"));
+        hZPt[i]->Scale(scale_factor);
+        hZMass[i]->Divide((TH1D*)file_pp->Get("hZMassData"));
+        hZMass[i]->Scale(scale_factor);
+
+        // Set stats off
+        hTrkPt[i]->SetStats(0);
+        hLeadingPt[i]->SetStats(0);
+        hTrkEta[i]->SetStats(0);
+        hLeadingEta[i]->SetStats(0);
+        hZPt[i]->SetStats(0);
+        hZMass[i]->SetStats(0);
+    }
+    // Create a canvas to draw the histograms for PbPb/pp ratios
+    TCanvas *c1 = new TCanvas("c1", "Canvas", 1600, 2000);
+    c1->Divide(2, 3);
+
+    c1->cd(1);
+    for (int i = 0; i < ncontours; i++) {
+        hTrkPt[i]->SetTitle("Track pT Ratio");
+        hTrkPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hTrkPt[i]->GetYaxis()->SetTitle("PbPb/pp");
+        hTrkPt[i]->GetYaxis()->SetRangeUser(0, 3);
+        hTrkPt[i]->SetLineColor(ccolors[i]);
+        hTrkPt[i]->Draw("HIST SAME");
+
+        TLine *line = new TLine(hTrkPt[i]->GetXaxis()->GetXmin(), 1, hTrkPt[i]->GetXaxis()->GetXmax(), 1);
+        line->SetLineColor(kGray+2);
+        line->SetLineStyle(2);
+        line->Draw("SAME");
+    }
+
+    c1->cd(2);
+    for (int i = 0; i < ncontours; i++) {
+        hLeadingPt[i]->SetTitle("Leading Track pT Ratio");
+        hLeadingPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hLeadingPt[i]->GetYaxis()->SetTitle("PbPb/pp");
+        hLeadingPt[i]->GetYaxis()->SetRangeUser(0, 3);
+        hLeadingPt[i]->SetLineColor(ccolors[i]);
+        hLeadingPt[i]->Draw("HIST SAME");
+
+        TLine *line = new TLine(hLeadingPt[i]->GetXaxis()->GetXmin(), 1, hLeadingPt[i]->GetXaxis()->GetXmax(), 1);
+        line->SetLineColor(kGray+2);
+        line->SetLineStyle(2);
+        line->Draw("SAME");
+    }
+
+    c1->cd(3);
+    for (int i = 0; i < ncontours; i++) {
+        hZPt[i]->SetTitle("Z pT Ratio");
+        hZPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hZPt[i]->GetYaxis()->SetTitle("PbPb/pp");
+        hZPt[i]->GetYaxis()->SetRangeUser(0, 3);
+        hZPt[i]->SetLineColor(ccolors[i]);
+        hZPt[i]->Draw("HIST SAME");
+
+        TLine *line = new TLine(hZPt[i]->GetXaxis()->GetXmin(), 1, hZPt[i]->GetXaxis()->GetXmax(), 1);
+        line->SetLineColor(kGray+2);
+        line->SetLineStyle(2);
+        line->Draw("SAME");
+    }
+
+    c1->cd(4);
+    for (int i = 0; i < ncontours; i++) {
+        hZMass[i]->SetTitle("Z Mass Ratio");
+        hZMass[i]->GetXaxis()->SetTitle("Mass (GeV/c^2)");
+        hZMass[i]->GetYaxis()->SetTitle("PbPb/pp");
+        hZMass[i]->GetYaxis()->SetRangeUser(0, 3);
+        hZMass[i]->SetLineColor(ccolors[i]);
+        hZMass[i]->Draw("HIST SAME");
+
+        TLine *line = new TLine(hZMass[i]->GetXaxis()->GetXmin(), 1, hZMass[i]->GetXaxis()->GetXmax(), 1);
+        line->SetLineColor(kGray+2);
+        line->SetLineStyle(2);
+        line->Draw("SAME");
+    }
+
+    c1->cd(5);
+    for (int i = 0; i < ncontours; i++) {
+        hTrkEta[i]->SetTitle("Track Eta Ratio");
+        hTrkEta[i]->GetXaxis()->SetTitle("Eta");
+        hTrkEta[i]->GetYaxis()->SetTitle("PbPb/pp");
+        hTrkEta[i]->GetYaxis()->SetRangeUser(0, 3);
+        hTrkEta[i]->SetLineColor(ccolors[i]);
+        hTrkEta[i]->Draw("HIST SAME");
+
+        TLine *line = new TLine(hTrkEta[i]->GetXaxis()->GetXmin(), 1, hTrkEta[i]->GetXaxis()->GetXmax(), 1);
+        line->SetLineColor(kGray+2);
+        line->SetLineStyle(2);
+        line->Draw("SAME");
+    }
+
+    c1->cd(6);
+    for (int i = 0; i < ncontours; i++) {
+        hLeadingEta[i]->SetTitle("Leading Track Eta Ratio");
+        hLeadingEta[i]->GetXaxis()->SetTitle("Eta");
+        hLeadingEta[i]->GetYaxis()->SetTitle("PbPb/pp");
+        hLeadingEta[i]->GetYaxis()->SetRangeUser(0, 3);
+        hLeadingEta[i]->SetLineColor(ccolors[i]);
+        hLeadingEta[i]->Draw("HIST SAME");
+
+        TLine *line = new TLine(hLeadingEta[i]->GetXaxis()->GetXmin(), 1, hLeadingEta[i]->GetXaxis()->GetXmax(), 1);
+        line->SetLineColor(kGray+2);
+        line->SetLineStyle(2);
+        line->Draw("SAME");
+    }
+
+    // Add legend to the leading track pT plot
+    c1->cd(2);
+    TLegend *leg = new TLegend(0.65, 0.65, 0.85, 0.85);
+    leg->SetBorderSize(0); // Remove legend box
+    leg->SetTextSize(0.04); // Reduce font size
+    const char *ratio_labels[ncontours] = {"data ratio", "pythia ratio", "jewel ratio", "hybrid ratio"};
+    for (int i = 0; i < ncontours; i++) {
+        leg->AddEntry(hLeadingPt[i], ratio_labels[i], "l");
+    }
+    leg->Draw("SAME");
+
+    // Optionally: Save the canvas as an image
+    c1->SaveAs(Form("overlay_basic_PbPb_pp_ratio_%s-%s.png", zpt_select, pt_select));
+}
 
 void plotOverlay() {
     //overlay_pt();
     //overlay_generators();
-    overlay_basic_pp();
-    //overlay_basic_PbPb();
+
+    const char* zpt_select[3] = {"ZPT40_350", "ZPT20_60", "ZPT80_350"};
+    const char* pt_select = "1_40";
+
+    for (int i = 0; i < 3; i++) {
+        overlay_basic_pp(zpt_select[i], pt_select);
+        overlay_basic_PbPb(zpt_select[i], pt_select);
+        overlay_basic_PbPb_pp_ratio(zpt_select[i], pt_select);
+    }   
 }

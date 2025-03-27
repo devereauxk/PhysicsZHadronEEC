@@ -2,7 +2,7 @@
 
 # Define common arguments
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/DY-v11-Zpt0.root --MixFile mergedSample/DY-v11-Zpt0.root --IsPP false --IsGenZ false --nMix 10"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/DY-gen-v11-Zpt0.root --MixFile mergedSample/DY-gen-v11-Zpt0.root --IsPP false --IsGenZ true --nMix 10"
 
 # Loop over HiBin ranges, Pt ranges, and ZPT ranges, running analysis and combining results
 for hibin in "${HIBIN_RANGES[@]}"; do
