@@ -827,6 +827,7 @@ void overlay_basic_PbPb(const char *zpt_select, const char *pt_select) {
         hTrkPt[i]->SetTitle("Track pT");
         hTrkPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
         hTrkPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkPt[i]->GetYaxis()->SetRangeUser(1e-6, 1e3);
         hTrkPt[i]->SetLineColor(ccolors[i]);
         hTrkPt[i]->Draw("HIST SAME");
 
@@ -1247,7 +1248,8 @@ void plotOverlay() {
     //overlay_pt();
     //overlay_generators();
 
-    const char* zpt_select[3] = {"ZPT40_350", "ZPT20_60", "ZPT80_350"};
+    //const char* zpt_select[3] = {"ZPT40_350", "ZPT20_60", "ZPT80_350"};
+    const char* zpt_select[1] = {"ZPT20_60"};
     const char* pt_select = "1_40";
 
     for (int i = 0; i < 3; i++) {

@@ -494,14 +494,16 @@ int main(int argc, char *argv[]) {
          if (Rebin!=1) {
             HData[iC][iF]->Rebin(Rebin);
             HData[iC][iF]->Scale(1./Rebin);
-            HDataSys[iC][iF]->Rebin(Rebin);
-            HDataSys[iC][iF]->Scale(1./Rebin);
+            if(SkipSystematics == false && HDataSys[iC][iF] != nullptr) {
+               HDataSys[iC][iF]->Rebin(Rebin);
+               HDataSys[iC][iF]->Scale(1./Rebin);
+            }
          }
             HData[iC][iF]->Scale(1./2);
-            HDataSys[iC][iF]->Scale(1./2);
+            if(SkipSystematics == false && HDataSys[iC][iF] != nullptr) HDataSys[iC][iF]->Scale(1./2);
       }	   
    }   
-
+   
    // Draw things
    for(int iC = 0; iC < NColumn; iC++) {
       Pad[iC]->cd();
@@ -510,8 +512,8 @@ int main(int argc, char *argv[]) {
       cout <<iC<<endl;
       for(int iF = NPair-1; iF >=0; iF--) {
          if (lines[iF]>0) {
-	    HDataSys[iC][iF]->SetLineStyle(lines[iF]);
-	    HData[iC][iF]->SetLineStyle(lines[iF]);
+      if(SkipSystematics == false && HDataSys[iC][iF] != nullptr) HDataSys[iC][iF]->SetLineStyle(lines[iF]);
+	   HData[iC][iF]->SetLineStyle(lines[iF]);
 	 }
 	 if(SkipSystematics == false && HDataSys[iC][iF] != nullptr && lines[iF]==0) HDataSys[iC][iF]->Draw("same e2");
 	 if (lines[iF]<=0) { 
