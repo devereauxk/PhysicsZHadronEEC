@@ -5,6 +5,27 @@
 const int rcolors[4] = {kRed-4, kOrange+1, kSpring-8, kTeal-2};
 const int ccolors[4] = {kBlack,  kGreen, kViolet, kOrange+1};
 
+void divideByWidth(TH1D* input) {
+    if (!input) {
+        std::cerr << "Error: Null histogram pointer passed to divideByWidth function." << std::endl;
+        return;
+    }
+
+    int nBins = input->GetNbinsX();
+    for (int i = 1; i <= nBins; ++i) {
+        double binContent = input->GetBinContent(i);
+        double binError = input->GetBinError(i);
+        double binWidth = input->GetBinWidth(i);
+
+        if (binWidth != 0) {
+            input->SetBinContent(i, binContent / binWidth);
+            input->SetBinError(i, binError / binWidth);
+        } else {
+            std::cerr << "Warning: Bin width is zero for bin " << i << ". Skipping division for this bin." << std::endl;
+        }
+    }
+}
+
 void overlay_pt() {
 
     const int nptbins = 3;
@@ -490,6 +511,9 @@ void overlay_basic_pp(const char *zpt_select, const char *pt_select) {
         hLeadingEta[i]->Scale(1. / integral);
         hZPt[i]->Scale(1. / integral);
         hZMass[i]->Scale(1. / integral);
+
+        // divide by bin width
+        divideByWidth(hTrkPt[i]);
 
         // Set stats off
         hTrkPt[i]->SetStats(0);
@@ -1248,13 +1272,15 @@ void plotOverlay() {
     //overlay_pt();
     //overlay_generators();
 
-    //const char* zpt_select[3] = {"ZPT40_350", "ZPT20_60", "ZPT80_350"};
-    const char* zpt_select[1] = {"ZPT20_60"};
-    const char* pt_select = "1_40";
+    const char* zpt_select[1] = {"ZPT40_350"};
+    const char* pt_select[4] = {"1_2", "2_4", "4_10", "1_40"};
 
-    for (int i = 0; i < 3; i++) {
-        overlay_basic_pp(zpt_select[i], pt_select);
-        overlay_basic_PbPb(zpt_select[i], pt_select);
-        overlay_basic_PbPb_pp_ratio(zpt_select[i], pt_select);
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 4; j++) {
+
+            overlay_basic_pp(zpt_select[i], pt_select[j]);
+            //overlay_basic_PbPb(zpt_select, pt_select[i]);
+            //overlay_basic_PbPb_pp_ratio(zpt_select, pt_select[i]);
+        }
     }   
 }

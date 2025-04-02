@@ -3,7 +3,7 @@
 # Define common arguments
 source config.sh
 # where's the jewel flag?
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/jewel_PbPb030-v9.root --MixFile mergedSample/jewel_PbPb030-v9.root --IsPP true --IsJewel true --IsGenZ true --nMix 10 --MinHiBin 0 --MaxHiBin 600000"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/jewel_PbPb030-v9.root --MixFile mergedSample/jewel_PbPb030-v9.root --IsPP false --IsJewel true --IsGenZ true --nMix 10 --MinHiBin 0 --MaxHiBin 600000"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}

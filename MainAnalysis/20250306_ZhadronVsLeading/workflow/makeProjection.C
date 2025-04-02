@@ -37,13 +37,11 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     TH1D *hMixData = (TH1D*)file->Get("hMixData"); // Replace with your histogram name
     TH1D *hNZMixData = (TH1D*)file->Get("hNZMixData"); // Replace with your histogram name
 
-    TH1D *hTrkPtData = (TH1D*)file->Get("hTrkPtData");
-    TH1D *hTrkPtMixData = (TH1D*)file->Get("hTrkPtMixData");
-
     hNZData->SetName(Form("hNZData_%s",tag));
     hNZMixData->SetName(Form("hNZMixData_%s",tag));
 
     // Verify that all required histograms are loaded successfully from the file
+    /*
     if (!hData || !hNZData || !hMixData || !hNZMixData) {
         // Check each histogram individually to provide a specific error message
         if (!hData) {
@@ -63,6 +61,7 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
         std::cerr << "Error: One or more required histograms could not be loaded from the file. Exiting function." << std::endl;
         return;
     }
+    */
 
     // Scale histograms
     hData->SetName(Form("hData_%s",tag));
@@ -70,16 +69,9 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hMixData->SetName(Form("hMixData_%s",tag));
     hMixData->Scale(1. / hNZMixData->GetBinContent(1));
     TH1D *hDataAll = (TH1D*) hData->Clone(Form("hDataAll_%s",tag));
-
-    hTrkPtData->SetName(Form("hTrkPtData_%s",tag));
-    hTrkPtData->Scale(1. / hNZData->GetBinContent(1));
-    hTrkPtMixData->SetName(Form("hTrkPtMixData_%s",tag));
-    hTrkPtMixData->Scale(1. / hNZMixData->GetBinContent(1));
     
     // Subtract hMixData from hData
     if (doSub) hData->Add(hMixData, -1);
-
-    // if (doSub) hTrkPtData->Add(hTrkPtMixData, -1);
 
     // Create a canvas to draw the histogram
     TCanvas *c1 = new TCanvas("c1", "Canvas for Y projection", 800, 600);
@@ -96,13 +88,6 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     divideByWidth(hProjX);
     hProjX->Draw();
 
-    //Creating new canvas for track pt distribution
-    TCanvas *c3 = new TCanvas("c3", "Canvas for track pt", 800, 600);
-    hTrkPtData->SetMarkerStyle(20);
-    hTrkPtData->GetXaxis()->SetTitle("track pT");
-    divideByWidth(hTrkPtData);
-    hTrkPtData->Draw();
-
     // Optionally: Save the canvas as an image and write histograms to a file
     TFile *outf = new TFile(outfname, "RECREATE");
     hData->Write();
@@ -112,9 +97,6 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hProjX->Write();
     hNZData->Write();
     hNZMixData->Write();
-
-    hTrkPtData->Write();
-    hTrkPtMixData->Write();
     
     // Cleanup: Close the file
     //file->Close();
