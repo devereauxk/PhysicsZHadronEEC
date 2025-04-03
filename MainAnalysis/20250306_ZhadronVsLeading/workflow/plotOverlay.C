@@ -542,6 +542,8 @@ void overlay_basic_pp(const char *zpt_select, const char *pt_select) {
         hTrkPt[i]->SetTitle("Track pT");
         hTrkPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
         hTrkPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkPt[i]->GetXaxis()->SetRangeUser(0,200);
+        hTrkPt[i]->GetYaxis()->SetRangeUser(1e-6, 10);
         hTrkPt[i]->SetLineColor(ccolors[i]);
         hTrkPt[i]->Draw("HIST SAME");
 
@@ -554,6 +556,7 @@ void overlay_basic_pp(const char *zpt_select, const char *pt_select) {
             hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetRangeUser(0,200);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
             hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
             hRatio->GetYaxis()->SetTitleSize(0.1);
@@ -1273,10 +1276,10 @@ void plotOverlay() {
     //overlay_generators();
 
     const char* zpt_select[1] = {"ZPT40_350"};
-    const char* pt_select[4] = {"1_2", "2_4", "4_10", "1_40"};
+    const char* pt_select[1] = {"1_40"};
 
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 4; j++) {
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 1; j++) {
 
             overlay_basic_pp(zpt_select[i], pt_select[j]);
             //overlay_basic_PbPb(zpt_select, pt_select[i]);

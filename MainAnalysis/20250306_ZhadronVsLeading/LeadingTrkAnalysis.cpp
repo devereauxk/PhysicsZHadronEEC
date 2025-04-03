@@ -169,21 +169,22 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
          float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
          float trackPt   = par.mix ? (*MMix->trackPt)[j] : (*MZSignal->trackPt)[j];
 
-         // throw invalid leading track, but continue the loop so diagnostic hists filled
-         if(trackSelectionNoPt((par.mix ? MMix : MZSignal), par, j) && trackPt > par.MaxTrackPT) invalidLead = true;
-         // important that this cut on the leading track pt is done on only tracks that pass trackSelectionNoPt (or else just the decay muons will be almost always selected as the leading track)
+         //cout<<"track weight "<<(*MZSignal->trackWeight)[j]<<" track pt "<<trackPt<<endl;
 
-         cout<<"invalid lead="<<invalidLead<<endl;
+         // throw invalid leading track, but continue the loop so diagnostic hists filled
+         if(trackSelectionNoPt((par.mix ? MMix : MZSignal), par, j) && trackPt > par.MaxTrackPT && (par.mix ? (*MMix->trackWeight)[j] : (*MZSignal->trackWeight)[j]) > 0) {
+            invalidLead = true;
+            //cout<<"track selection no pt = "<<trackSelectionNoPt((par.mix ? MMix : MZSignal), par, j)<<" track pt = "<<trackPt<<" passes "<<(trackPt > par.MaxTrackPT)<<endl;
+         }
+         // important that this cut on the leading track pt is done on only tracks that pass trackSelectionNoPt (or else just the decay muons will be almost always selected as the leading track)
 
          // Check if the track passes the selection criteria
          // we use no pt here since this loop is for finiding the leading track, and filling diagnostic diagrams
          // we do not want to take the "leading track with pt less than maxtrkpt" as a our leading track
          // maxtrkpt and mintrkpt are now applied ONLY on the leading track
-         if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue; // modded
+         if (!trackSelectionNoPt((par.mix ? MMix : MZSignal), par, j)) continue; // modded
 
          // Check if track is too close to the Z hadron (might be a muon from Z->muon muon)
-         // 0.0025 used in Zhadron study
-         //if ( sqrt((trackPhi - zPhi) * (trackPhi - zPhi) + (trackEta - zY) * (trackEta - zY)) < 0.1 ) continue;
          // trackselection seems like it already takes care of this
 
          // event + Z + track weight
@@ -206,7 +207,7 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
          hTrkPt->Fill(trackPt, eventZtrk_weight);
          hTrkEta->Fill(trackEta, eventZtrk_weight);
 
-         if (trackPt > maxTrkPt) {
+         if (trackPt > maxTrkPt && (par.mix ? (*MMix->trackWeight)[j] : (*MZSignal->trackWeight)[j]) > 0) {
             maxTrkPt = trackPt;
             maxTrkEta = trackEta;
             maxTrkIdx = j;
@@ -219,6 +220,8 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
       // here we apply the track pt requirement on the leading track
       //if(!trackSelection((par.mix ? MMix : MZSignal), par, maxTrkIdx)) continue;
       if (invalidLead) continue;
+
+      //cout<<" event "<<i<<" leading track pt "<<maxTrkPt<<endl;
 
       // fill basic trk histograms
       hLeadingPt->Fill(maxTrkPt, maxTrkWeight);
@@ -275,7 +278,7 @@ public:
 
       hLeadingVsZ = new TH3D(Form("hLeadingVsZ%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4); // 3D: (deta, dphi, dr)
 
-      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 50, 0, 10);
+      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 200, 0, 200);
       hLeadingPt = new TH1D(Form("hLeadingPt%s", title.c_str()), "", 40, 0, 40);
       hTrkEta = new TH1D(Form("hTrkEta%s", title.c_str()), "", 40, -3, 3);
       hLeadingEta = new TH1D(Form("hLeadingEta%s", title.c_str()), "", 40, -3, 3);
