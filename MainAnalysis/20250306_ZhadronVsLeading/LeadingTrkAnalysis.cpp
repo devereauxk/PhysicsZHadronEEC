@@ -44,8 +44,8 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
    if ((*b->trackPt)[j] > par.MaxTrackPT) return false;  
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
-   //if ((*b->trackEta)[j] > 2.4) return false;
-   //if ((*b->trackEta)[j] < -2.4) return false;
+   if ((*b->trackEta)[j] > 2.4) return false;
+   if ((*b->trackEta)[j] < -2.4) return false;
    return true;
 }
 
@@ -55,8 +55,8 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
 bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
    if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
-   //if ((*b->trackEta)[j] > 2.4) return false;
-   //if ((*b->trackEta)[j] < -2.4) return false;
+   if ((*b->trackEta)[j] > 2.4) return false;
+   if ((*b->trackEta)[j] < -2.4) return false;
    return true;
 }
 
@@ -169,13 +169,8 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
          float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
          float trackPt   = par.mix ? (*MMix->trackPt)[j] : (*MZSignal->trackPt)[j];
 
-         //cout<<"track weight "<<(*MZSignal->trackWeight)[j]<<" track pt "<<trackPt<<endl;
-
          // throw invalid leading track, but continue the loop so diagnostic hists filled
-         if(trackSelectionNoPt((par.mix ? MMix : MZSignal), par, j) && trackPt > par.MaxTrackPT && (par.mix ? (*MMix->trackWeight)[j] : (*MZSignal->trackWeight)[j]) > 0) {
-            invalidLead = true;
-            //cout<<"track selection no pt = "<<trackSelectionNoPt((par.mix ? MMix : MZSignal), par, j)<<" track pt = "<<trackPt<<" passes "<<(trackPt > par.MaxTrackPT)<<endl;
-         }
+         if(trackSelectionNoPt((par.mix ? MMix : MZSignal), par, j) && trackPt > par.MaxTrackPT && (par.mix ? (*MMix->trackWeight)[j] : (*MZSignal->trackWeight)[j]) != 0) invalidLead = true;
          // important that this cut on the leading track pt is done on only tracks that pass trackSelectionNoPt (or else just the decay muons will be almost always selected as the leading track)
 
          // Check if the track passes the selection criteria
@@ -219,7 +214,7 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
       // check if suitable leading track is found
       // here we apply the track pt requirement on the leading track
       //if(!trackSelection((par.mix ? MMix : MZSignal), par, maxTrkIdx)) continue;
-      if (invalidLead) continue;
+      if (invalidLead || maxTrkPt < par.MinTrackPT) continue;
 
       //cout<<" event "<<i<<" leading track pt "<<maxTrkPt<<endl;
 
@@ -278,7 +273,7 @@ public:
 
       hLeadingVsZ = new TH3D(Form("hLeadingVsZ%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4); // 3D: (deta, dphi, dr)
 
-      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 200, 0, 200);
+      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 35, 0, 35);
       hLeadingPt = new TH1D(Form("hLeadingPt%s", title.c_str()), "", 40, 0, 40);
       hTrkEta = new TH1D(Form("hTrkEta%s", title.c_str()), "", 40, -3, 3);
       hLeadingEta = new TH1D(Form("hLeadingEta%s", title.c_str()), "", 40, -3, 3);
