@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Number of threads per instance
-nThread=70
+nThread=50
 
 # Array to hold the names of the output files
 declare -a outputFileNames
@@ -30,5 +30,5 @@ do
 done
 echo "All chunks have been processed and merged into output.root."
 
-#root -l -q -b "makeProjection.C(\"$1-$2.root\",\"$1-$2-result.root\",\"$2\", 1)"
-#root -l -q -b "makeProjection.C(\"$1-$2.root\",\"$1-$2-nosub.root\",\"$2\",0)"
+root -l -q -b "makeProjection.C(\"$1-$2.root\",\"$1-$2-result.root\",\"$2\", 1)"
+root -l -q -b "makeProjection.C(\"$1-$2.root\",\"$1-$2-nosub.root\",\"$2\",0)"

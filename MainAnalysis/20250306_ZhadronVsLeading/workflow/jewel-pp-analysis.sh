@@ -18,10 +18,14 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
    done
 
    # Combine results for the current HiBin and ZPT range
-   #hadd -f "plots/$1jewelPP_ZPT${min_zpt}_${max_zpt}-result.root" \
-   #   "output/$1jewelPP_ZPT${min_zpt}_${max_zpt}-1_2-result.root" \
-   #   "output/$1jewelPP_ZPT${min_zpt}_${max_zpt}-2_4-result.root" \
-   #   "output/$1jewelPP_ZPT${min_zpt}_${max_zpt}-4_10-result.root"
+   hadd -f "plots/$1jewelPP${suffix}_ZPT${min_zpt}_${max_zpt}-result.root" \
+       $(for pt_range in "${PT_RANGES[@]}"; do
+            echo "output/$1jewelPP${suffix}_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
+         done)
+   hadd -f "plots/$1jewelPP${suffix}_ZPT${min_zpt}_${max_zpt}-nosub.root" \
+       $(for pt_range in "${PT_RANGES[@]}"; do
+            echo "output/$1jewelPP${suffix}_ZPT${min_zpt}_${max_zpt}-${pt_range}-nosub.root"
+         done)
 done
 
 

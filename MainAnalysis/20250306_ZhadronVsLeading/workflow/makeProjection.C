@@ -32,16 +32,15 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     TFile *file = new TFile(infname, "READ");
 
     // Retrieve histograms from the file
-    TH2D *hData = (TH2D*)file->Get("hData"); // Replace with your histogram name
-    TH2D *hNZData = (TH2D*)file->Get("hNZData"); // Replace with your histogram name
-    TH1D *hMixData = (TH1D*)file->Get("hMixData"); // Replace with your histogram name
+    TH3D *hData = (TH3D*)file->Get("hLeadingVsZData"); // Replace with your histogram name
+    TH3D *hNZData = (TH3D*)file->Get("hNZData"); // Replace with your histogram name
+    TH1D *hMixData = (TH1D*)file->Get("hLeadingVsZMixData"); // Replace with your histogram name
     TH1D *hNZMixData = (TH1D*)file->Get("hNZMixData"); // Replace with your histogram name
 
     hNZData->SetName(Form("hNZData_%s",tag));
     hNZMixData->SetName(Form("hNZMixData_%s",tag));
 
     // Verify that all required histograms are loaded successfully from the file
-    /*
     if (!hData || !hNZData || !hMixData || !hNZMixData) {
         // Check each histogram individually to provide a specific error message
         if (!hData) {
@@ -61,13 +60,14 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
         std::cerr << "Error: One or more required histograms could not be loaded from the file. Exiting function." << std::endl;
         return;
     }
-    */
 
     // Scale histograms
     hData->SetName(Form("hData_%s",tag));
     hData->Scale(1. / hNZData->GetBinContent(1));
+    hData->Scale(0.5); // since each hist filled twice
     hMixData->SetName(Form("hMixData_%s",tag));
     hMixData->Scale(1. / hNZMixData->GetBinContent(1));
+    hMixData->Scale(0.5); // since each hist filled twice
     TH1D *hDataAll = (TH1D*) hData->Clone(Form("hDataAll_%s",tag));
     
     // Subtract hMixData from hData
@@ -75,14 +75,14 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
 
     // Create a canvas to draw the histogram
     TCanvas *c1 = new TCanvas("c1", "Canvas for Y projection", 800, 600);
-    TH1D *hProjY = (TH1D*) hData->ProjectionY(Form("DeltaPhi_Result%s",tag),0,10); // include underflow bin
+    TH1D *hProjY = (TH1D*) hData->ProjectionY(Form("DeltaPhi_Result%s",tag));
     hProjY->SetMarkerStyle(20);
     divideByWidth(hProjY);
     hProjY->Draw();
 
     // Creating a new canvas for the X projection
     TCanvas *c2 = new TCanvas("c2", "Canvas for X projection", 800, 600);
-    TH1D *hProjX = (TH1D*) hData->ProjectionX(Form("DeltaEta_Result%s",tag),6,10);
+    TH1D *hProjX = (TH1D*) hData->ProjectionX(Form("DeltaEta_Result%s",tag));
     hProjX->SetMarkerStyle(20);
     hProjX->GetXaxis()->SetTitle("#Delta#eta");
     divideByWidth(hProjX);

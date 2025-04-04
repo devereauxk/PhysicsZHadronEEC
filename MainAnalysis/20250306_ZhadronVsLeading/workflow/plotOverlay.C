@@ -245,7 +245,6 @@ void overlay_pt() {
     delete file_PbPb;
 }
 
-
 void overlay_generators(const char *zpt_select, const char *pt_select) {
 
     const int ncontours = 3;
@@ -450,6 +449,11 @@ void overlay_basic_pp(const char *zpt_select, const char *pt_select) {
 
         // divide by bin width
         divideByWidth(hTrkPt[i]);
+        divideByWidth(hLeadingPt[i]);
+        divideByWidth(hTrkEta[i]);
+        divideByWidth(hLeadingEta[i]);
+        divideByWidth(hZPt[i]);
+        divideByWidth(hZMass[i]);
 
         // Set stats off
         hTrkPt[i]->SetStats(0);
@@ -477,6 +481,7 @@ void overlay_basic_pp(const char *zpt_select, const char *pt_select) {
         pad1->cd();
         hTrkPt[i]->SetTitle("Track pT");
         hTrkPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hTrkPt[i]->GetXaxis()->SetRangeUser(0, 10);
         hTrkPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
         hTrkPt[i]->SetLineColor(ccolors[i]);
         hTrkPt[i]->Draw("HIST SAME");
@@ -490,7 +495,7 @@ void overlay_basic_pp(const char *zpt_select, const char *pt_select) {
             hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
-            hRatio->GetXaxis()->SetRangeUser(0,200);
+            hRatio->GetXaxis()->SetRangeUser(0,10);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
             hRatio->GetYaxis()->SetTitle("ratio wrt pythia-gen");
             hRatio->GetYaxis()->SetTitleSize(0.1);
@@ -761,7 +766,13 @@ void overlay_basic_PbPb(const char *zpt_select, const char *pt_select) {
         hZPt[i]->Scale(1. / integral);
         hZMass[i]->Scale(1. / integral);
 
+        // divide by bin width
         divideByWidth(hTrkPt[i]);
+        divideByWidth(hLeadingPt[i]);
+        divideByWidth(hTrkEta[i]);
+        divideByWidth(hLeadingEta[i]);
+        divideByWidth(hZPt[i]);
+        divideByWidth(hZMass[i]);
 
         // Set stats off
         hTrkPt[i]->SetStats(0);
@@ -1209,16 +1220,16 @@ void overlay_basic_PbPb_pp_ratio(const char *zpt_select, const char *pt_select) 
 void plotOverlay() {
     //overlay_pt();
     
-    const char* zpt_select[2] = {"ZPT20_60", "ZPT40_350"};
-    const char* pt_select[1] = {"1_40"};
+    const char* zpt_select[1] = {"ZPT40_350"};
+    const char* pt_select[3] = {"3_6", "6_10", "10_20"};
 
-    for (int i = 0; i < 2; i++) {
-        for (int j = 0; j < 1; j++) {
+    for (int i = 0; i < 1; i++) {
+        for (int j = 0; j < 3; j++) {
             overlay_generators(zpt_select[i], pt_select[j]);
 
             overlay_basic_pp(zpt_select[i], pt_select[j]);
-            overlay_basic_PbPb(zpt_select[i], pt_select[j]);
-            overlay_basic_PbPb_pp_ratio(zpt_select[i], pt_select[j]);
+            //overlay_basic_PbPb(zpt_select[i], pt_select[j]);
+            //overlay_basic_PbPb_pp_ratio(zpt_select[i], pt_select[j]);
         }
     }   
 }

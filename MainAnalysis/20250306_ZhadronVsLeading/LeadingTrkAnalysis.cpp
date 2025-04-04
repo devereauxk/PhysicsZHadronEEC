@@ -68,14 +68,8 @@ bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    int effectiveHiBin = par.isHiBinUp ? b->hiBinUp : (par.isHiBinDown ? b->hiBinDown : b->hiBin);   // The actual centrality bin used for centrality selection
    if (par.isPUReject && par.isPP && b->NVertex != 1) return 0;                                     // Only apply PU rejection (single vertex requirement) in pp analysis
-
-   //cout<<"effectiveHiBin: "<<effectiveHiBin<<endl;
-
    if (effectiveHiBin < par.MinHiBin) return 0;
    if (effectiveHiBin >= par.MaxHiBin) return 0;
-
-   //cout<<"nZs: "<<(par.isGenZ ? b->genZMass->size() : b->zMass->size())<<endl;
-
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size()) == 0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) < 60) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) > 120) return 0;
@@ -177,7 +171,7 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
          // we use no pt here since this loop is for finiding the leading track, and filling diagnostic diagrams
          // we do not want to take the "leading track with pt less than maxtrkpt" as a our leading track
          // maxtrkpt and mintrkpt are now applied ONLY on the leading track
-         if (!trackSelectionNoPt((par.mix ? MMix : MZSignal), par, j)) continue; // modded
+         if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue; // modded
 
          // Check if track is too close to the Z hadron (might be a muon from Z->muon muon)
          // trackselection seems like it already takes care of this
@@ -244,8 +238,9 @@ class DataAnalyzer {
 public:
    TFile *inf, *mixFile, *mixFileClone, *outf;
    TNtuple *ntDiagnose;
-   TH1D *hTrkPt = 0, *hLeadingPt = 0, *hZPt = 0, *hZMass = 0, *hTrkEta = 0, *hLeadingEta = 0, *hNZ = 0;
-   TH3D* hLeadingVsZ = 0;
+   TH1D *hTrkPt = 0, *hLeadingPt = 0, *hZPt = 0, *hZMass = 0, *hTrkEta = 0, *hLeadingEta = 0;
+   TH3D *hLeadingVsZ = 0, *hLeadingVsZMix = 0;
+   TH1D *hNZ = 0, *hNZMix = 0;
    ZHadronMessenger *MZHadron, *MMix, *MMixEvt;
    string title;
 
@@ -273,7 +268,7 @@ public:
 
       hLeadingVsZ = new TH3D(Form("hLeadingVsZ%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4); // 3D: (deta, dphi, dr)
 
-      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 35, 0, 35);
+      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 200, 0, 40);
       hLeadingPt = new TH1D(Form("hLeadingPt%s", title.c_str()), "", 40, 0, 40);
       hTrkEta = new TH1D(Form("hTrkEta%s", title.c_str()), "", 40, -3, 3);
       hLeadingEta = new TH1D(Form("hLeadingEta%s", title.c_str()), "", 40, -3, 3);
@@ -285,12 +280,10 @@ public:
       , par)); // analysis
 
       // Second histogram with mix=true
-      /*
       par.mix = true;
-      hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
+      hLeadingVsZMix = new TH3D(Form("hLeadingVsZMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
-      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, hMix, 0, par, ntDiagnose)); // Dphi analysis with mixing
-      */
+      // hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, hMix, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {
@@ -303,11 +296,14 @@ public:
       smartWrite(hZMass);
       smartWrite(hNZ);
       smartWrite(hLeadingVsZ);
+
+      smartWrite(hLeadingVsZMix);
+      smartWrite(hNZMix);
    }
 
 private:
    void deleteHistograms() {
-      delete hTrkPt, hLeadingPt, hZPt, hTrkEta, hLeadingEta, hZMass, hLeadingVsZ, hNZ;
+      delete hTrkPt, hLeadingPt, hZPt, hTrkEta, hLeadingEta, hZMass, hLeadingVsZ, hNZ, hLeadingVsZMix, hNZMix;
    }
 };
 
