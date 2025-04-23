@@ -171,7 +171,7 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
          // we use no pt here since this loop is for finiding the leading track, and filling diagnostic diagrams
          // we do not want to take the "leading track with pt less than maxtrkpt" as a our leading track
          // maxtrkpt and mintrkpt are now applied ONLY on the leading track
-         if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue; // modded
+         if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
 
          // Check if track is too close to the Z hadron (might be a muon from Z->muon muon)
          // trackselection seems like it already takes care of this

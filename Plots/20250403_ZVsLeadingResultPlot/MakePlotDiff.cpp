@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
    });
    vector<string> SecondTags      = CL.GetStringVector("SecondTags", vector<string>());
    vector<string> Labels          = CL.GetStringVector("Labels", vector<string> {
-      "3<p_{T}^{lead}<6 GeV","6<p_{T}^{lead}<10 GeV","10<p_{T}^{lead}<20 GeV"
+      "7<p_{T}^{lead}<12@GeV","12<p_{T}^{lead}<20@GeV","1<p_{T}^{lead}<40@GeV"
    });
    
    
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
    double MarginTop     = CL.GetDouble("MarginTop",50);
    double MarginBottom  = CL.GetDouble("MarginBottom",100);
    double PadWidth      = 400;
-   double PadHeight     = 400;
+   double PadHeight     = 300;
    double RPadHeight    = 170;
    
    if (MarginBottom==0) XAxisLabel="";
@@ -533,6 +533,7 @@ int main(int argc, char *argv[]) {
       Latex.SetTextAngle(0);
       Latex.SetTextAlign(33);
       Latex.SetTextSize(0.065);
+      cout<<"label "<<replaceHashWithSpace(Labels[iC]).c_str()<<endl;
       Latex.DrawLatex(0.97, 0.97, replaceHashWithSpace(Labels[iC]).c_str());
 
       if(iC == 0) {   // adding extra info!

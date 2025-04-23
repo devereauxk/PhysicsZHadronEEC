@@ -1,7 +1,7 @@
 #!/bin/bash
 zpt_range="40_350"
 myfile="plots/PbPb0_30_ZPT$zpt_range-nosub.root,plots/DY0_30_ZPT$zpt_range-nosub.root,plots/jewelPbPb030_ZPT$zpt_range-nosub.root,plots/hybridPbPb030_ZPT$zpt_range-nosub.root,plots/PbPb0_30_ZPT$zpt_range-nosub.root,plots/DY0_30_ZPT$zpt_range-nosub.root,plots/jewelPbPb030_ZPT$zpt_range-nosub.root,plots/hybridPbPb030_ZPT$zpt_range-nosub.root"
-curvelabels="PbPb@0-30%","PythiaDY","Hybrid","Jewel@v2.2.0"
+curvelabels="PbPb@0-30%","PythiaDY","Jewel@v2.2.0","Hybrid"
 tags="Result3_6","Result6_10","Result10_20"
 labels="3<p_{T}^{lead}<6@GeV","6<p_{T}^{lead}<10@GeV","10<p_{T}^{lead}<20@GeV"
 
