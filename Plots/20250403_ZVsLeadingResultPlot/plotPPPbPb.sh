@@ -1,5 +1,6 @@
 #!/bin/bash
-source ../../MainAnalysis/20250306_ZhadronVsLeading/workflow/config.sh
+#source ../../MainAnalysis/20250306_ZhadronVsLeading/workflow/config.sh
+source config.sh
 
 colors=1181,1179,1179,1183,1180,1180,7,1,97,0,1184,1185,1186,1187,1188
 markers=20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20

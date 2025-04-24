@@ -610,7 +610,7 @@ int main(int argc, char *argv[]) {
    }
 
    // Finally we have the plots
-   Canvas.SaveAs((OutputBase + ".png").c_str());
+   Canvas.SaveAs((OutputBase + ".pdf").c_str());
 
    // Close input files
    for(int iF = 0; iF < NFile; iF++) {

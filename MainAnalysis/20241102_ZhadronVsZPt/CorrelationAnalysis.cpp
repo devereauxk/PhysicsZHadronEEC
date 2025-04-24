@@ -44,6 +44,8 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
    if ((*b->trackPt)[j] > par.MaxTrackPT) return false;  
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
+   if ((*b->trackEta)[j] > 2.4) return false;
+   if ((*b->trackEta)[j] < -2.4) return false;
    return true;
 }
 
@@ -53,6 +55,8 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
 bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
    if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
+   if ((*b->trackEta)[j] > 2.4) return false;
+   if ((*b->trackEta)[j] < -2.4) return false;
    return true;
 }
 

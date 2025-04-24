@@ -2,7 +2,7 @@
 
 # Define common arguments
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/hybrid_pp-v8.root --MixFile mergedSample/hybrid_pp-v8.root --IsPP true --IsGenZ true --nMix 10 --MinHiBin 0 --MaxHiBin 600000"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/hybrid_pp-v9.root --MixFile mergedSample/hybrid_pp-v9.root --IsPP false --IsGenZ true --nMix 1 --MinHiBin 0 --MaxHiBin 600000"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}
@@ -19,7 +19,15 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
 
    # Combine results for the current HiBin and ZPT range
    hadd -f "plots/$1hybridPP_ZPT${min_zpt}_${max_zpt}-result.root" \
-      "output/$1hybridPP_ZPT${min_zpt}_${max_zpt}-1_2-result.root" \
-      "output/$1hybridPP_ZPT${min_zpt}_${max_zpt}-2_4-result.root" \
-      "output/$1hybridPP_ZPT${min_zpt}_${max_zpt}-4_10-result.root"
+         $(for pt_range in "${PT_RANGES[@]}"; do
+            echo "output/$1hybridPP_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
+         done)
+   hadd -f "plots/$1hybridPP_ZPT${min_zpt}_${max_zpt}-nosub.root" \
+         $(for pt_range in "${PT_RANGES[@]}"; do
+            echo "output/$1hybridPP_ZPT${min_zpt}_${max_zpt}-${pt_range}-nosub.root"
+         done)
 done
+
+
+#./finalAnalysis.sh output/$1hybridPP 4_20  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11}   --MinZPT 20 --MaxZPT 60 --MinTrackPT 1 --MaxTrackPT 40 --Input mergedSample/hybrid_pp-v8.root --IsSelfMixing false  --IsPP true --IsGenZ true  --MinHiBin 0 --MaxHiBin 600000
+#root -l -q -b "plotBasic.C(\"output/$1hybridPP-4_20.root\",\"plots/$1hybridPP\")"

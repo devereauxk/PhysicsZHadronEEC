@@ -2,8 +2,8 @@
 #include <TH1.h>
 #include <TCanvas.h>
 
-const int rcolors[4] = {kRed-4, kOrange+1, kSpring-8, kTeal-2};
-const int ccolors[4] = {kBlack,  kGreen, kViolet, kOrange+1};
+const int rcolors[7] = {kRed-4, kOrange+1, kSpring-8, kTeal-2, kCyan-3, kViolet+1, kPink-7};
+const int ccolors[7] = {kBlack,  kGreen, kViolet, kOrange+1, kRed-4, kTeal-2, kSpring-8};
 
 void divideByWidth(TH1D* input) {
     if (!input) {
@@ -833,6 +833,325 @@ void overlay_basic_PbPb(const char *zpt_select, const char *pt_select) {
 
 }
 
+void overlay_basic_pPb(const char *zpt_select, const char *pt_select) {
+
+    const int ncontours = 7;
+    const char *pPb_name[ncontours] = {"pp", "pPb", "pPb", "pPbMC", "pPbMC_Gen", "PbPMC", "PbPMC_Gen"};
+
+    TH1D* hTrkPt[ncontours];
+    TH1D* hLeadingPt[ncontours];
+    TH1D* hTrkEta[ncontours];
+    TH1D* hLeadingEta[ncontours];
+    TH1D* hZPt[ncontours];
+    TH1D* hZMass[ncontours];
+    TH1D* hNZ[ncontours];
+
+    // Load histograms for PbPb
+    for (int i = 0; i < ncontours; i++) {
+        TFile *file = new TFile(Form("output/%s_ZPT%s-%s.root", pPb_name[i], zpt_select, pt_select), "READ");
+        hTrkPt[i] = (TH1D*)file->Get("hTrkPtData");
+        hLeadingPt[i] = (TH1D*)file->Get("hLeadingPtData");
+        hTrkEta[i] = (TH1D*)file->Get("hTrkEtaData");
+        hLeadingEta[i] = (TH1D*)file->Get("hLeadingEtaData");
+        hZPt[i] = (TH1D*)file->Get("hZPtData");
+        hZMass[i] = (TH1D*)file->Get("hZMassData");
+        hNZ[i] = (TH1D*)file->Get("hNZData");
+
+        // Normalize histograms
+        double integral = hNZ[i]->GetBinContent(1);
+        hTrkPt[i]->Scale(1. / integral);
+        hLeadingPt[i]->Scale(1. / integral);
+        hTrkEta[i]->Scale(1. / integral);
+        hLeadingEta[i]->Scale(1. / integral);
+        hZPt[i]->Scale(1. / integral);
+        hZMass[i]->Scale(1. / integral);
+
+        // divide by bin width
+        divideByWidth(hTrkPt[i]);
+        divideByWidth(hLeadingPt[i]);
+        divideByWidth(hTrkEta[i]);
+        divideByWidth(hLeadingEta[i]);
+        divideByWidth(hZPt[i]);
+        divideByWidth(hZMass[i]);
+
+        // Set stats off
+        hTrkPt[i]->SetStats(0);
+        hLeadingPt[i]->SetStats(0);
+        hTrkEta[i]->SetStats(0);
+        hLeadingEta[i]->SetStats(0);
+        hZPt[i]->SetStats(0);
+        hZMass[i]->SetStats(0);
+    }
+
+    // Create a canvas to draw the histograms for PbPb
+    TCanvas *c1 = new TCanvas("c1", "Canvas", 1600, 2000);
+    c1->Divide(2, 3);
+
+    c1->cd(1);
+    TPad *pad1 = new TPad("pad1_1", "pad1", 0, 0.3, 1, 1);
+    pad1->SetBottomMargin(0);
+    pad1->SetLogy();
+    pad1->Draw();
+    TPad *pad2 = new TPad("pad2_1", "pad2", 0, 0, 1, 0.3);
+    pad2->SetTopMargin(0);
+    pad2->SetBottomMargin(0.2);
+    pad2->Draw();
+    for (int i = 3; i < ncontours; i++) {
+        pad1->cd();
+        hTrkPt[i]->SetTitle("Track pT");
+        hTrkPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hTrkPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkPt[i]->SetLineColor(ccolors[i]);
+        hTrkPt[i]->Draw("HIST SAME");
+
+        pad2->cd();
+        if (i != 0) {
+            TH1D* hRatio = (TH1D*)hTrkPt[i]->Clone(Form("ratio_TrkPt_%d", i));
+            hRatio->Divide(hTrkPt[0]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pp");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
+    }
+
+    c1->cd(2);
+    TPad *pad3 = new TPad("pad1_2", "pad1", 0, 0.3, 1, 1);
+    pad3->SetBottomMargin(0);
+    pad3->SetLogy();
+    pad3->Draw();
+    TPad *pad4 = new TPad("pad2_2", "pad2", 0, 0, 1, 0.3);
+    pad4->SetTopMargin(0);
+    pad4->SetBottomMargin(0.2);
+    pad4->Draw();
+
+    TLegend *leg = new TLegend(0.65, 0.65, 0.85, 0.85);
+    leg->SetBorderSize(0); // Remove legend box
+    leg->SetTextSize(0.04); // Reduce font size
+
+    for (int i = 3; i < ncontours; i++) {
+        pad3->cd();
+        hLeadingPt[i]->SetTitle("Leading Track pT");
+        hLeadingPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hLeadingPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hLeadingPt[i]->SetLineColor(ccolors[i]);
+        hLeadingPt[i]->Draw("HIST SAME");
+        leg->AddEntry(hLeadingPt[i], pPb_name[i], "l");
+
+        pad4->cd();
+        if (i != 0) {
+            TH1D* hRatio = (TH1D*)hLeadingPt[i]->Clone(Form("ratio_LeadingPt_%d", i));
+            hRatio->Divide(hLeadingPt[0]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pp");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
+    }
+    pad3->cd();
+    leg->Draw("SAME");
+
+    c1->cd(3);
+    TPad *pad5 = new TPad("pad1_3", "pad1", 0, 0.3, 1, 1);
+    pad5->SetBottomMargin(0);
+    pad5->SetLogy();
+    pad5->Draw();
+    TPad *pad6 = new TPad("pad2_3", "pad2", 0, 0, 1, 0.3);
+    pad6->SetTopMargin(0);
+    pad6->SetBottomMargin(0.2);
+    pad6->Draw();
+    for (int i = 3; i < ncontours; i++) {
+        pad5->cd();
+        hZPt[i]->SetTitle("Z pT Distribution");
+        hZPt[i]->GetXaxis()->SetTitle("pT (GeV/c)");
+        hZPt[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hZPt[i]->SetLineColor(ccolors[i]);
+        hZPt[i]->Draw("HIST SAME");
+
+        pad6->cd();
+        if (i != 0) {
+            TH1D* hRatio = (TH1D*)hZPt[i]->Clone(Form("ratio_ZPt_%d", i));
+            hRatio->Divide(hZPt[0]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("pT (GeV/c)");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pp");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
+    }
+
+    c1->cd(4);
+    TPad *pad7 = new TPad("pad1_4", "pad1", 0, 0.3, 1, 1);
+    pad7->SetBottomMargin(0);
+    pad7->SetLogy();
+    pad7->Draw();
+    TPad *pad8 = new TPad("pad2_4", "pad2", 0, 0, 1, 0.3);
+    pad8->SetTopMargin(0);
+    pad8->SetBottomMargin(0.2);
+    pad8->Draw();
+    for (int i = 3; i < ncontours; i++) {
+        pad7->cd();
+        hZMass[i]->SetTitle("Z Mass");
+        hZMass[i]->GetXaxis()->SetTitle("Mass (GeV/c^2)");
+        hZMass[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hZMass[i]->SetLineColor(ccolors[i]);
+        hZMass[i]->Draw("HIST SAME");
+
+        pad8->cd();
+        if (i != 0) {
+            TH1D* hRatio = (TH1D*)hZMass[i]->Clone(Form("ratio_ZMass_%d", i));
+            hRatio->Divide(hZMass[0]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("Mass (GeV/c^2)");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pp");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
+    }
+
+    c1->cd(5);
+    TPad *pad9 = new TPad("pad1_5", "pad1", 0, 0.3, 1, 1);
+    pad9->SetBottomMargin(0);
+    pad9->SetLogy();
+    pad9->Draw();
+    TPad *pad10 = new TPad("pad2_5", "pad2", 0, 0, 1, 0.3);
+    pad10->SetTopMargin(0);
+    pad10->SetBottomMargin(0.2);
+    pad10->Draw();
+    for (int i = 3; i < ncontours; i++) {
+        pad9->cd();
+        hTrkEta[i]->SetTitle("Track Eta");
+        hTrkEta[i]->GetXaxis()->SetTitle("Eta");
+        hTrkEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hTrkEta[i]->SetLineColor(ccolors[i]);
+        hTrkEta[i]->Draw("HIST SAME");
+
+        pad10->cd();
+        if (i != 0) {
+            TH1D* hRatio = (TH1D*)hTrkEta[i]->Clone(Form("ratio_TrkEta_%d", i));
+            hRatio->Divide(hTrkEta[0]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("Eta");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pp");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
+    }
+
+    c1->cd(6);
+    TPad *pad11 = new TPad("pad1_6", "pad1", 0, 0.3, 1, 1);
+    pad11->SetBottomMargin(0);
+    pad11->SetLogy();
+    pad11->Draw();
+    TPad *pad12 = new TPad("pad2_6", "pad2", 0, 0, 1, 0.3);
+    pad12->SetTopMargin(0);
+    pad12->SetBottomMargin(0.2);
+    pad12->Draw();
+    for (int i = 3; i < ncontours; i++) {
+        pad11->cd();
+        hLeadingEta[i]->SetTitle("Leading Track Eta");
+        hLeadingEta[i]->GetXaxis()->SetTitle("Eta");
+        hLeadingEta[i]->GetYaxis()->SetTitle("Entries / N_Z");
+        hLeadingEta[i]->SetLineColor(ccolors[i]);
+        hLeadingEta[i]->Draw("HIST SAME");
+
+        pad12->cd();
+        if (i != 0) {
+            TH1D* hRatio = (TH1D*)hLeadingEta[i]->Clone(Form("ratio_LeadingEta_%d", i));
+            hRatio->Divide(hLeadingEta[0]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle("Eta");
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle("ratio wrt pp");
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(0, 2);
+            hRatio->SetLineColor(ccolors[i]);
+            hRatio->Draw("HIST SAME");
+
+            TLine *line = new TLine(hRatio->GetXaxis()->GetXmin(), 1, hRatio->GetXaxis()->GetXmax(), 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
+    }
+
+    // Optionally: Save the canvas as an image
+    c1->SaveAs(Form("diagnostic/overlay_basic_pPb_%s-%s.png", zpt_select, pt_select));
+
+}
+
 void overlay_basic_PbPb_pp_ratio(const char *zpt_select, const char *pt_select) {
 
     const int ncontours = 4;
@@ -1000,10 +1319,11 @@ void overlay_basic_PbPb_pp_ratio(const char *zpt_select, const char *pt_select) 
 
 void plotOverlay(const char* zpt_select, const char* pt_select) {
 
-    overlay_generators(zpt_select, pt_select);
+    //overlay_generators(zpt_select, pt_select);
 
-    overlay_basic_pp(zpt_select, pt_select);
-    overlay_basic_PbPb(zpt_select, pt_select);
+    //overlay_basic_pp(zpt_select, pt_select);
+    //overlay_basic_PbPb(zpt_select, pt_select);
+    overlay_basic_pPb(zpt_select, pt_select);
     //overlay_basic_PbPb_pp_ratio(zpt_select[i], pt_select[j]);
 
 }
