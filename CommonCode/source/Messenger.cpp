@@ -1961,9 +1961,9 @@ bool ZHadronMessenger::Initialize(bool SkipTrack)
    genMuDR = nullptr;
    genMuDphiS = nullptr;
 
-   Tree->SetBranchAddress("Run", &Run);
-   Tree->SetBranchAddress("Event", &Event);
-   Tree->SetBranchAddress("Lumi", &Lumi);
+   Tree->SetBranchAddress("run", &Run);
+   Tree->SetBranchAddress("event", &Event);
+   Tree->SetBranchAddress("lumi", &Lumi);
 
    Tree->SetBranchAddress("hiBin", &hiBin);
    Tree->SetBranchAddress("hiBinUp", &hiBinUp);

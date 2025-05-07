@@ -91,12 +91,14 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 //============================================================//
 // leading track angular distribution wrt Z calculation
 //============================================================//
-float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, TH3D* hLeadingVsZ, TH1D *hTrkPt, TH1D *hLeadingPt, TH1D *hTrkEta, TH1D *hLeadingEta, TH1D *hZPt, TH1D *hZMass, const Parameters& par, TNtuple *nt = 0) {
+float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, TH3D* hLeadingVsZ, TH3D *hTrkPtEtaPhi, TH1D *hLeadingPt, TH1D *hLeadingEta, TH3D *hZPtEtaMult, TH1D *hZMass, TH1D *hTrkWeight, const Parameters& par, TNtuple *nt = 0) {
 
    float nZ = 0;
-   hTrkPt->Sumw2();
+   hLeadingVsZ->Sumw2();
+   hTrkPtEtaPhi->Sumw2();
    hLeadingPt->Sumw2();
-   hZPt->Sumw2();
+   hZPtEtaMult->Sumw2();
+   hLeadingEta->Sumw2();
    hZMass->Sumw2();
 
    par.printParameters();
@@ -123,6 +125,11 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
       corrector_100_200 = new TrackResidualCorrector(Form("%s_100_200.root", par.residualCor.c_str()));              
    }
 
+   ZCorrector *Z_corrector;
+   if (par.useZCor) {
+      Z_corrector = new ZCorrector(Form("%s.root", par.ZCor.c_str()));
+   }
+
    // event loop
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
@@ -138,8 +145,15 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
       float eventZ_weight = (par.mix && par.isSelfMixing) ? (MMix->ZWeight * MMix->EventWeight) * (MZSignal->ZWeight * MZSignal->EventWeight) : (MZSignal->ZWeight * MZSignal->EventWeight);
       eventZ_weight *= (par.ExtraZWeight == -1) ? 1 : ((par.mix && par.isSelfMixing) ? MMix->ExtraZWeight[par.ExtraZWeight] * MZSignal->ExtraZWeight[par.ExtraZWeight] : MZSignal->ExtraZWeight[par.ExtraZWeight]);
 
-      // count number of Zs
-      nZ += eventZ_weight;
+      // pPb only, weighting between PPb and PbP
+      // PPb case: weight = 1, PbP case: weight = 0
+      if (par.PPbWeight > -1) {
+         if ( (par.mix ? MMix->Run : MZSignal->Run) > 285956 ) {
+            eventZ_weight *= par.PPbWeight; // PPb case
+         } else {
+            eventZ_weight *= (1 - par.PPbWeight); // PbP case
+         }
+      }
 
       // get the z info
       float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
@@ -147,9 +161,26 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       float zMass = (par.isGenZ ? (*MZSignal->genZMass)[0] : (*MZSignal->zMass)[0]);
 
+      // get event multiplicity
+      double mult = 0;
+      for (unsigned long j = 0; j < MZSignal->trackPt->size(); j++) {
+         if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
+         mult += (*MZSignal->trackWeight)[j];
+      }
+
+      // [ppb only] apply Z pT and eta corrector, scales MC reco up to Data
+      if (par.useZCor) {
+         float zPtEtaMultCorrection = Z_corrector->GetCorrectionFactor(zPt, zY, mult);
+         eventZ_weight *= zPtEtaMultCorrection;
+         //cout<<"corr "<<zPtEtaCorrection<<endl;
+      }
+
       // fill basic Z diagrams
-      hZPt->Fill(zPt, eventZ_weight);
+      hZPtEtaMult->Fill(zPt, zY, mult, eventZ_weight);
       hZMass->Fill(zMass, eventZ_weight);
+
+      // count number of Zs
+      nZ += eventZ_weight;
 
       // sum over parts in the mixed (resp signal) events
       float maxTrkPt = -1;
@@ -169,7 +200,7 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
 
          // Check if the track passes the selection criteria
          // we use no pt here since this loop is for finiding the leading track, and filling diagnostic diagrams
-         // we do not want to take the "leading track with pt less than maxtrkpt" as a our leading track
+         // we do NOT want to take the "leading track with pt less than maxtrkpt" as a our leading track
          // maxtrkpt and mintrkpt are now applied ONLY on the leading track
          if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
 
@@ -193,8 +224,8 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
             eventZtrk_weight *= (par.mix ? ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
          }
 
-         hTrkPt->Fill(trackPt, eventZtrk_weight);
-         hTrkEta->Fill(trackEta, eventZtrk_weight);
+         hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, eventZtrk_weight);
+         hTrkWeight->Fill((*MZSignal->trackWeight)[j], eventZtrk_weight);
 
          if (trackPt > maxTrkPt && (par.mix ? (*MMix->trackWeight)[j] : (*MZSignal->trackWeight)[j]) > 0) {
             maxTrkPt = trackPt;
@@ -204,13 +235,10 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
          }
 
       }
-
       // check if suitable leading track is found
       // here we apply the track pt requirement on the leading track
       //if(!trackSelection((par.mix ? MMix : MZSignal), par, maxTrkIdx)) continue;
       if (invalidLead || maxTrkPt < par.MinTrackPT) continue;
-
-      //cout<<" event "<<i<<" leading track pt "<<maxTrkPt<<endl;
 
       // fill basic trk histograms
       hLeadingPt->Fill(maxTrkPt, maxTrkWeight);
@@ -238,7 +266,10 @@ class DataAnalyzer {
 public:
    TFile *inf, *mixFile, *mixFileClone, *outf;
    TNtuple *ntDiagnose;
-   TH1D *hTrkPt = 0, *hLeadingPt = 0, *hZPt = 0, *hZMass = 0, *hTrkEta = 0, *hLeadingEta = 0;
+   TH1D *hLeadingPt = 0, *hZMass = 0, *hLeadingEta = 0;
+   TH1D *hTrkWeight = 0;
+   TH3D *hZPtEtaMult = 0;
+   TH3D *hTrkPtEtaPhi = 0;
    TH3D *hLeadingVsZ = 0, *hLeadingVsZMix = 0;
    TH1D *hNZ = 0, *hNZMix = 0;
    ZHadronMessenger *MZHadron, *MMix, *MMixEvt;
@@ -268,34 +299,32 @@ public:
 
       hLeadingVsZ = new TH3D(Form("hLeadingVsZ%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4); // 3D: (deta, dphi, dr)
 
-      hTrkPt = new TH1D(Form("hTrkPt%s", title.c_str()), "", 200, 0, 40);
+      hTrkPtEtaPhi = new TH3D(Form("hTrkPtEtaPhi%s", title.c_str()), "", 200, 0, 40, 40, -3, 3, 40, -M_PI, M_PI);
       hLeadingPt = new TH1D(Form("hLeadingPt%s", title.c_str()), "", 40, 0, 40);
-      hTrkEta = new TH1D(Form("hTrkEta%s", title.c_str()), "", 40, -3, 3);
       hLeadingEta = new TH1D(Form("hLeadingEta%s", title.c_str()), "", 40, -3, 3);
-      hZPt = new TH1D(Form("hZPt%s", title.c_str()), "", 40, 0, 200);
+      hZPtEtaMult = new TH3D(Form("hZPtEtaMult%s", title.c_str()), "", 140, 0, 100, 15, -2.4, 2.4, 40, 0, 160);
       hZMass = new TH1D(Form("hZMass%s", title.c_str()), "", 40, 60, 120);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
+      hTrkWeight = new TH1D(Form("hTrkWeight%s", title.c_str()), "", 50, 0, 2);
       
-      hNZ->SetBinContent(1, getLeadingVsZ(MZHadron, MMix, MMixEvt, hLeadingVsZ, hTrkPt, hLeadingPt, hTrkEta, hLeadingEta, hZPt, hZMass
+      hNZ->SetBinContent(1, getLeadingVsZ(MZHadron, MMix, MMixEvt, hLeadingVsZ, hTrkPtEtaPhi, hLeadingPt, hLeadingEta, hZPtEtaMult, hZMass, hTrkWeight
       , par)); // analysis
 
       // Second histogram with mix=true
       par.mix = true;
-      hLeadingVsZMix = new TH3D(Form("hLeadingVsZMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2, 20, -4, 4);
-      hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
       // hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, hMix, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {
       outf->cd();
-      smartWrite(hTrkPt);
+      smartWrite(hTrkPtEtaPhi);
       smartWrite(hLeadingPt);
-      smartWrite(hTrkEta);
       smartWrite(hLeadingEta);
-      smartWrite(hZPt);
+      smartWrite(hZPtEtaMult);
       smartWrite(hZMass);
       smartWrite(hNZ);
       smartWrite(hLeadingVsZ);
+      smartWrite(hTrkWeight);
 
       smartWrite(hLeadingVsZMix);
       smartWrite(hNZMix);
@@ -303,7 +332,7 @@ public:
 
 private:
    void deleteHistograms() {
-      delete hTrkPt, hLeadingPt, hZPt, hTrkEta, hLeadingEta, hZMass, hLeadingVsZ, hNZ, hLeadingVsZMix, hNZMix;
+      delete hTrkPtEtaPhi, hLeadingPt, hZPtEtaMult, hLeadingEta, hZMass, hLeadingVsZ, hNZ, hLeadingVsZMix, hNZMix, hTrkWeight;
    }
 };
 
@@ -352,6 +381,9 @@ int main(int argc, char *argv[])
    par.MaxZY         = CL.GetDouble("MaxZY", 200);           // Maximum Z particle rapidity threshold for event selection.
    par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);      // Do Muon systematics, -1 means no extraweight.
    par.includeHole   = CL.GetBool  ("includeHole",true);     // Include hole particle or not
+   par.PPbWeight     = CL.GetDouble("PPbWeight",-1); // Luminosity correction factor for pPb analysis
+   par.useZCor  = CL.GetBool  ("UseZCor", false); // Use ZPtEta correction
+   par.ZCor     = CL.Get      ("ZCor", "ZCorrection-PPb"); // ZPtEta correction file
    par.mix = 0;
    par.isPP = IsPP;
    par.isJewel = IsJewel;

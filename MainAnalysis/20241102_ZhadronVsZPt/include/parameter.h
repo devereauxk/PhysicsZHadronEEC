@@ -36,6 +36,7 @@ public:
    bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
    bool useLeadingTrk;    // Flag to see if we use leading track direction as the reference, replacing the role of Z.
    bool useResidualCor;   // Flag to see if we use alterative tracking correction table.
+   double PPbWeight;      // Luminosity correction factor for pPb analysis
     
    void printParameters() const {
       cout << "Input file: " << input << endl;
@@ -64,6 +65,7 @@ public:
       cout << "Number of mixed events: " << nMix << endl;
       cout << "Muon Tagging Enabled: " << (isMuTagged ? "true" : "false") << endl;
       cout << "PU rejection: " << (isPUReject ? "true" : "false") << endl;
+      cout << "PPb Weight: " << PPbWeight << endl;
       if (mix) cout << "Event mixing!" << endl;
    }
 };

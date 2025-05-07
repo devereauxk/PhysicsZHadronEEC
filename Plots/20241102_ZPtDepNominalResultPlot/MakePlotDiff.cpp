@@ -204,6 +204,7 @@ int main(int argc, char *argv[]) {
    vector<string> CurveLabels     = CL.GetStringVector("CurveLabels", vector<string>{"pp", "PbPb 0-30%"});
    string ToPlot                  = CL.Get("ToPlot", "DeltaPhi");
    vector<int>    lines           = CL.GetIntVector("lines", vector<int>{0,0,1,1,1,1,1});
+   vector<int> scales             = CL.GetIntVector("scales", vector<int>{1,1,1,1,1,1,1});   
    vector<int>    reflected       = CL.GetIntVector("reflected", vector<int>{1,0,0,0,0,0,0});
    vector<string> Tags            = CL.GetStringVector("Tags", vector<string> {
          "Result1_2", "Result2_4", "Result4_10"
@@ -416,8 +417,9 @@ int main(int argc, char *argv[]) {
          string Tag = Tags[iC];
          if(SecondTags.size() == NColumn && iF == 1) Tag = SecondTags[iC];
          HData[iC][iF] = GetHistogram(File[iF], ToPlot, Tag, Colors[iF]);
-	 HData[iC][iF]->SetMarkerStyle(Markers[iF]+4);
-	 HData[iC][iF]->SetMarkerSize(1.5);
+         HData[iC][iF]->SetMarkerStyle(Markers[iF]+4);
+         HData[iC][iF]->SetMarkerSize(1.5);
+
          if (lines[iF]==0) HData[iC][iF]->SetLineColorAlpha(Colors[iF], 0.4); else HData[iC][iF]->SetLineColorAlpha(Colors[iF], 0.8);
          if (lines[iF]==0) HData[iC][iF]->SetMarkerColorAlpha(Colors[iF], 0.4);
          if (lines[iF]>0) HData[iC][iF]->SetLineWidth(2.5);
@@ -501,6 +503,10 @@ int main(int argc, char *argv[]) {
          }
             HData[iC][iF]->Scale(1./2);
             if(SkipSystematics == false && HDataSys[iC][iF] != nullptr) HDataSys[iC][iF]->Scale(1./2);
+
+            if (scales[iF] != 1) {
+               HData[iC][iF]->Scale(1./scales[iF]);
+            }
       }	   
    }   
    

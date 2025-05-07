@@ -2,7 +2,7 @@
 
 # Define common arguments
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/PPbData_Reco.root --MixFile pPbSample/PPbData_Reco.root --IsPP false --IsGenZ false --nMix 10"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/PPbData_Reco.root --MixFile pPbSample/PPbData_Reco.root --IsPP false --IsGenZ false --nMix 10 --PPbWeight $1"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}

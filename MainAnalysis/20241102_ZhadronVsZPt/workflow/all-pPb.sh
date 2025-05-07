@@ -1,6 +1,5 @@
 make -C ..
-./pp-analysis.sh
-./pPb-analysis.sh
+./pPb-analysis.sh 0
 ./pPbMC-analysis.sh
 ./pPbMC_Gen-analysis.sh
 ./PbPMC-analysis.sh

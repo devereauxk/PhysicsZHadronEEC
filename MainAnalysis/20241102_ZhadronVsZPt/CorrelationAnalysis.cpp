@@ -171,7 +171,9 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
             }
             MMix->GetEntry(mix_i);
             nZ += ((par.mix && par.isSelfMixing) ? (MMix->ZWeight * MMix->EventWeight) * (MZSignal->ZWeight * MZSignal->EventWeight) : (MZSignal->ZWeight * MZSignal->EventWeight)) * (
-                     (par.ExtraZWeight == -1) ? 1 : ((par.mix && par.isSelfMixing) ? MMix->ExtraZWeight[par.ExtraZWeight] * MZSignal->ExtraZWeight[par.ExtraZWeight] : MZSignal->ExtraZWeight[par.ExtraZWeight]));
+                     (par.ExtraZWeight == -1) ? 1 : ((par.mix && par.isSelfMixing) ? MMix->ExtraZWeight[par.ExtraZWeight] * MZSignal->ExtraZWeight[par.ExtraZWeight] : MZSignal->ExtraZWeight[par.ExtraZWeight])) * (
+                     (par.PPbWeight > -1) ? ((par.mix ? MMix->Run : MZSignal->Run) > 285956 ? par.PPbWeight : (1 - par.PPbWeight)) : 1
+                     );
             for (unsigned long j = 0; j < (par.mix ? MMix->trackPhi->size() : MZSignal->trackPhi->size()); j++) {
                if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
                float trackDphi  = par.mix ? DeltaPhi((*MMix->trackPhi)[j], zPhi) : DeltaPhi((*MZSignal->trackPhi)[j], zPhi);
@@ -195,6 +197,15 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
                } else {
                   weight *= (par.mix ? ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
                }
+
+               if (par.PPbWeight > -1) {
+                  if ( (par.mix ? MMix->Run : MZSignal->Run) > 285956 ) {
+                     weight *= par.PPbWeight; // PPb case
+                  } else {
+                     weight *= (1 - par.PPbWeight); // PbP case
+                  }
+               }
+
                h->Fill(trackDeta, trackDphi, weight);
                h->Fill(-trackDeta, trackDphi, weight);
                h->Fill(trackDeta, trackDphi2, weight);
@@ -316,6 +327,7 @@ int main(int argc, char *argv[])
    par.MaxZY         = CL.GetDouble("MaxZY", 200);           // Maximum Z particle rapidity threshold for event selection.
    par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);      // Do Muon systematics, -1 means no extraweight.
    par.includeHole   = CL.GetBool  ("includeHole",true);     // Include hole particle or not
+   par.PPbWeight     = CL.GetDouble("PPbWeight",-1); // Luminosity correction factor for pPb analysis
    par.mix = 0;
    par.isPP = IsPP;
    par.isJewel = IsJewel;
