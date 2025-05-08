@@ -4,7 +4,6 @@ rm ../ExecuteCorrelationAnalysis
 make -C ..
 
 ./pPb-analysis.sh 1
-#./pPbMC_Gen-analysis.sh
 
 ./pPbMC-analysis.sh --UseZCor false
 cp output/pPbMC_ZPT0_100-0_40.root output/pPbMC_ZPT0_100-0_40-0.root
@@ -46,7 +45,6 @@ rm ../ExecuteCorrelationAnalysis
 make -C ..
 
 ./pPb-analysis.sh 0
-./PbPMC_Gen-analysis.sh
 
 ./PbPMC-analysis.sh --UseZCor false
 cp output/PbPMC_ZPT0_100-0_40.root output/PbPMC_ZPT0_100-0_40-0.root

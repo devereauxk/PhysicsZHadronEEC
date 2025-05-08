@@ -1,0 +1,4 @@
+PT_RANGES=("0_40")
+HIBIN_RANGES=("0_30")
+ZPT_RANGES=("0_100")
+UseLeadingTrk=0
