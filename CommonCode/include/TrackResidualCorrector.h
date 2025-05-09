@@ -220,3 +220,105 @@ private:
    vector<TF1*> fitFuncs_eta;
    vector<TF1*> fitFuncs_mult;
 };
+
+class TrackResidualPPbCorrector
+{
+public:
+   TrackResidualPPbCorrector(std::string filename = "residualCorrection/totalCorrection.root")
+   {
+      f = TFile::Open(filename.c_str());
+      if (!f || f->IsZombie())
+      {
+         std::cerr << "Error: Unable to open file " << filename << std::endl;
+         return;
+      }
+
+      int i = 1;
+      while (true)
+      {
+         TF1* fitFunc_pt = (TF1*)f->Get(Form("fitFunc_pt-%i", i));
+         if (!fitFunc_pt) break;
+         fitFuncs_pt.push_back(fitFunc_pt);
+         i++;
+      }
+
+      cout<<"n fitFuncs_pt: "<<fitFuncs_pt.size()<<endl;
+
+      i = 1;
+      while (true)
+      {
+         TF1* fitFunc_eta = (TF1*)f->Get(Form("fitFunc_eta-%i", i));
+         if (!fitFunc_eta) break;
+         fitFuncs_eta.push_back(fitFunc_eta);
+         i++;
+      }
+
+      cout<<"n fitFuncs_eta: "<<fitFuncs_eta.size()<<endl;
+
+      i = 1;
+      while (true)
+      {
+         TF1* fitFunc_phi = (TF1*)f->Get(Form("fitFunc_phi-%i", i));
+         if (!fitFunc_phi) break;
+         fitFuncs_phi.push_back(fitFunc_phi);
+         i++;
+      }
+
+      cout<<"n fitFuncs_phi: "<<fitFuncs_phi.size()<<endl;
+   }
+
+   ~TrackResidualPPbCorrector()
+   {
+      f->Close();
+      delete f;
+   }
+
+   double GetCorrectionFactor(double pt, double eta, double phi)
+   {
+      double corr = 1.;
+
+      // Apply pT corrections
+      for (size_t i = 0; i < fitFuncs_pt.size(); i++)
+      {
+         TF1 *fitFunc_pt = fitFuncs_pt.at(i);
+
+         double xmin, xmax;
+         fitFunc_pt->GetRange(xmin, xmax);
+         if (pt < xmin || pt > xmax) continue;
+
+         corr *= fitFunc_pt->Eval(pt);
+      }
+
+      // Apply eta corrections
+      for (size_t i = 0; i < fitFuncs_eta.size(); i++)
+      {
+         TF1 *fitFunc_eta = fitFuncs_eta.at(i);
+
+         double xmin, xmax;
+         fitFunc_eta->GetRange(xmin, xmax);
+         if (eta < xmin || eta > xmax) continue;
+
+         corr *= fitFunc_eta->Eval(eta);
+      }
+
+      // Apply phi corrections
+      for (size_t i = 0; i < fitFuncs_phi.size(); i++)
+      {
+         TF1 *fitFunc_phi = fitFuncs_phi.at(i);
+
+         double xmin, xmax;
+         fitFunc_phi->GetRange(xmin, xmax);
+         if (phi < xmin || phi > xmax) continue;
+
+         corr *= fitFunc_phi->Eval(phi);
+      }
+
+      return corr;
+   }
+
+private:
+   TFile* f;
+   vector<TF1*> fitFuncs_pt;
+   vector<TF1*> fitFuncs_eta;
+   vector<TF1*> fitFuncs_phi;
+};

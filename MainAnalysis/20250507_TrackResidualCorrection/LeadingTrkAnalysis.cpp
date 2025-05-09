@@ -113,21 +113,14 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
    unsigned long mixstart_i = mix_i;
    int deltaI = (iEnd - iStart) / 100 + 1;
 
-   TrackResidualCorrector *corrector;
-   TrackResidualCorrector *corrector_0_20;
-   TrackResidualCorrector *corrector_20_60;
-   TrackResidualCorrector *corrector_60_100;
-   TrackResidualCorrector *corrector_100_200;
+   TrackResidualPPbCorrector *Trk_corrector;
    if (par.useResidualCor) {
-      corrector_0_20    = new TrackResidualCorrector(Form("%s_0_20.root",    par.residualCor.c_str()));              
-      corrector_20_60   = new TrackResidualCorrector(Form("%s_20_60.root",   par.residualCor.c_str()));              
-      corrector_60_100  = new TrackResidualCorrector(Form("%s_60_100.root",  par.residualCor.c_str()));              
-      corrector_100_200 = new TrackResidualCorrector(Form("%s_100_200.root", par.residualCor.c_str()));              
+      Trk_corrector = new TrackResidualPPbCorrector(par.residualCor.c_str());          
    }
 
    ZCorrector *Z_corrector;
    if (par.useZCor) {
-      Z_corrector = new ZCorrector(Form("%s.root", par.ZCor.c_str()));
+      Z_corrector = new ZCorrector(par.ZCor.c_str());
    }
 
    // event loop
@@ -211,14 +204,11 @@ float getLeadingVsZ(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronM
          float eventZtrk_weight = eventZ_weight;
          // + (residual correction weight)
          if (par.useResidualCor) {
-            float hiBin = par.mix ? MMix->hiBin : MZSignal->hiBin;
-            if (hiBin < 20) corrector = corrector_0_20;
-            else if (hiBin < 60) corrector = corrector_20_60;
-            else if (hiBin < 100) corrector = corrector_60_100;
-            else corrector = corrector_100_200;
-            float residualCorrection = corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
+            float residualCorrection = Trk_corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
+
+            // cout<<"("<<trackPt<<" "<<trackEta<<" "<<trackPhi<<") "<<residualCorrection<<endl;
    
-            eventZtrk_weight *= (par.mix ? ((*MMix->trackWeight)[j] / (*MMix->trackResidualWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : ((*MZSignal->trackWeight)[j] / (*MZSignal->trackResidualWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
+            // eventZtrk_weight *= (par.mix ? ((*MMix->trackWeight)[j] / (*MMix->trackResidualWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : ((*MZSignal->trackWeight)[j] / (*MZSignal->trackResidualWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));
             eventZtrk_weight *= residualCorrection;
          } else {
             eventZtrk_weight *= (par.mix ? ((*MMix->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MMix->trackWeight)[j] < 0))) : ((*MZSignal->trackWeight)[j] * (1 - 0.33 * par.isJewel * ((*MZSignal->trackWeight)[j] < 0))));

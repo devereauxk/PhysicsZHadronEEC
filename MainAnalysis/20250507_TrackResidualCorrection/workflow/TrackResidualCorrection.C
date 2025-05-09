@@ -60,7 +60,7 @@ void TrackResidualCorrection(const char *MCReco = "pPbMC.root", const char *MCGe
 
     // Perform fits
     if (doPtFit) {
-        TF1 *fitFunc = new TF1(Form("fitFunc_pt-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", 0, 15);
+        TF1 *fitFunc = new TF1(Form("fitFunc_pt-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", 0, 20);
         hTrkPtRatio->Fit(fitFunc, "R");
         fitFunc->Write();
     }
@@ -70,7 +70,7 @@ void TrackResidualCorrection(const char *MCReco = "pPbMC.root", const char *MCGe
         fitFunc->Write();
     }
     if (doPhiFit) {
-        TF1 *fitFunc = new TF1(Form("fitFunc_phi-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", 0, M_PI);
+        TF1 *fitFunc = new TF1(Form("fitFunc_phi-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", -M_PI, M_PI);
         hTrkPhiRatio->Fit(fitFunc, "R");
         fitFunc->Write();
     }

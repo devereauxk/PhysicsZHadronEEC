@@ -73,7 +73,7 @@ void plotRatioLogy(vector<TH1D*> hists, const char* title, vector<string> labels
         hist->GetXaxis()->SetTitle(xTitle);
         hist->GetXaxis()->SetRangeUser(xmin, xmax);
         hist->GetYaxis()->SetTitle(yTitle);
-        hist->GetYaxis()->SetRangeUser(ymin, ymax);
+        //hist->GetYaxis()->SetRangeUser(ymin, ymax);
         hist->GetYaxis()->SetTitleSize(0.05);
         hist->SetLineColor(ccolors[i]);
 
@@ -120,52 +120,25 @@ void plotRatioLogy(vector<TH1D*> hists, const char* title, vector<string> labels
 
 void plotResidualCor(const char *zpt_select, const char *pt_select, const char* tag = "", bool PPb = true) {
 
-    const char * fname[8];
     /*
-    const char * pPb_name[8] = {"data", "MC reco_0 no corr", "MC reco_1 pt", "MC reco_1 pt+eta", "MC reco_1 pt+eta+mult", "MC reco_2 pt", "MC reco_2 pt+eta", "MC reco_2 pt+eta+mult"};
+    vector<string> labels = {"data", "MC Gen", "MC Reco Z_4 trk_0", "MC Reco Z_4 trk_1", "MC Reco Z_4 trk_2"};
+    vector<string> fname;
     if (PPb) {
-        fname[0] = "output/1pPb_ZPT0_100-0_40.root";
-        fname[1] = "output/pPbMC_ZPT0_100-0_40-0.root";
-        fname[2] = "output/pPbMC_ZPT0_100-0_40-1-pt.root";
-        fname[3] = "output/pPbMC_ZPT0_100-0_40-1-pteta.root";
-        fname[4] = "output/pPbMC_ZPT0_100-0_40-1-ptetamult.root";
-        fname[5] = "output/pPbMC_ZPT0_100-0_40-2-pt.root";
-        fname[6] = "output/pPbMC_ZPT0_100-0_40-2-pteta.root";
-        fname[7] = "output/pPbMC_ZPT0_100-0_40-2-ptetamult.root";
+        fname = {"output/1pPb_ZPT0_100-0_40.root", "output/pPbMC_Gen_ZPT0_100-0_40.root", "output/pPbMC_ZPT0_100-0_40-0.root", "output/pPbMC_ZPT0_100-0_40-1-ptetaphi.root", "output/pPbMC_ZPT0_100-0_40-2-ptetaphi.root", "output/pPbMC_ZPT0_100-0_40-3-ptetaphi.root", "output/pPbMC_ZPT0_100-0_40-4-ptetaphi.root"};
     } else {
-        fname[0] = "output/0pPb_ZPT0_100-0_40.root";
-        fname[1] = "output/PbPMC_ZPT0_100-0_40-0.root";
-        fname[2] = "output/PbPMC_ZPT0_100-0_40-1-pt.root";
-        fname[3] = "output/PbPMC_ZPT0_100-0_40-1-pteta.root";
-        fname[4] = "output/PbPMC_ZPT0_100-0_40-1-ptetamult.root";
-        fname[5] = "output/PbPMC_ZPT0_100-0_40-2-pt.root";
-        fname[6] = "output/PbPMC_ZPT0_100-0_40-2-pteta.root";
-        fname[7] = "output/PbPMC_ZPT0_100-0_40-2-ptetamult.root";
+        fname = {"output/0pPb_ZPT0_100-0_40.root", "output/PbPMC_Gen_ZPT0_100-0_40.root", "output/PbPMC_ZPT0_100-0_40-0.root", "output/PbPMC_ZPT0_100-0_40-1-ptetaphi.root", "output/PbPMC_ZPT0_100-0_40-2-ptetaphi.root", "output/PbPMC_ZPT0_100-0_40-3-ptetaphi.root", "output/PbPMC_ZPT0_100-0_40-4-ptetaphi.root"};
     }
     */
-    vector<string> labels = {"data", "MC reco_0 no corr", "MC reco_1 pt+eta+mult", "MC reco_2 pt+eta+mult", "MC reco_3 pt+eta+mult", "MC reco_4 pt+eta+mult","",""};
+
+    vector<string> labels = {"data", "MC Gen", "MC Reco Z_4 trk_0", "MC Reco Z_4 trk_1 pt", "MC Reco Z_4 trk_1 pt+eta", "MC Reco Z_4 trk_1 pt+eta+phi"};
+    vector<string> fname;
     if (PPb) {
-        fname[0] = "output/1pPb_ZPT0_100-0_40.root";
-        fname[1] = "output/pPbMC_ZPT0_100-0_40-0.root";
-        fname[2] = "output/pPbMC_ZPT0_100-0_40-1-ptetamult.root";
-        fname[3] = "output/pPbMC_ZPT0_100-0_40-2-ptetamult.root";
-        fname[4] = "output/pPbMC_ZPT0_100-0_40-3-ptetamult.root";
-        fname[5] = "output/pPbMC_ZPT0_100-0_40-4-ptetamult.root";
-        fname[6] = "";
-        fname[7] = "";
-    } else {
-        fname[0] = "output/0pPb_ZPT0_100-0_40.root";
-        fname[1] = "output/PbPMC_ZPT0_100-0_40-0.root";
-        fname[2] = "output/PbPMC_ZPT0_100-0_40-1-ptetamult.root";
-        fname[3] = "output/PbPMC_ZPT0_100-0_40-2-ptetamult.root";
-        fname[4] = "output/PbPMC_ZPT0_100-0_40-3-ptetamult.root";
-        fname[5] = "output/PbPMC_ZPT0_100-0_40-4-ptetamult.root";
-        fname[6] = "";
-        fname[7] = "";
+        fname = {"output/1pPb_ZPT0_100-0_40.root", "output/pPbMC_Gen_ZPT0_100-0_40.root", "output/pPbMC_ZPT0_100-0_40-0.root", "output/pPbMC_ZPT0_100-0_40-1-pt.root", "output/pPbMC_ZPT0_100-0_40-1-pteta.root", "output/pPbMC_ZPT0_100-0_40-1-ptetaphi.root"};
     }
 
-    int ncontours = 2;
-    int baseline = 0;
+    int ncontours = 6;
+    int baseline = 1;
+    const char *rTitle = "hist / MC Gen";
 
     vector<TH1D*> hTrkPt;
     vector<TH1D*> hTrkEta;
@@ -186,7 +159,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
 
     // Load histograms for PbPb
     for (int i = 0; i < ncontours; i++) {
-        TFile *file = new TFile(fname[i], "READ");
+        TFile *file = new TFile(fname[i].c_str(), "READ");
 
         hLeadingPt.push_back((TH1D*)file->Get("hLeadingPtData"));
         hLeadingEta.push_back((TH1D*)file->Get("hLeadingEtaData"));
@@ -257,6 +230,11 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         for (int j = 0; j < nptbin; j++) {
             hMult_ptbin[i][j]->SetStats(0);
         }
+
+        // print info about pt dist
+        cout << "hTrkPt[" << i << "] " << hTrkPt[i]->GetName() << " " << hTrkPt[i]->GetEntries() << " " << hTrkPt[i]->GetMean() << " " << hTrkPt[i]->GetRMS() << endl;
+        //print max and min bins
+        cout << "hTrkPt[" << i << "] " << hTrkPt[i]->GetName() << " " << hTrkPt[i]->GetBinContent(hTrkPt[i]->GetMaximumBin()) << " " << hTrkPt[i]->GetBinContent(hTrkPt[i]->GetMinimumBin()) << endl;
     }
 
     // Create a canvas to draw the histograms for PbPb
@@ -270,7 +248,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         labels,
         "pT (GeV/c)", 0, 20,
         "(1/N_{Z}) dN/dp_{T}", 1e-3, 1e2,
-        "MC reco / data", 0, 2,
+        rTitle, 0, 4,
         baseline
     );
 
@@ -281,7 +259,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         labels,
         "eta", -2.4, 2.4,
         "(1/N_{Z}) dN/d#eta", 3, 2e1,
-        "MC reco / data", 0.6, 1.4,
+        rTitle, 0.6, 1.4,
         baseline
     );
 
@@ -292,7 +270,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         labels,
         "phi", -M_PI, M_PI,
         "(1/N_{Z}) dN/d#phi", 3, 1e1,
-        "MC reco / data", 0.6, 1.4,
+        rTitle, 0.6, 1.4,
         baseline
     );
 
@@ -303,7 +281,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         labels,
         "N_{ch}", 0, 100,
         "Entries (normed to 1)", 1e-4, 2e-1,
-        "MC reco / data", 0, 4,
+        rTitle, 0, 4,
         baseline
     );
 
@@ -314,7 +292,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         labels,
         "pT (GeV/c)", 0, 25,
         "(1/N_{Z}) dN/dp_{T}", 5e-3, 1e-1,
-        "MC reco / data", 0.6, 1.4,
+        rTitle, 0.6, 1.4,
         baseline
     );
 
@@ -325,7 +303,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         labels,
         "eta", -2.4, 2.4,
         "(1/N_{Z}) dN/d#eta", 2e-2, 1,
-        "MC reco / data", 0.6, 1.4,
+        rTitle, 0.6, 1.4,
         baseline
     );
 
@@ -336,7 +314,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         labels,
         "pT (GeV/c)", 0, 20,
         "(1/N_{Z}) dN/dp_{T}", 1e-3, 5e-1,
-        "MC reco / data", 0, 2,
+        rTitle, 0, 2,
         baseline
     );
 
@@ -347,7 +325,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         labels,
         "eta", -2.4, 2.4,
         "(1/N_{Z}) dN/d#eta", 5e-2, 1e0,
-        "MC reco / data", 0.6, 1.4,
+        rTitle, 0.6, 1.4,
         baseline
     );
 

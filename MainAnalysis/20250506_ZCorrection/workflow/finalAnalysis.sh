@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Number of threads per instance
-nThread=50
+nThread=1
 
 # Array to hold the names of the output files
 declare -a outputFileNames
