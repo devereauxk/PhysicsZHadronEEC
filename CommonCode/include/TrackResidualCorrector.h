@@ -117,6 +117,61 @@ private:
    TrackResidualCorrector *TRC4;
 };
 
+
+class ZCorrector
+{
+public:
+   ZCorrector(std::string filename = "ZCorrector_20230508/totalCorrection.root")
+   {
+      f = new TFile(filename.c_str());
+      hPtCorrTotal  = (TH1D *)f->Get("hPtCorrTotal");
+      hEtaCorrTotal = (TH1D *)f->Get("hEtaCorrTotal");
+      //hPhiCorrTotal = (TH1D *)f->Get("hPhiCorrTotal");
+   }
+
+   ~ZCorrector()
+   {
+      f->Close();
+      delete f;
+   }
+
+   double GetCorrectionFactor(double pt, double eta)
+   {
+      //if(phi < 0)
+      //   phi += 2 * M_PI;
+
+      double corr = 1.;
+
+      // Apply pT corrections
+      if (hPtCorrTotal) {
+         double PTMax = hPtCorrTotal->GetXaxis()->GetBinUpEdge(hPtCorrTotal->GetNbinsX());
+         
+         int bin_pt = hPtCorrTotal->GetXaxis()->FindBin(pt);
+         // last bin in PT is overflow
+         if(pt >= PTMax) bin_pt = hPtCorrTotal->GetNbinsX();
+
+         corr *= hPtCorrTotal->GetBinContent(bin_pt);
+      }
+
+      // Apply eta corrections
+      if (hEtaCorrTotal) {
+         int bin_eta = hEtaCorrTotal->GetXaxis()->FindBin(eta);
+         corr *= hEtaCorrTotal->GetBinContent(bin_eta);
+      }
+
+      if(isnan(corr)) corr = 1;
+
+      return corr;
+   }
+
+private:
+   TFile* f;
+   TH1D *hPtCorrTotal;
+   TH1D *hEtaCorrTotal;
+   //TH1D *hPhiCorrTotal;
+};
+
+/*
 class ZCorrector
 {
    // extends ZPtEtaCorrector to (Zpt, Zeta) -> (Zpt, Zeta, event mult) correction
@@ -220,6 +275,8 @@ private:
    vector<TF1*> fitFuncs_eta;
    vector<TF1*> fitFuncs_mult;
 };
+*/
+
 
 class TrackResidualPPbCorrector
 {

@@ -5,10 +5,12 @@
 #include <iostream>
 
 // example usage
-// root -l -b -q "ZCorrection.C(\"output/pPbMC_ZPT0_100-0_40.root\", \"output/1pPb_ZPT0_100-0_40.root\", \"PPb\", 1, false, false, true)"
+// root -l -b -q "ZCorrection.C(\"output/pPbMC_ZPT0_100-0_40.root\", \"output/1pPb_ZPT0_100-0_40.root\", \"Zcorrectionfactor/totalCorrection.root\", true, false)"
 
-void ZCorrection(const char *MC_reco = "pPbMC.root", const char *Data_reco = "pPb.root", const char* tag = "", int iter = 1, bool doPtFit = true, bool doEtaFit = false, bool doMultFit = false)
-{
+void ZCorrection(const char *MC_reco = "pPbMC.root", const char *Data_reco = "pPb.root",
+                 const char* output = "", 
+                 bool doPtFit = false, bool doEtaFit = false) {
+
     // Open the input ROOT files
     TFile *fileMC = TFile::Open(MC_reco, "READ");
     TFile *fileData = TFile::Open(Data_reco, "READ");
@@ -37,7 +39,6 @@ void ZCorrection(const char *MC_reco = "pPbMC.root", const char *Data_reco = "pP
         hZPtEtaMultData->Scale(1. / integralData);
     }
 
-    // get projections
     TH1D *hZPtMC = (TH1D *)hZPtEtaMultMC->ProjectionX("hZPtMC");
     TH1D *hZEtaMC = (TH1D *)hZPtEtaMultMC->ProjectionY("hZEtaMC");
     TH1D *hMultMC = (TH1D *)hZPtEtaMultMC->ProjectionZ("hZMultMC");
@@ -52,32 +53,45 @@ void ZCorrection(const char *MC_reco = "pPbMC.root", const char *Data_reco = "pP
     TH1D *hMultRatio = (TH1D *)hMultData->Clone("hMultRatio");
     hMultRatio->Divide(hMultMC);
 
-    // open output file, create if it doesn't exist
-    TFile *outputFile = TFile::Open(Form("ZCorrection-%s.root", tag), "UPDATE");
-    if (!outputFile || outputFile->IsZombie()) {
-        outputFile = new TFile(Form("ZCorrection-%s.root", tag), "RECREATE");
-    }
-
-    // perform fits
+    // write to file, if file exists, apply existing corrections
+    TFile *outputFile = TFile::Open(output, "UPDATE");
+    TH1D *hZPtRatioOld = (TH1D *)outputFile->Get("hPtCorrTotal");
+    TH1D *hZEtaRatioOld = (TH1D *)outputFile->Get("hEtaCorrTotal");
     if (doPtFit) {
-        TF1 *fitFunc = new TF1(Form("fitFunc_pt-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", 0, 15);
-        hZPtRatio->Fit(fitFunc, "R");
-        fitFunc->Write();
+        // print all bincontent for hZPtRatio
+        /*
+        for (int i = 1; i <= hZPtRatio->GetNbinsX(); i++) {
+            cout << hZPtRatio->GetBinContent(i) << " ";
+        }
+        cout << endl;
+        */
+        
+        if (hZPtRatioOld) {
+            cout<<"pT hist already there "<<hZPtRatioOld->Integral()<<endl;
+            hZPtRatioOld->Multiply(hZPtRatio);
+            cout<<"new "<<" "<<hZPtRatioOld->Integral()<<endl;
+            hZPtRatioOld->Write();
+        } else {
+            hZPtRatio->SetName("hPtCorrTotal");
+            hZPtRatio->Write();
+        }
     }
     if (doEtaFit) {
-        TF1 *fitFunc = new TF1(Form("fitFunc_eta-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", -2.4, 2.4);
-        hZEtaRatio->Fit(fitFunc, "R");
-        fitFunc->Write();
-    }
-    if (doMultFit) {
-        TF1 *fitFunc = new TF1(Form("fitFunc_mult-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", 0, 100);
-        hMultRatio->Fit(fitFunc, "R");
-        fitFunc->Write();
+        if (hZEtaRatioOld) {
+            cout<<"eta hist already there "<<hZEtaRatioOld->Integral()<<endl;
+            hZEtaRatioOld->Multiply(hZEtaRatio);
+            cout<<"new "<<" "<<hZEtaRatioOld->Integral()<<endl;
+            hZEtaRatioOld->Write();
+        } else {
+            hZEtaRatio->SetName("hEtaCorrTotal");
+            hZEtaRatio->Write();
+        }
     }
 
-    // Clean up
+    // clean up
+    outputFile->Write();
+    outputFile->Close();
     fileMC->Close();
     fileData->Close();
-    outputFile->Close();
 
 }

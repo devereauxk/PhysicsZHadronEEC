@@ -6,7 +6,7 @@
 // root -l -b -q "plotResidualCor.C(\"0_100\", \"0_40\", \"PPb\", true)"
 // root -l -b -q "plotResidualCor.C(\"0_100\", \"0_40\", \"PbP\", false)"
 
-const int ccolors[10] = {
+const int ccolors[14] = {
     kBlue+2,     // deep blue
     kAzure+7,    // cyan
     kTeal+3,     // teal
@@ -16,7 +16,11 @@ const int ccolors[10] = {
     kRed,        // red
     kPink+7,     // pink
     kMagenta+2,  // magenta
-    kViolet+7    // purple
+    kViolet+7,   // purple
+    kGray+2,     // gray
+    kBlack,      // black
+    kOrange+2,   // extra orange
+    kCyan+2      // extra cyan
 };
 
 void divideByWidth(TH1D* input) {
@@ -60,7 +64,7 @@ void plotRatioLogy(vector<TH1D*> hists, const char* title, vector<string> labels
     const char* xTitle, double xmin, double xmax,
     const char* yTitle, double ymin, double ymax,
     const char* rTitle, double rmin, double rmax,
-    int baseline = 0) {
+    int baseline = 0, bool logy = true) {
 
     TLegend *leg = new TLegend(0.65, 0.65, 0.85, 0.85);
     leg->SetBorderSize(0); // Remove legend box
@@ -68,7 +72,7 @@ void plotRatioLogy(vector<TH1D*> hists, const char* title, vector<string> labels
 
     TPad *pad1 = new TPad(title, title, 0, 0.3, 1, 1);
     pad1->SetBottomMargin(0);
-    pad1->SetLogy();
+    logy ? pad1->SetLogy() : pad1->SetLogy(0);
     pad1->Draw();
     TPad *pad2 = new TPad(title, title, 0, 0, 1, 0.3);
     pad2->SetTopMargin(0);
@@ -157,27 +161,104 @@ void plot2D(TH2D* hist, const char* title,
     hist->Draw("COLZ");
 }
 
+void plotRatioConvergence(vector<TH1D*> hists, const char* title, vector<string> labels,
+    const char* xTitle, double xmin, double xmax,
+    const char* yTitle, double ymin, double ymax,
+    const char* rTitle, double rmin, double rmax) {
+
+    TLegend *leg = new TLegend(0.65, 0.65, 0.85, 0.85);
+    leg->SetBorderSize(0); // Remove legend box
+    leg->SetTextSize(0.04); // Reduce font size
+
+    TPad *pad1 = new TPad(title, title, 0, 0.3, 1, 1);
+    pad1->SetBottomMargin(0);
+    pad1->SetLogy(0);
+    pad1->Draw();
+    TPad *pad2 = new TPad(title, title, 0, 0, 1, 0.3);
+    pad2->SetTopMargin(0);
+    pad2->SetBottomMargin(0.2);
+    pad2->Draw();
+
+    for (int i = 0; i < hists.size(); i++) {
+        pad1->cd();
+
+        TH1D* hist = hists[i];
+
+        hist->SetStats(0);
+        hist->SetTitle(title);
+        hist->GetXaxis()->SetTitle(xTitle);
+        hist->GetXaxis()->SetRangeUser(xmin, xmax);
+        hist->GetYaxis()->SetTitle(yTitle);
+        hist->GetYaxis()->SetRangeUser(ymin, ymax);
+        hist->GetYaxis()->SetTitleSize(0.05);
+        hist->SetLineColor(ccolors[i]);
+
+        if (i == 0) {
+            hist->Draw("E SAME");
+        } else {
+            hist->Draw("HIST SAME");
+        }
+        leg->AddEntry(hist, Form("%s", labels[i].c_str()), "l");
+
+        TLine *line2 = new TLine(xmin, 1, xmax, 1);
+        line2->SetLineColor(kGray+2);
+        line2->SetLineStyle(2);
+        line2->Draw("SAME");
+
+        pad2->cd();
+        if (i != 0) {
+            TH1D* hRatio = (TH1D*)hist->Clone(Form("ratio_TrkPt_%d", i));
+            hRatio->Divide(hists[i-1]);
+            hRatio->SetTitle("");
+            hRatio->SetStats(0);
+            hRatio->GetXaxis()->SetTitle(xTitle);
+            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetLabelSize(0.08);
+            hRatio->GetXaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetTitle(rTitle);
+            hRatio->GetYaxis()->SetTitleSize(0.1);
+            hRatio->GetYaxis()->SetLabelSize(0.08);
+            hRatio->GetYaxis()->SetTitleOffset(0.4);
+            hRatio->GetYaxis()->SetRangeUser(rmin, rmax);
+            hRatio->SetLineColor(ccolors[i]);
+
+            // Force statistical errors for the ratio to be zero
+            for (int bin = 1; bin <= hRatio->GetNbinsX(); ++bin) {
+                hRatio->SetBinError(bin, 0);
+            }
+
+            cout<<title<<" "<<labels[i]<<" "<<hRatio->Integral()<<endl;
+
+            hRatio->Draw("SAME");
+
+            TLine *line = new TLine(xmin, 1, xmax, 1);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+        }
+    }
+    pad1->cd();
+    leg->Draw("SAME");
+}
+
+
 void plotResidualCor(const char *zpt_select, const char *pt_select, const char* tag = "", bool PPb = true) {
     
-    /*
-    vector<string> labels = {"data", "MC Gen", "MC Reco Z_4 trk_0", "MC Reco Z_4 trk_1", "MC Reco Z_4 trk_2", "MC Reco Z_4 trk_3", "MC Reco Z_4 trk_4", "MC Reco Z_4 trk_5", "MC Reco Z_4 trk_6", "MC Reco Z_4 trk_7"};
+    vector<string> labels = {"data", "MC Gen", "MC Reco 0", "MC Reco 1_pt", "MC Reco 1_pteta", 
+                             "MC Reco 2_pt", "MC Reco 2_pteta"};
     vector<string> fname;
     if (PPb) {
-        fname = {"output/1pPb_ZPT0_100-0_40.root", "output/pPbMC_Gen_ZPT0_100-0_40.root", "output/pPbMC_ZPT0_100-0_40-0.root", "output/pPbMC_ZPT0_100-0_40-1-ptetaphi.root", "output/pPbMC_ZPT0_100-0_40-2-ptetaphi.root", "output/pPbMC_ZPT0_100-0_40-3-ptetaphi.root", "output/pPbMC_ZPT0_100-0_40-4-ptetaphi.root", "output/pPbMC_ZPT0_100-0_40-5-ptetaphi.root", "output/pPbMC_ZPT0_100-0_40-6-ptetaphi.root"};
-    } else {
-        fname = {"output/0pPb_ZPT0_100-0_40.root", "output/PbPMC_Gen_ZPT0_100-0_40.root", "output/PbPMC_ZPT0_100-0_40-0.root", "output/PbPMC_ZPT0_100-0_40-1-ptetaphi.root", "output/PbPMC_ZPT0_100-0_40-2-ptetaphi.root", "output/PbPMC_ZPT0_100-0_40-3-ptetaphi.root", "output/PbPMC_ZPT0_100-0_40-4-ptetaphi.root"};
+        fname = {"output/1pPb_ZPT0_100-0_40.root", "output/pPbMC_Gen_ZPT0_100-0_40.root",
+                 "output/pPbMC_ZPT0_100-0_40-0.root",
+                 "output/pPbMC_ZPT0_100-0_40-1-pt.root", "output/pPbMC_ZPT0_100-0_40-1.root",
+                 "output/pPbMC_ZPT0_100-0_40-2-pt.root", "output/pPbMC_ZPT0_100-0_40-2.root"};
     }
-        */
+    vector<string> labels_Zratio = {"0", "1_pt", "1_eta", "2_pt", "2_eta"};
     
-    vector<string> labels = {"data", "MC Gen", "MC Reco Z_4 trk_0", "MC Reco Z_4 trk_1 pt", "MC Reco Z_4 trk_1 pt+eta", "MC Reco Z_4 trk_1 pt+eta+phi"};
-    vector<string> fname;
-    if (PPb) {
-        fname = {"output/1pPb_ZPT0_100-0_40.root", "output/pPbMC_Gen_ZPT0_100-0_40.root", "output/pPbMC_ZPT0_100-0_40-0.root", "output/pPbMC_ZPT0_100-0_40-1-pt.root", "output/pPbMC_ZPT0_100-0_40-1-pteta.root", "output/pPbMC_ZPT0_100-0_40-1-ptetaphi.root"};
-    }
 
-    int ncontours = 6;
-    int baseline = 1;
-    const char *rTitle = "hist / MC Gen";
+    int ncontours = 2;
+    int baseline = 0;
+    const char *rTitle = "hist / data 0";
 
     vector<TH1D*> hTrkPt;
     vector<TH1D*> hTrkEta;
@@ -200,7 +281,7 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
     vector<vector<TH1D*>> hMult_ptbin;
 
     // Load histograms for PbPb
-    for (int i = 0; i < ncontours; i++) {
+    for (int i = 0; i < fname.size(); i++) {
         TFile *file = new TFile(fname[i].c_str(), "READ");
 
         hLeadingPt.push_back((TH1D*)file->Get("hLeadingPtData"));
@@ -268,6 +349,18 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
         divideByWidth(hZMass[i]);
         divideByWidth(hTrkWeight[i]);
 
+    }
+
+    // Z correction ratios
+    vector<TH1D*> hZPtRatio;
+    vector<TH1D*> hZEtaRatio;
+    for (int i = 0; i < fname.size()-2; i++) {
+
+        hZPtRatio.push_back((TH1D*)hZPt[i+2]->Clone(Form("hZPtRatio_%d", i)));
+        hZEtaRatio.push_back((TH1D*)hZEta[i+2]->Clone(Form("hZEtaRatio_%d", i)));
+        hZPtRatio[i]->Divide(hZPt[0]);
+        hZEtaRatio[i]->Divide(hZEta[0]);
+        
     }
 
     // Create a canvas to draw the histograms for PbPb
@@ -363,23 +456,23 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
     );
 
     c1->cd(9);
-    TH2D* hTrkPtEta_ratio = (TH2D*)hTrkPtEta[2]->Clone("hTrkPtEta_ratio");
-    hTrkPtEta_ratio->Divide(hTrkPtEta[baseline]);
-    plot2D(
-        hTrkPtEta_ratio,
-        "Track pT vs eta",
-        "pT (GeV/c)", 0, 15,
-        "eta", -2.5, 2.5
+    plotRatioConvergence(
+        hZPtRatio,
+        "Z pT, c=Data(reco)/MC(reco)",
+        labels_Zratio,
+        "pT (Gev/c)", 0, 25,
+        "correction factor", 0.6, 1.4,
+        "c(n)/c(n-1)", 0.85, 1.15
     );
 
     c1->cd(10);
-    TH2D* hTrkPtPhi_ratio = (TH2D*)hTrkPtPhi[2]->Clone("hTrkPtPhi_ratio");
-    //hTrkPtPhi_ratio->Divide(hTrkPtPhi[baseline]);
-    plot2D(
-        hTrkPtPhi_ratio,
-        "Track pT vs phi",
-        "pT (GeV/c)", 0, 15,
-        "phi", -4, 4
+    plotRatioConvergence(
+        hZEtaRatio,
+        "Z eta, c=Data(reco)/MC(reco)",
+        labels_Zratio,
+        "eta", -2.4, 2.4,
+        "correction factor", 0.6, 1.4,
+        "c(n)/c(n-1)", 0.85, 1.15
     );
 
     // Optionally: Save the canvas as an image

@@ -2,7 +2,7 @@
 
 # Define common arguments
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/PPbMC_Gen.root --MixFile pPbSample/PPbMC_Gen.root --IsPP false --IsGenZ false --nMix 1"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/PPbMC_Gen.root --MixFile pPbSample/PPbMC_Gen.root --IsPP false --IsGenZ true --nMix 1"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}
@@ -18,12 +18,12 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
    done
 
    # Combine results for the current HiBin and ZPT range
-   hadd -f "plots/$1pPbMC_Gen_ZPT${min_zpt}_${max_zpt}-result.root" \
-       $(for pt_range in "${PT_RANGES[@]}"; do
-            echo "output/$1pPbMC_Gen_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
-         done)
-   hadd -f "plots/$1pPbMC_Gen_ZPT${min_zpt}_${max_zpt}-nosub.root" \
-       $(for pt_range in "${PT_RANGES[@]}"; do
-            echo "output/$1pPbMC_Gen_ZPT${min_zpt}_${max_zpt}-${pt_range}-nosub.root"
-         done)
+   #hadd -f "plots/$1pPbMC_Gen_ZPT${min_zpt}_${max_zpt}-result.root" \
+   #    $(for pt_range in "${PT_RANGES[@]}"; do
+   #         echo "output/$1pPbMC_Gen_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
+   #      done)
+   #hadd -f "plots/$1pPbMC_Gen_ZPT${min_zpt}_${max_zpt}-nosub.root" \
+   #    $(for pt_range in "${PT_RANGES[@]}"; do
+   #         echo "output/$1pPbMC_Gen_ZPT${min_zpt}_${max_zpt}-${pt_range}-nosub.root"
+   #      done)
 done

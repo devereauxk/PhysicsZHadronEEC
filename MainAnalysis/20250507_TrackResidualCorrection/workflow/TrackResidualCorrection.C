@@ -38,12 +38,28 @@ void TrackResidualCorrection(const char *MCReco = "pPbMC.root", const char *MCGe
     }
 
     // Get projections
+    /*
     TH1D *hTrkPtReco = (TH1D *)hTrkPtEtaPhiReco->ProjectionX("hTrkPtReco");
     TH1D *hTrkEtaReco = (TH1D *)hTrkPtEtaPhiReco->ProjectionY("hTrkEtaReco");
     TH1D *hTrkPhiReco = (TH1D *)hTrkPtEtaPhiReco->ProjectionZ("hTrkPhiReco");
     TH1D *hTrkPtGen = (TH1D *)hTrkPtEtaPhiGen->ProjectionX("hTrkPtGen");
     TH1D *hTrkEtaGen = (TH1D *)hTrkPtEtaPhiGen->ProjectionY("hTrkEtaGen");
     TH1D *hTrkPhiGen = (TH1D *)hTrkPtEtaPhiGen->ProjectionZ("hTrkPhiGen");
+    */
+
+    TH1D *hTrkPtReco = (TH1D *)fileReco->Get("hTrkPtData");
+    TH1D *hTrkEtaReco = (TH1D *)fileReco->Get("hTrkEtaData");
+    TH1D *hTrkPhiReco = (TH1D *)fileReco->Get("hTrkPhiData");
+    TH1D *hTrkPtGen = (TH1D *)fileGen->Get("hTrkPtData");
+    TH1D *hTrkEtaGen = (TH1D *)fileGen->Get("hTrkEtaData");
+    TH1D *hTrkPhiGen = (TH1D *)fileGen->Get("hTrkPhiData");
+
+    hTrkPtReco->Scale(1. / integralReco);
+    hTrkEtaReco->Scale(1. / integralReco);
+    hTrkPhiReco->Scale(1. / integralReco);
+    hTrkPtGen->Scale(1. / integralGen);
+    hTrkEtaGen->Scale(1. / integralGen);
+    hTrkPhiGen->Scale(1. / integralGen);
 
     TH1D *hTrkPtRatio = (TH1D *)hTrkPtGen->Clone("hTrkPtRatio");
     hTrkPtRatio->Divide(hTrkPtReco);
@@ -51,6 +67,8 @@ void TrackResidualCorrection(const char *MCReco = "pPbMC.root", const char *MCGe
     hTrkEtaRatio->Divide(hTrkEtaReco);
     TH1D *hTrkPhiRatio = (TH1D *)hTrkPhiGen->Clone("hTrkPhiRatio");
     hTrkPhiRatio->Divide(hTrkPhiReco);
+
+    cout<<"Integrals "<<hTrkEtaRatio->Integral()<<" "<<hTrkPhiRatio->Integral()<<" "<<hTrkPtRatio->Integral()<<endl;
 
     // Open output file, create if it doesn't exist
     TFile *outputFile = TFile::Open(output, "UPDATE");
@@ -60,7 +78,7 @@ void TrackResidualCorrection(const char *MCReco = "pPbMC.root", const char *MCGe
 
     // Perform fits
     if (doPtFit) {
-        TF1 *fitFunc = new TF1(Form("fitFunc_pt-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", 0, 20);
+        TF1 *fitFunc = new TF1(Form("fitFunc_pt-%i", iter), "[0]*x*x*x + [1]*x*x + [2]*x + [3]", 1, 40);
         hTrkPtRatio->Fit(fitFunc, "R");
         fitFunc->Write();
     }

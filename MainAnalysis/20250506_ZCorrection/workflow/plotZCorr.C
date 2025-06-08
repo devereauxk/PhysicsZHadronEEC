@@ -72,12 +72,16 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
         fname[7] = "output/PbPMC_ZPT0_100-0_40-2-ptetamult.root";
     }
     */
-    const char * pPb_name[8] = {"data", "MC reco_0 no corr", "MC reco_1 pt+eta+mult", "MC reco_2 pt+eta+mult", "MC reco_3 pt+eta+mult", "MC reco_4 pt+eta+mult","",""};
+    //const char * pPb_name[8] = {"data", "MC reco_0 no corr", "MC reco_1 pt+eta+mult", "MC reco_2 pt+eta+mult", "MC reco_3 pt+eta+mult", "MC reco_4 pt+eta+mult","",""};
+    const char * pPb_name[8] = {"data PPb", "MC reco_0 PPb", "data PbP", "MC reco_0 PbP", "","","", ""};
     if (PPb) {
         fname[0] = "output/1pPb_ZPT0_100-0_40.root";
         fname[1] = "output/pPbMC_ZPT0_100-0_40-0.root";
-        fname[2] = "output/pPbMC_ZPT0_100-0_40-1-ptetamult.root";
-        fname[3] = "output/pPbMC_ZPT0_100-0_40-2-ptetamult.root";
+        fname[2] = "output/0pPb_ZPT0_100-0_40.root";
+        fname[3] = "output/PbPMC_ZPT0_100-0_40-0.root";
+        //fname[1] = "output/pPbMC_ZPT0_100-0_40-0.root";
+        //fname[2] = "output/pPbMC_ZPT0_100-0_40-1-ptetamult.root";
+        //fname[3] = "output/pPbMC_ZPT0_100-0_40-2-ptetamult.root";
         fname[4] = "output/pPbMC_ZPT0_100-0_40-3-ptetamult.root";
         fname[5] = "output/pPbMC_ZPT0_100-0_40-4-ptetamult.root";
         fname[6] = "";
@@ -93,7 +97,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
         fname[7] = "";
     }
 
-    int ncontours = 6;
+    int ncontours = 4;
 
     TH1D* hTrkPt[ncontours];
     TH1D* hTrkEta[ncontours];
@@ -114,12 +118,9 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
 
     // Load histograms for PbPb
     for (int i = 0; i < ncontours; i++) {
-        TFile *file;
-        if (i == 0) {
-            file = new TFile(fname[i], "READ");
-        } else {
-            file = new TFile(fname[i], "READ");
-        }
+        TFile *file =  new TFile(fname[i], "READ");
+        cout<<"Loading file: " << fname[i] << endl;
+
         hLeadingPt[i] = (TH1D*)file->Get("hLeadingPtData");
         hLeadingEta[i] = (TH1D*)file->Get("hLeadingEtaData");
         hZMass[i] = (TH1D*)file->Get("hZMassData");
@@ -145,7 +146,6 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hZPtEtaMult->GetXaxis()->FindBin(ptbin_hi[j] - 1e-6)
             );
         }
-
 
         // Normalize histograms
         double integral = hNZ[i]->GetBinContent(1);
@@ -230,7 +230,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("MC reco / data");
+            hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -285,7 +285,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("MC reco / data");
+            hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -340,7 +340,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("MC reco / data");
+            hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -395,7 +395,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("MC reco / data");
+            hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -443,7 +443,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("MC reco / data");
+            hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -488,7 +488,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("MC reco / data");
+            hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -531,7 +531,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("MC reco / data");
+            hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -583,7 +583,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
         hRatio->GetXaxis()->SetTitleSize(0.15);
         hRatio->GetXaxis()->SetLabelSize(0.08);
         hRatio->GetXaxis()->SetTitleOffset(0.4);
-        hRatio->GetYaxis()->SetTitle("MC reco / data");
+        hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
         hRatio->GetYaxis()->SetTitleSize(0.1);
         hRatio->GetYaxis()->SetLabelSize(0.08);
         hRatio->GetYaxis()->SetTitleOffset(0.4);
@@ -654,7 +654,7 @@ void plotZCorr(const char *zpt_select, const char *pt_select, const char* tag = 
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
             hRatio->GetXaxis()->SetTitleOffset(0.4);
-            hRatio->GetYaxis()->SetTitle("MC reco / data");
+            hRatio->GetYaxis()->SetTitle(Form("MC reco / %s", pPb_name[baseline]));
             hRatio->GetYaxis()->SetTitleSize(0.1);
             hRatio->GetYaxis()->SetLabelSize(0.08);
             hRatio->GetYaxis()->SetTitleOffset(0.4);
