@@ -31,7 +31,8 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
     #curvelabels="pPb@Data","PPb@MC@Reco","PPb@MC@Gen"
     #scales=1,1,1,1,1,1
 
-    myfile="plots/0pPb_ZPT$zpt_range-result.root,plots/PbPMC_ZPT$zpt_range-result.root,plots/PbPMC_Gen_ZPT$zpt_range-result.root,plots/PbPMC_ZPT$zpt_range-result.root,plots/PbPMC_ZPT$zpt_range-result.root,plots/PbPMC_ZPT$zpt_range-result.root"
+    myfile="plots/1pPb_ZPT$zpt_range-result.root,plots/pp_ZPT$zpt_range-result.root"
+    #plots/PbPMC_ZPT$zpt_range-result.root,plots/PbPMC_Gen_ZPT$zpt_range-result.root,plots/PbPMC_ZPT$zpt_range-result.root,plots/PbPMC_ZPT$zpt_range-result.root,plots/PbPMC_ZPT$zpt_range-result.root"
     curvelabels="PbP@Data","PbP@MC@Reco","PbP@MC@Gen"
     scales=1,1,1,1,1,1
     
@@ -42,9 +43,9 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
     echo $extraInfoEta
 
     #"\"PbPb 0-30%\",\"HYBRID No Wake\",\"HYBRID\",\"JEWEL\",PYQUEN,\"JEWEL No Recoil\""
-    ./ExecuteDiff --PlotDiff 1 --ExtraInfo $extraInfoPhi --Markers $markers --Colors $colors --XAxisLabel "#Delta#phi_{ch,Z}" --YAxisLabel "d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}" --SolidXMin 0 --SolidXMax 3.1415926 --XMin -1.5758 --XMax 4.7275 --Rebin 1 --ToPlot DeltaPhi --DataFiles $myfile --SkipSystematics true --YMin -0.5 --YMax 1.2 --RMin -0.2 --RMax 0.2 --OutputBase summary/result-DeltaPhi-Diff0_30_ZPT$zpt_range-0 --CurveLabels $curvelabels --lines 0,1,1,2,1,2,1,2 --Tags $tags --Labels $labels --RAxisLabel "pPb - MC" --scales $scales
+    ./ExecuteDiff --PlotDiff 1 --ExtraInfo $extraInfoPhi --Markers $markers --Colors $colors --XAxisLabel "#Delta#phi_{ch,Z}" --YAxisLabel "d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}" --SolidXMin 0 --SolidXMax 3.1415926 --XMin -1.5758 --XMax 4.7275 --Rebin 1 --ToPlot DeltaPhi --DataFiles $myfile --SkipSystematics true --YMin -1.0 --YMax 2 --RMin -0.5 --RMax 0.5 --OutputBase summary/result-DeltaPhi-Diff0_30_ZPT$zpt_range --CurveLabels $curvelabels --lines 0,1,1,2,1,2,1,2 --Tags $tags --Labels $labels --RAxisLabel "pPb - pp" --scales $scales
 
-    ./ExecuteDiff --PlotDiff 1 --ExtraInfo $extraInfoEta --Markers $markers --Colors $colors --XAxisLabel "#Deltay_{ch,Z}" --YAxisLabel "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}" --SolidXMin 0 --SolidXMax 3.9999 --XMin -3.999 --XMax 3.9999 --Rebin 2 --ToPlot DeltaEta --DataFiles $myfile --SkipSystematics true --YMin -0.5 --YMax 0.5 --RMin -0.5 --RMax 0.5 --OutputBase summary/result-DeltaEta-Diff0_30_ZPT$zpt_range-0 --CurveLabels $curvelabels --lines 0,1,1,2,1,2,1,2 --Tags $tags --Labels $labels --scales $scales
+    ./ExecuteDiff --PlotDiff 1 --ExtraInfo $extraInfoEta --Markers $markers --Colors $colors --XAxisLabel "#Deltay_{ch,Z}" --YAxisLabel "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}" --SolidXMin 0 --SolidXMax 3.9999 --XMin -3.999 --XMax 3.9999 --Rebin 2 --ToPlot DeltaEta --DataFiles $myfile --SkipSystematics true --YMin -0.5 --YMax 0.5 --RMin -0.5 --RMax 0.5 --OutputBase summary/result-DeltaEta-Diff0_30_ZPT$zpt_range --CurveLabels $curvelabels --lines 0,1,1,2,1,2,1,2 --Tags $tags --Labels $labels --scales $scales
 
 done
 

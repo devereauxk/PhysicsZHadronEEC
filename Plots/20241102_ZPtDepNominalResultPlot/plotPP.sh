@@ -20,8 +20,9 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
     echo $tags
     echo $labels
 
-    myfile="plots/pp_ZPT$zpt_range-result.root,plots/pythia_ZPT$zpt_range-result.root,plots/jewelPP_ZPT$zpt_range-result.root,plots/hybridPP_ZPT$zpt_range-result.root,plots/pp_ZPT$zpt_range-result.root,plots/pythia_ZPT$zpt_range-result.root,plots/jewelPP_ZPT$zpt_range-result.root,plots/hybridPP_ZPT$zpt_range-result.root"
-    curvelabels="PP","Pythia","Jewel@v2.2.0","Hybrid"
+    myfile="plots/pp_ZPT$zpt_range-result.root"
+    #,plots/pythia_ZPT$zpt_range-result.root,plots/jewelPP_ZPT$zpt_range-result.root,plots/hybridPP_ZPT$zpt_range-result.root,plots/pp_ZPT$zpt_range-result.root,plots/pythia_ZPT$zpt_range-result.root,plots/jewelPP_ZPT$zpt_range-result.root,plots/hybridPP_ZPT$zpt_range-result.root"
+    curvelabels="PP" #,"Pythia","Jewel@v2.2.0","Hybrid"
 
     extraInfoPhi="${zpt_range/_*/}<p_{T}^{Z}<${zpt_range/*_/}@GeV","|y_{Z}|<2.4",""
     extraInfoEta="${zpt_range/_*/}<p_{T}^{Z}<${zpt_range/*_/}@GeV","|y_{Z}|<2.4",""

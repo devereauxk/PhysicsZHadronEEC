@@ -13,7 +13,7 @@ make -C ..
 ./pPbMC-analysis.sh --UseZCor false
 cp output/pPbMC_ZPT0_100-0_40.root output/pPbMC_ZPT0_100-0_40-0.root
 
-for i in 1 2; do
+for i in 1 2 3 4; do
     echo "Iteration $i"
 
     ############ pt correction ############

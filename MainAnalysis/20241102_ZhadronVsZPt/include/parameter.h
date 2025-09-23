@@ -37,6 +37,8 @@ public:
    bool useLeadingTrk;    // Flag to see if we use leading track direction as the reference, replacing the role of Z.
    bool useResidualCor;   // Flag to see if we use alterative tracking correction table.
    double PPbWeight;      // Luminosity correction factor for pPb analysis
+   bool useTrackCor;      // Flag to see if we use track efficiency correction
+   bool useEventCor;      // Flag to see if we use event efficiency correction
     
    void printParameters() const {
       cout << "Input file: " << input << endl;
@@ -53,8 +55,10 @@ public:
       cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
       cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
       cout << "isPP: " << (isPP ? "true" : "false") << endl;
-      cout << "useLeadingTrk: " << (useLeadingTrk ? "true" : "false") << endl;
-      cout << "useResidualCor: " << (useResidualCor ? "true" : "false") << endl;
+      cout << "UseLeadingTrk: " << (useLeadingTrk ? "true" : "false") << endl;
+      cout << "UseResidualCor: " << (useResidualCor ? "true" : "false") << endl;
+      cout << "UseTrackCor: " << (useTrackCor ? "true" : "false") << endl;
+      cout << "UseEventCor: " << (useEventCor ? "true" : "false") << endl;
       cout << "Scale factor: " << scaleFactor << endl;
       cout << "SumHF shift: " << shift << endl;
       cout << "MinHiBin: " << MinHiBin << endl;

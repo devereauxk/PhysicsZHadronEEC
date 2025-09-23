@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
    if(SystematicFiles.size() == 0) SkipSystematics = true;
 
-   string PbPbLumi = "1.67 nb^{-1}";
+   string PbPbLumi = "-- nb^{-1}";
    string PPLumi = "301 pb^{-1}";
 
    int NFile = DataFiles.size();
@@ -252,7 +252,7 @@ int main(int argc, char *argv[]) {
 
    string XAxisLabel = CL.Get("XAxisLabel", "|#Delta#phi_{trk,Z}|");
    string YAxisLabel = CL.Get("YAxisLabel", "d<#DeltaN_{ch}>/d#Delta#phi_{trk,Z}");
-   string RAxisLabel = CL.Get("RAxisLabel", "PbPb - pp");
+   string RAxisLabel = CL.Get("RAxisLabel", "pPb - pp");
 
    double MarginLeft    = 100;
    double MarginRight   = 50;
@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
    Latex.SetTextAlign(31);
    Latex.SetTextSize(0.045/CanvasHeight*RefCanvasHeight);
    if (MarginTop>10) Latex.DrawLatex(XMarginLeft + XPadWidth * NColumn, XMarginBottom + XRPadHeight + XPadHeight + 0.01,
-      Form("PbPb (pp) 5.02 TeV %s (%s)", PbPbLumi.c_str(), PPLumi.c_str()));
+      Form("pPb (pp) 5.02 TeV %s (%s)", PbPbLumi.c_str(), PPLumi.c_str()));
 
    // Retrieve histograms
    vector<vector<TH1D *>> HData(NColumn);
@@ -419,6 +419,8 @@ int main(int argc, char *argv[]) {
          HData[iC][iF] = GetHistogram(File[iF], ToPlot, Tag, Colors[iF]);
          HData[iC][iF]->SetMarkerStyle(Markers[iF]+4);
          HData[iC][iF]->SetMarkerSize(1.5);
+
+         cout<<HData[iC][iF]->GetEntries()<<" "<<HData[iC][iF]->Integral()<<" "<<HData[iC][iF]->GetBinContent(5)<<endl;
 
          if (lines[iF]==0) HData[iC][iF]->SetLineColorAlpha(Colors[iF], 0.4); else HData[iC][iF]->SetLineColorAlpha(Colors[iF], 0.8);
          if (lines[iF]==0) HData[iC][iF]->SetMarkerColorAlpha(Colors[iF], 0.4);
@@ -507,6 +509,8 @@ int main(int argc, char *argv[]) {
             if (scales[iF] != 1) {
                HData[iC][iF]->Scale(1./scales[iF]);
             }
+         
+            cout<<HData[iC][iF]->GetEntries()<<" "<<HData[iC][iF]->Integral()<<" "<<HData[iC][iF]->GetBinContent(5)<<endl;
       }	   
    }   
    
@@ -514,7 +518,7 @@ int main(int argc, char *argv[]) {
    for(int iC = 0; iC < NColumn; iC++) {
       Pad[iC]->cd();
       HWorld[iC]->Draw("axis");
-      if (PlotZeroLine) l->Draw();
+      if (PlotZeroLine) l->Draw("same");
       cout <<iC<<endl;
       for(int iF = NPair-1; iF >=0; iF--) {
          if (lines[iF]>0) {

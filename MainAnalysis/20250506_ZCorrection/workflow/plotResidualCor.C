@@ -243,9 +243,11 @@ void plotRatioConvergence(vector<TH1D*> hists, const char* title, vector<string>
 
 
 void plotResidualCor(const char *zpt_select, const char *pt_select, const char* tag = "", bool PPb = true) {
-    
-    vector<string> labels = {"data", "MC Gen", "MC Reco 0", "MC Reco 1_pt", "MC Reco 1_pteta", 
-                             "MC Reco 2_pt", "MC Reco 2_pteta"};
+
+    /*
+    vector<string> labels = {"data(reco)", "MC(gen)", "MC(reco) i=0",
+                             "MC(reco) i=1 (pt)", "MC(reco) i=1 (pt+eta)",
+                             "MC(reco) i=2 (pt)", "MC(reco) i=2 (pt+eta)"};
     vector<string> fname;
     if (PPb) {
         fname = {"output/1pPb_ZPT0_100-0_40.root", "output/pPbMC_Gen_ZPT0_100-0_40.root",
@@ -254,11 +256,26 @@ void plotResidualCor(const char *zpt_select, const char *pt_select, const char* 
                  "output/pPbMC_ZPT0_100-0_40-2-pt.root", "output/pPbMC_ZPT0_100-0_40-2.root"};
     }
     vector<string> labels_Zratio = {"0", "1_pt", "1_eta", "2_pt", "2_eta"};
+    */
+
+    vector<string> labels = {"data(reco)", "MC(gen)", "MC(reco) i=0",
+                             "MC(reco) i=1 (pt+eta)",
+                             "MC(reco) i=2 (pt+eta)",
+                             "MC(reco) i=3 (pt+eta)",
+                             "MC(reco) i=4 (pt+eta)"};
+    vector<string> fname;
+    if (PPb) {
+        fname = {"output/1pPb_ZPT0_100-0_40.root", "output/pPbMC_Gen_ZPT0_100-0_40.root",
+                 "output/pPbMC_ZPT0_100-0_40-0.root",
+                 "output/pPbMC_ZPT0_100-0_40-1.root", "output/pPbMC_ZPT0_100-0_40-2.root",
+                    "output/pPbMC_ZPT0_100-0_40-3.root", "output/pPbMC_ZPT0_100-0_40-4.root"};
+    }
+    vector<string> labels_Zratio = {"0", "1_pteta", "2_pteta", "3_pteta", "4_pteta"};
     
 
     int ncontours = 2;
     int baseline = 0;
-    const char *rTitle = "hist / data 0";
+    const char *rTitle = "hist / data(reco)";
 
     vector<TH1D*> hTrkPt;
     vector<TH1D*> hTrkEta;
