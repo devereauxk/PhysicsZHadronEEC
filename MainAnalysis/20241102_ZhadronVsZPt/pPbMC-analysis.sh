@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Define common arguments
+source clean.sh
 source config.sh
 COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/PPbMC_Reco.root --MixFile pPbSample/PPbMC_Reco.root --IsPP false --IsGenZ false --nMix 1"
 
@@ -15,7 +16,7 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
       echo ./finalAnalysis.sh "output/pPbMC_${TAG}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" \
          $COMMON_ARGS --MinTrackPT "$min_pt" --MaxTrackPT "$max_pt" \
          --MinZPT "$min_zpt" --MaxZPT "$max_zpt" \
-         --UseTrackCor $UseTrackCor --UseEventCor $UseEventCor | bash
+         --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight | bash
    done
 
    # Combine results for the current HiBin and ZPT range
