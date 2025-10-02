@@ -88,7 +88,7 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, TH2D *h, TH2D *hSub0, TH2D *hTrkPtEta, TH3D* hZPtEtaMult, const Parameters& par, TNtuple *nt = 0) {
+float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, TH2D *h, TH2D *hSub0, TH2D *hTrkPtEta, TH3D* hZPtEtaMult, TH1D* hVZ, const Parameters& par, TNtuple *nt = 0) {
    float nZ = 0;
    h->Sumw2();
    if (hTrkPtEta != 0) hTrkPtEta->Sumw2();
@@ -106,6 +106,9 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
    int deltaI = (iEnd - iStart) / 100 + 1;
    float dPhi_threshold = M_PI / 2;
 
+   //==================================================//
+   // loop over events
+   //==================================================//
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
       if (i % deltaI == 0) {
@@ -117,44 +120,102 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
       //if (!eventSelection(MZSignal, par)) continue;
       if (MZSignal->trackPt->size() < 1) continue;
 
-      // Find a mixed akeevent
       float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
 
-      float this_eventZWeight = 1;
-      if (par.useEventWeight) this_eventZWeight = (MZSignal->EventWeight) * (MZSignal->ZWeight);
-      nZ += this_eventZWeight;
-      
-      int mult = 0;
-      for (unsigned long j = 0; j < (par.mix ? MMix->trackPhi->size() : MZSignal->trackPhi->size()); j++) {
+      //==================================================//
+      // loop over mixed events
+      //==================================================//
+      bool foundMix = false;
+      for (unsigned int nMix = 0; nMix < targetMix; nMix++) {
+         foundMix = false;
+         mixstart_i = mix_i;
+         if (par.mix) {
+            while (!foundMix) {
+               mix_i = (mix_i + 1);
+               if (mix_i >= MMixEvt->GetEntries()) mix_i = 0;
+               if (mixstart_i == mix_i) break;
+               MMixEvt->GetEntry(mix_i);
+               if (par.isSelfMixing) {
+                  if (eventSelection(MMixEvt, par) && par.isSelfMixing && i != mix_i) foundMix = true;
+               } else {
+                  if (matching(MZSignal, MMixEvt, par.shift) && !par.isSelfMixing) foundMix = true;
+               }
+            }
+         } 
+         if (!foundMix && par.mix) {
+            cout << "Cannot find a mixed event!!! Event = " << i << " " << MZSignal->SignalHF << endl;
+            break;
+         }
+         MMix->GetEntry(mix_i);
 
-         //if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
-         mult++;
+         //==================================================//
+         // calculate event+Z weight
+         //==================================================//
+         float this_eventZWeight = 1;
+         if (par.useEventWeight) {
+            if (par.mix && par.isSelfMixing) {
+               this_eventZWeight *= (MZSignal->EventWeight) * (MMix->EventWeight) * (MZSignal->ZWeight) * (MMix->ZWeight);
+            } else {
+               this_eventZWeight *= (MZSignal->EventWeight) * (MZSignal->ZWeight);
+            }
+         }
+         if (par.PPbWeight > -1) {
+            if (MZSignal->Run > 285956) this_eventZWeight *= par.PPbWeight; // for PPb
+            else this_eventZWeight *= 1 - par.PPbWeight; // for PbP
+         }
+         nZ += this_eventZWeight;
          
-         float trackDphi  = par.mix ? DeltaPhi((*MMix->trackPhi)[j], zPhi) : DeltaPhi((*MZSignal->trackPhi)[j], zPhi);
-         float trackDphi2 = par.mix ? DeltaPhi(zPhi, (*MMix->trackPhi)[j]) : DeltaPhi(zPhi, (*MZSignal->trackPhi)[j]);
-         float trackDeta  = par.mix ? fabs((*MMix->trackEta)[j] - zY) : fabs((*MZSignal->trackEta)[j] - zY);
+         //==================================================//
+         // loop over tracks
+         //==================================================//
+         int mult = 0;
+         for (unsigned long j = 0; j < (par.mix ? MMix->trackPhi->size() : MZSignal->trackPhi->size()); j++) {
 
-         float trackPhi  = par.mix ? (*MMix->trackPhi)[j] : (*MZSignal->trackPhi)[j];
-         float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
-         float trackPt   = par.mix ? (*MMix->trackPt)[j] : (*MZSignal->trackPt)[j];
+            // Check if the event passes the selection criteria
+            if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
+            mult++;
+            
+            float trackDphi  = par.mix ? DeltaPhi((*MMix->trackPhi)[j], zPhi) : DeltaPhi((*MZSignal->trackPhi)[j], zPhi);
+            float trackDphi2 = par.mix ? DeltaPhi(zPhi, (*MMix->trackPhi)[j]) : DeltaPhi(zPhi, (*MZSignal->trackPhi)[j]);
+            float trackDeta  = par.mix ? fabs((*MMix->trackEta)[j] - zY) : fabs((*MZSignal->trackEta)[j] - zY);
 
-         float this_trackWeight = 1;
-         if(par.useTrackWeight) this_trackWeight = (*MZSignal->trackWeight)[j];
+            float trackPhi  = par.mix ? (*MMix->trackPhi)[j] : (*MZSignal->trackPhi)[j];
+            float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
+            float trackPt   = par.mix ? (*MMix->trackPt)[j] : (*MZSignal->trackPt)[j];
 
-         float weight = this_eventZWeight * this_trackWeight;
+            //==================================================//
+            // calculate track weight
+            //==================================================//
+            float this_trackWeight = 1;
+            if(par.useTrackWeight) {
+               if (par.mix && par.isSelfMixing) {
+                  this_trackWeight *= (*MZSignal->trackWeight)[j] * (*MMix->trackWeight)[j];
+               } else {
+                  this_trackWeight *= (*MZSignal->trackWeight)[j];
+               }
+            }
+            float weight = this_eventZWeight * this_trackWeight;
 
-         h->Fill(trackDeta, trackDphi, weight);
-         h->Fill(-trackDeta, trackDphi, weight);
-         h->Fill(trackDeta, trackDphi2, weight);
-         h->Fill(-trackDeta, trackDphi2, weight);
+            //==================================================//
+            // fill central values
+            //==================================================//
 
-         hTrkPtEta->Fill(trackPt, trackEta, weight);
+            //if (par.mix) cout<< "(" << trackDeta << ", " << trackDphi << ") " << weight << " = " << this_eventZWeight << " * " << this_trackWeight << endl;
+
+            h->Fill(trackDeta, trackDphi, weight);
+            h->Fill(-trackDeta, trackDphi, weight);
+            h->Fill(trackDeta, trackDphi2, weight);
+            h->Fill(-trackDeta, trackDphi2, weight);
+
+            if (hTrkPtEta != 0) hTrkPtEta->Fill(trackPt, trackEta, weight);
+         }
+
+         if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, mult, this_eventZWeight);
+         if (hVZ != 0) hVZ->Fill(MZSignal->VZ, this_eventZWeight);
+
       }
-
-      if(hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, mult, this_eventZWeight);
-
    }
    return nZ;
 }
@@ -163,7 +224,7 @@ class DataAnalyzer {
 public:
    TFile *inf, *mixFile, *mixFileClone, *outf;
    TNtuple *ntDiagnose;
-   TH1D *hNZ, *hNZMix;
+   TH1D *hNZ, *hNZMix, *hVZ;
    TH2D *hTrkPtEta;
    TH3D *hZPtEtaMult;
    TH2D *h = 0, *hSub0 = 0, *hMix = 0;
@@ -194,34 +255,34 @@ public:
       h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hTrkPtEta = new TH2D(Form("hTrkPtEta%s", title.c_str()), "", 100, 0, 100, 48, -2.4, 2.4);
       hZPtEtaMult = new TH3D(Form("hZPtEtaMult%s", title.c_str()), "", 100, 0, 200, 48, -2.4, 2.4, 300, 0, 300);
+      hVZ = new TH1D(Form("hVZ%s", title.c_str()), "", 40, -20, 20);
       hSub0 = new TH2D(Form("hSub0%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
-      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, h, hSub0, hTrkPtEta, hZPtEtaMult, par)); // Dphi analysis
+      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, h, hSub0, hTrkPtEta, hZPtEtaMult, hVZ, par)); // Dphi analysis
 
       // Second histogram with mix=true
-      /*
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
-      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, hMix, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
-      */
+      //hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, hMix, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {
       outf->cd();
       smartWrite(h);
       //smartWrite(hSub0);
-      //smartWrite(hMix);
+      smartWrite(hMix);
       smartWrite(hNZ);
-      //smartWrite(hNZMix);
-      //smartWrite(ntDiagnose);
+      smartWrite(hNZMix);
+      smartWrite(ntDiagnose);
       smartWrite(hTrkPtEta);
       smartWrite(hZPtEtaMult);
+      smartWrite(hVZ);
    }
 
 private:
    void deleteHistograms() {
-      delete h, hSub0, hMix, hNZ, hNZMix, hTrkPtEta, hZPtEtaMult;
+      delete h, hSub0, hMix, hNZ, hNZMix, hTrkPtEta, hZPtEtaMult, hVZ;
    }
 };
 

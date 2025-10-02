@@ -34,16 +34,17 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     // Retrieve histograms from the file
     TH2D *hData = (TH2D*)file->Get("hData"); // Replace with your histogram name
     TH2D *hNZData = (TH2D*)file->Get("hNZData"); // Replace with your histogram name
-    //TH1D *hMixData = (TH1D*)file->Get("hMixData"); // Replace with your histogram name
-    //TH1D *hNZMixData = (TH1D*)file->Get("hNZMixData"); // Replace with your histogram name
-    TH1D *hTrkPtEta = (TH1D*)file->Get("hTrkPtEtaData"); // Replace with your histogram name
+    TH1D *hMixData = (TH1D*)file->Get("hMixData"); // Replace with your histogram name
+    TH1D *hNZMixData = (TH1D*)file->Get("hNZMixData"); // Replace with your histogram name
+    TH2D *hTrkPtEta = (TH2D*)file->Get("hTrkPtEtaData"); // Replace with your histogram name
     TH3D *hZPtEtaMult = (TH3D*)file->Get("hZPtEtaMultData"); // Replace with your histogram name
+    TH1D* hVZ = (TH1D*)file->Get("hVZData"); // Replace with your histogram name
 
     hNZData->SetName(Form("hNZData_%s",tag));
-    //hNZMixData->SetName(Form("hNZMixData_%s",tag));
+    hNZMixData->SetName(Form("hNZMixData_%s",tag));
+    hVZ->SetName(Form("hVZ_%s",tag));
 
     // Verify that all required histograms are loaded successfully from the file
-    /*
     if (!hData || !hNZData || !hMixData || !hNZMixData) {
         // Check each histogram individually to provide a specific error message
         if (!hData) {
@@ -63,25 +64,24 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
         std::cerr << "Error: One or more required histograms could not be loaded from the file. Exiting function." << std::endl;
         return;
     }
-    */
 
     // Scale histograms
     hData->SetName(Form("hData_%s",tag));
     hData->Scale(1. / hNZData->GetBinContent(1));
-    //hMixData->SetName(Form("hMixData_%s",tag));
-    //hMixData->Scale(1. / hNZMixData->GetBinContent(1));
-    //TH1D *hDataAll = (TH1D*) hData->Clone(Form("hDataAll_%s",tag));
+    cout<<"NZs: "<<hNZData->GetBinContent(1)<<endl;
+    hMixData->SetName(Form("hMixData_%s",tag));
+    hMixData->Scale(1. / hNZMixData->GetBinContent(1));
+    TH1D *hDataAll = (TH1D*) hData->Clone(Form("hDataAll_%s",tag));
 
     hTrkPtEta->SetName(Form("hTrkPtEtaData_%s",tag));
-    //hTrkPtEta->Scale(1. / hNZData->GetBinContent(1));
+    hTrkPtEta->Scale(1. / hNZData->GetBinContent(1));
     hZPtEtaMult->SetName(Form("hZPtEtaMult_%s",tag));
-    //hZPtEtaMult->Scale(1. / hNZData->GetBinContent(1));
+    hZPtEtaMult->Scale(1. / hNZData->GetBinContent(1));
     
     // Subtract hMixData from hData
-    //if (doSub) hData->Add(hMixData, -1);
+    if (doSub) hData->Add(hMixData, -1);
 
     // Create a canvas to draw the histogram
-    /*
     TCanvas *c1 = new TCanvas("c1", "Canvas for Y projection", 800, 600);
     TH1D *hProjY = (TH1D*) hData->ProjectionY(Form("DeltaPhi_Result%s",tag),0,10); // include underflow bin
     hProjY->SetMarkerStyle(20);
@@ -95,19 +95,19 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hProjX->GetXaxis()->SetTitle("#Delta#eta");
     divideByWidth(hProjX);
     hProjX->Draw();
-    */
 
     // Optionally: Save the canvas as an image and write histograms to a file
     TFile *outf = new TFile(outfname, "RECREATE");
     hData->Write();
-    //hDataAll->Write();
-    //hMixData->Write();
-    //hProjY->Write();
-    //hProjX->Write();
+    hDataAll->Write();
+    hMixData->Write();
+    hProjY->Write();
+    hProjX->Write();
     hNZData->Write();
-    //hNZMixData->Write();
+    hNZMixData->Write();
     hTrkPtEta->Write();
     hZPtEtaMult->Write();
+    hVZ->Write();
     
     // Cleanup: Close the file
     //file->Close();

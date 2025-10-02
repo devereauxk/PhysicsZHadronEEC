@@ -1,4 +1,5 @@
 #!/bin/bash
+source clean.sh
 source config.sh
 
 colors=1181,1179,1179,1183,1180,1180,7,1,97,0,1184,1185,1186,1187,1188
@@ -20,9 +21,10 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
     echo $tags
     echo $labels
 
-    myfile="plots/1pPb_ZPT$zpt_range-result.root"
+    myfile="plots/pPb_w1_ZPT$zpt_range-result.root"
     #plots/DY0_30_ZPT$zpt_range-result.root,plots/jewelPbPb030_ZPT$zpt_range-result.root,plots/hybridPbPb030_ZPT$zpt_range-result.root,plots/pp_ZPT$zpt_range-result.root,plots/pythia_ZPT$zpt_range-result.root,plots/jewelPP_ZPT$zpt_range-result.root,plots/hybridPP_ZPT$zpt_range-result.root"
-    curvelabels="pPb"
+    curvelabels="Data, Gen, Reco (weighted)"
+    nametag="pPb_mcDataCompare"
     #,"Pythia","Jewel@v2.2.0","Hybrid"
 
     extraInfoPhi="${zpt_range/_*/}<p_{T}^{Z}<${zpt_range/*_/}@GeV","|y_{Z}|<2.4",""
@@ -31,9 +33,9 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
     echo $extraInfoEta
 
     #"\"PbPb 0-30%\",\"HYBRID No Wake\",\"HYBRID\",\"JEWEL\",PYQUEN,\"JEWEL No Recoil\""
-    ./ExecuteDiff --PlotDiff 0 --ExtraInfo $extraInfoPhi --Markers $markers --Colors $colors --XAxisLabel "#Delta#phi_{ch,Z}" --YAxisLabel "d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}" --SolidXMin 0 --SolidXMax 3.1415926 --XMin -1.5758 --XMax 4.7275 --Rebin 1 --ToPlot DeltaPhi --DataFiles $myfile --SkipSystematics true --YMin -2.5 --YMax 4.5 --RMin -2.5 --RMax 2.5 --OutputBase summary/result-DeltaPhi-pPb0_30MC$zpt_range --CurveLabels $curvelabels --lines 0,1,2,2,1,2,1,2 --Tags $tags --Labels $labels
+    ./ExecuteDiff --PlotDiff 0 --ExtraInfo $extraInfoPhi --Markers $markers --Colors $colors --XAxisLabel "#Delta#phi_{ch,Z}" --YAxisLabel "d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}" --SolidXMin 0 --SolidXMax 3.1415926 --XMin -1.5758 --XMax 4.7275 --Rebin 1 --ToPlot DeltaPhi --DataFiles $myfile --SkipSystematics true --YMin -2.5 --YMax 4.5 --RMin -2.5 --RMax 2.5 --OutputBase summary/result-DeltaPhi-${nametag}-$zpt_range --CurveLabels $curvelabels --lines 0,1,2,2,1,2,1,2 --Tags $tags --Labels $labels
 
-    ./ExecuteDiff --PlotDiff 0 --ExtraInfo $extraInfoEta --Markers $markers --Colors $colors --XAxisLabel "#Deltay_{ch,Z}" --YAxisLabel "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}" --SolidXMin 0 --SolidXMax 3.9999 --XMin -3.999 --XMax 3.9999 --Rebin 2 --ToPlot DeltaEta --DataFiles $myfile --SkipSystematics true --YMin -1.45 --YMax 1.45 --RMin -1.55 --RMax 1.55 --OutputBase summary/result-DeltaEta-pPb0_30MC$zpt_range --CurveLabels $curvelabels --lines 0,1,2,2,1,2,1,2 --Tags $tags --Labels $labels
+    ./ExecuteDiff --PlotDiff 0 --ExtraInfo $extraInfoEta --Markers $markers --Colors $colors --XAxisLabel "#Deltay_{ch,Z}" --YAxisLabel "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}" --SolidXMin 0 --SolidXMax 3.9999 --XMin -3.999 --XMax 3.9999 --Rebin 2 --ToPlot DeltaEta --DataFiles $myfile --SkipSystematics true --YMin -1.45 --YMax 1.45 --RMin -1.55 --RMax 1.55 --OutputBase summary/result-DeltaEta-${nametag}-$zpt_range --CurveLabels $curvelabels --lines 0,1,2,2,1,2,1,2 --Tags $tags --Labels $labels
 
 done
 

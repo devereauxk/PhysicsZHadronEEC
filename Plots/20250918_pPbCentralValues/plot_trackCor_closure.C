@@ -13,6 +13,7 @@ void plot_trackCor_closure() {
 
     // The first input file is considered the baseline (Gen-level)
     // currently using a certain ZPT and track PT range
+    /**
     vector<string> input_ZPT_files = {
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_ZPT0_40-result.root",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_noweight_ZPT0_40-result.root",
@@ -28,12 +29,26 @@ void plot_trackCor_closure() {
         "Reco (nominal weighting)"
     };
     const char* output =  "plots/pPb_TrackCor_closure_ZPT0_40-1_10";
+    */
+
+    vector<string> input_ZPT_files = {
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_nominal_ZPT0_40-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_ZPT0_40-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_w1_ZPT0_40-result.root"
+    };
+    vector<string> labels = {
+        "pp data",
+        "Reco (nominal weighting)",
+        "PPb data"
+    };
+    const char* output =  "track_summary/20251001_TrackCor_closure_pp_and_PPbData_ZPT0_40-1_10";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
     vector<TH1*> hMult;
     vector<TH1*> hZPt;
     vector<TH1*> hZEta;
+    vector<TH1*> hVZ;
 
     // Loop over all input files
     int i = 0;
@@ -52,6 +67,8 @@ void plot_trackCor_closure() {
         TH1D* this_hMult = this_hZPtEtaMult->ProjectionZ(Form("mult_%s", labels[i].c_str()));
         TH1D* this_hZPt = this_hZPtEtaMult->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
         TH1D* this_hZEta = this_hZPtEtaMult->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
+        
+        TH1D* this_hVZ = (TH1D*)fin->Get("hVZData");
 
         divideByWidth(this_hTrkPt);
         divideByWidth(this_hTrkEta);
@@ -63,6 +80,7 @@ void plot_trackCor_closure() {
         hMult.push_back(this_hMult);
         hZPt.push_back(this_hZPt);
         hZEta.push_back(this_hZEta);
+        hVZ.push_back(this_hVZ);
 
         i++;
     }
@@ -72,11 +90,11 @@ void plot_trackCor_closure() {
 
     TPad* p1 = (TPad*) plotCMSRatio(
         hTrkEta, "", labels,
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {1, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray}, {1, 2, 2, 2, 1, 0},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "y_{ch}", -4, 4,
-        "dN_{ch}/d y_{ch}", 0, 8e6,
-        "Ratio to Gen-level", 0.5, 2.5,
+        "dN_{ch}/d y_{ch}", -1, -1,
+        "Ratio to Gen-level", 0.5, 2,
         0,
         false, false, false
     );
@@ -96,10 +114,10 @@ void plot_trackCor_closure() {
     TCanvas* c2 = new TCanvas("c2", "c2", 600, 600);
     TPad* p2 = (TPad*) plotCMSRatio(
         hTrkPt, "", labels,
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {1, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray}, {1, 2, 2, 2, 1, 0},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "p_{T}^{ch}", 1, 15,
-        "dN_{ch}/dp_{T}^{ch}", 1e2, 1e8,
+        "dN_{ch}/dp_{T}^{ch}", 1e-3, 1e2,
         "Ratio to Gen-level", 0.5, 2,
         0,
         false, true, false
@@ -120,8 +138,8 @@ void plot_trackCor_closure() {
     TCanvas* c3 = new TCanvas("c3", "c3", 600, 600);
     TPad* p3 = (TPad*) plotCMSRatio(
         {hMult[0], hMult[1]}, "", labels,
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {1, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray}, {1, 2, 2, 2, 1, 0},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "N_{ch}", 1, 300,
         "counts", -1, -1,
         "Ratio to Gen-level", 0.5, 1.5,
@@ -144,11 +162,11 @@ void plot_trackCor_closure() {
     TCanvas* c4 = new TCanvas("c4", "c4", 600, 600);
     TPad* p4 = (TPad*) plotCMSRatio(
         hZPt, "", labels,
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {1, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray}, {1, 2, 2, 2, 1, 0},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "p_{T,Z}", 0, 400,
         "dN_{Z}/dp_{T,Z}", -1, -1,
-        "Ratio to Gen-level", 0.9, 1.1,
+        "Ratio to Gen-level", 0.5, 1.5,
         0,
         false, true, false
     );
@@ -168,11 +186,11 @@ void plot_trackCor_closure() {
     TCanvas* c5 = new TCanvas("c5", "c5", 600, 600);
     TPad* p5 = (TPad*) plotCMSRatio(
         hZEta, "", labels,
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {1, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray}, {1, 2, 2, 2, 1, 0},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "y_{Z}", -2.4, 2.4,
         "dN_{Z}/dy_{Z}", -1, -1,
-        "Ratio to Gen-level", 0.9, 1.1,
+        "Ratio to Gen-level", 0.5, 1.5,
         0,
         false, false, false
     );
@@ -187,5 +205,28 @@ void plot_trackCor_closure() {
     p5->Update();
 
     c5->SaveAs(Form("%s-Zeta.png", output));
+
+    // make canvas
+    TCanvas* c6 = new TCanvas("c6", "c6", 600, 600);
+    TPad* p6 = (TPad*) plotCMSRatio(
+        hVZ, "", labels,
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray}, {1, 2, 2, 2, 1, 0},
+        {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        "V_{Z}", -20, 20,
+        "counts", -1, -1,
+        "Ratio to Gen-level", 0.5, 1.5,
+        0,
+        false, false, false
+    );
+
+    AddCMSHeader(
+        p6,
+        "Internal",
+        false
+    );
+
+    AddUPCHeader(p6, "8 TeV", "pPb");
+    p6->Update();
+    c6->SaveAs(Form("%s-Vz.png", output));
 
 }

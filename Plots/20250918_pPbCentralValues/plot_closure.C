@@ -27,7 +27,7 @@ void plot_closure() {
         "Reco (track correction only)",
         "Reco (nominal weighting)"
     };
-    const char* output =  "plots/pPb_closure_ZPT0_40-1_10";
+    const char* output =  "summary/pPb_closure_ZPT0_40-1_10";
 
     vector<TH1*> hDeltaEta;
     vector<TH1*> hDeltaPhi;
