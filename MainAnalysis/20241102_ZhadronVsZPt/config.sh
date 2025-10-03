@@ -1,6 +1,7 @@
-PT_RANGES=("1_2" "2_4" "4_10")
-ZPT_RANGES=("0_10" "10_20" "40_350")
+PT_RANGES=("1_10")
+ZPT_RANGES=("0_350")
 UseLeadingTrk=0
 UseTrackWeight=1
 UseEventWeight=1
-TAG="nominal"
+yBoost=0.465
+TAG="nominal_yboost"

@@ -12,9 +12,9 @@
 void reweight_VZ() {
 
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_noEvtWeight_ZPT0_350-result.root",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_w1_noEvtWeight_ZPT0_350-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_nominal_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_noEvtWeight_ZPT0_350-result.root",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_w0_noEvtWeight_ZPT0_350-result.root"
     };
     vector<string> labels = {
@@ -23,7 +23,7 @@ void reweight_VZ() {
         "Reco PbP",
         "Data PbP"
     };
-    const char* output =  "summary/20251001_ZPT0_350";
+    const char* output =  "summary/20251003_ZPT0_350";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
@@ -82,7 +82,7 @@ void reweight_VZ() {
     hVZRatio_pbp->Fit(fitFunc_pbp, "R");
 
     // save fits to root file
-    TFile* fout = TFile::Open("20251002_VzReweightFits.root", "RECREATE");
+    TFile* fout = TFile::Open("20251003_VzReweightFits.root", "RECREATE");
     fitFunc_ppb->Write();
     fitFunc_pbp->Write();
     fout->Close();
@@ -274,5 +274,26 @@ void reweight_VZ() {
     AddUPCHeader(p12, "5.02 TeV", "pPb & PbP");
     p12->Update();
     c12->SaveAs(Form("%s-trkEta_comparison.pdf", output));
+
+    // make canvas
+    TCanvas* c13 = new TCanvas("c13", "c13", 650, 600);
+    TPad* p13 = (TPad*) plotCMSSimple(
+        c13, {hZEta[1], hZEta[3]}, "", {"Data PPb", "Data PbP"},
+        {cmsBlue, cmsRed}, {0, 0},
+        {cmsBlue, cmsRed}, {mCircleFill, mCircleFill},
+        "#eta^{Z}", -2.4, 2.4,
+        "dN/d#eta", -1, -1,
+        false, false, false
+    );
+
+    AddCMSHeader(
+        p13,      // Provide the TPad
+        "Internal", // (optional) Add a subheader to the CMS header
+        false
+    );
+
+    AddUPCHeader(p13, "5.02 TeV", "pPb & PbP");
+    p13->Update();
+    c13->SaveAs(Form("%s-ZEtaData_comparison.pdf", output));
 
 }

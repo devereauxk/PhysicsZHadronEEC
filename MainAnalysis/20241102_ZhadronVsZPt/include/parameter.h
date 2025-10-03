@@ -31,14 +31,16 @@ public:
    bool isHiBinUp;        // Flag to do systematics with HiBinUp
    bool isHiBinDown;      // Flag to do systematics with HiBinDown
    bool isPP;             // Flag to check if this is a PP analysis
+   bool isData;           // Flag to check if this is a Data analysis
    bool isJewel;             // Flag to check if this is a Jewel analysis
    int ExtraZWeight;
    bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
    bool useLeadingTrk;    // Flag to see if we use leading track direction as the reference, replacing the role of Z.
    bool useResidualCor;   // Flag to see if we use alterative tracking correction table.
-   double PPbWeight;      // Luminosity correction factor for pPb analysis
    bool useTrackWeight;      // Flag to see if we use track efficiency correction
    bool useEventWeight;      // Flag to see if we use event efficiency correction
+   bool isPPb;            // Flag to check if this is a PPb analysis
+   float yBoost;          // Rapidity boost for pPb analysis
     
    void printParameters() const {
       cout << "Input file: " << input << endl;
@@ -55,6 +57,8 @@ public:
       cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
       cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
       cout << "isPP: " << (isPP ? "true" : "false") << endl;
+      cout << "isData: " << (isData ? "true" : "false") << endl;
+      cout << "isPPb: " << (isPPb ? "true" : "false") << endl;
       cout << "UseLeadingTrk: " << (useLeadingTrk ? "true" : "false") << endl;
       cout << "UseResidualCor: " << (useResidualCor ? "true" : "false") << endl;
       cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
@@ -69,7 +73,7 @@ public:
       cout << "Number of mixed events: " << nMix << endl;
       cout << "Muon Tagging Enabled: " << (isMuTagged ? "true" : "false") << endl;
       cout << "PU rejection: " << (isPUReject ? "true" : "false") << endl;
-      cout << "PPb Weight: " << PPbWeight << endl;
+      cout << "yBoost: " << yBoost << endl;
       if (mix) cout << "Event mixing!" << endl;
    }
 };

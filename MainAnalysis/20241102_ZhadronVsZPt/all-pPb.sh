@@ -1,4 +1,4 @@
-./pPb-analysis.sh 0
-./pPb-analysis.sh 1
+./pPb-analysis.sh
+./PbP-analysis.sh
 ./pPbMC-analysis.sh
 ./PbPMC-analysis.sh

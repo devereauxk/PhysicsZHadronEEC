@@ -28,11 +28,6 @@ bool checkError(const Parameters& par) {
       return true;  // Return true indicates an error was found
    }
 
-   if (par.isHiBinUp && par.isHiBinDown) {
-      std::cout << "Error! Cannot do hiBinUp and hiBinDown simultaneously!" << std::endl;
-      return true;  // Return true indicates an error was found
-   }
-
    return false;    // No errors found
 }
 
@@ -85,6 +80,13 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
    return 0;
 }
 
+
+// ======= Check if PPb event is PPb or PbP, returns true if PPb
+bool isPPbEvent(ZHadronMessenger *b) {
+   if (b->Run < 285950) return true;
+   return false;
+}
+
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
@@ -124,6 +126,11 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
 
+      if (par.yBoost != 0) {
+         if (par.isPPb) zY = zY - par.yBoost;
+         else zY = -(zY + par.yBoost);
+      } 
+
       //==================================================//
       // loop over mixed events
       //==================================================//
@@ -137,6 +144,8 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
                if (mix_i >= MMixEvt->GetEntries()) mix_i = 0;
                if (mixstart_i == mix_i) break;
                MMixEvt->GetEntry(mix_i);
+               // only mix PPb with PPb and PbP with PbP
+               if (!par.isPP && par.isData && isPPbEvent(MZSignal) != isPPbEvent(MMixEvt)) continue;
                if (par.isSelfMixing) {
                   if (eventSelection(MMixEvt, par) && par.isSelfMixing && i != mix_i) foundMix = true;
                } else {
@@ -161,10 +170,9 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
                this_eventZWeight *= (MZSignal->EventWeight) * (MZSignal->ZWeight);
             }
          }
-         if (par.PPbWeight > -1) {
-            if (MZSignal->Run < 285950) this_eventZWeight *= par.PPbWeight; // for PPb
-            else this_eventZWeight *= 1 - par.PPbWeight; // for PbP
-         }
+         // check event indeed has the right orientation
+         if (!par.isPP && par.isData && isPPbEvent(MZSignal) != par.isPPb) this_eventZWeight = 0;
+
          nZ += this_eventZWeight;
          
          //==================================================//
@@ -184,6 +192,13 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
             float trackPhi  = par.mix ? (*MMix->trackPhi)[j] : (*MZSignal->trackPhi)[j];
             float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
             float trackPt   = par.mix ? (*MMix->trackPt)[j] : (*MZSignal->trackPt)[j];
+
+            if (par.yBoost != 0 && !par.isPP) {
+               if (par.isPPb) trackEta = trackEta - par.yBoost;
+               else trackEta = -(trackEta + par.yBoost);
+            }
+            // boost will not affect trackDeta as track and Z boosted by same amount
+            // boost nonetheless applied for Z and track-specific histograms
 
             //==================================================//
             // calculate track weight
@@ -210,15 +225,16 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
             h->Fill(-trackDeta, trackDphi2, weight);
 
             if (hTrkPtEta != 0) hTrkPtEta->Fill(trackPt, trackEta, weight);
-         }
-
-         //cout<<MZSignal->Run<<" | "<<this_eventZWeight<<endl;
+         
+         } // end track loop
 
          if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, mult, this_eventZWeight);
          if (hVZ != 0) hVZ->Fill(MZSignal->VZ, this_eventZWeight);
 
-      }
-   }
+      } // end mix event loop
+
+   } // end event loop
+
    return nZ;
 }
 
@@ -256,7 +272,7 @@ public:
       par.mix = false;
       h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hTrkPtEta = new TH2D(Form("hTrkPtEta%s", title.c_str()), "", 100, 0, 100, 48, -2.4, 2.4);
-      hZPtEtaMult = new TH3D(Form("hZPtEtaMult%s", title.c_str()), "", 100, 0, 200, 48, -2.4, 2.4, 300, 0, 300);
+      hZPtEtaMult = new TH3D(Form("hZPtEtaMult%s", title.c_str()), "", 70, 0, 200, 30, -3, 3, 300, 0, 300);
       hVZ = new TH1D(Form("hVZ%s", title.c_str()), "", 40, -20, 20);
       hSub0 = new TH2D(Form("hSub0%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
@@ -333,9 +349,11 @@ int main(int argc, char *argv[])
    par.MaxZY         = CL.GetDouble("MaxZY", 200);           // Maximum Z particle rapidity threshold for event selection.
    par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);      // Do Muon systematics, -1 means no extraweight.
    par.includeHole   = CL.GetBool  ("includeHole",true);     // Include hole particle or not
-   par.PPbWeight     = CL.GetDouble("PPbWeight",-1); // Luminosity correction factor for pPb analysis
+   par.isPPb         = CL.GetBool  ("IsPPb", false);         // Flag to indicate if p is going in the positive eta direction.
+   par.yBoost       = CL.GetDouble("yBoost", 0);         // Rapidity boost for pPb analysis
    par.mix = 0;
    par.isPP = IsPP;
+   par.isData = IsData;
    par.isJewel = IsJewel;
    
    if (checkError(par)) return -1;

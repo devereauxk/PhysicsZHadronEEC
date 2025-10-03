@@ -11,36 +11,35 @@
 
 void plot_trackCor_closure() {
 
-    // The first input file is considered the baseline (Gen-level)
-    // currently using a certain ZPT and track PT range
-    /**
+    /*
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_ZPT0_40-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_noweight_ZPT0_40-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_TrackWeightOnly_ZPT0_40-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_EventWeightOnly_ZPT0_40-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_ZPT0_40-result.root"
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_nominal_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_nominal_ZPT0_350-result.root"
     };
     vector<string> labels = {
-        "Gen",
-        "Reco (no weight)",
-        "Reco (track weight)",
-        "Reco (event weight)",
-        "Reco (nominal weighting)"
+        "pPb data",
+        "pPb MC reco",
+        "PbP data",
+        "PbP MC reco"
     };
-    const char* output =  "plots/pPb_TrackCor_closure_ZPT0_40-1_10";
+    const char* output =  "track_summary/20251003_PbP-PPb_compare_UE_beforeBoost_ZPT0_350-1_10";
     */
 
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20240223_Zhadron/workflow/plots/pp-nosub.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_v6_ZPT40_350-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_nominal_ZPT40_350-result.root"
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_yboost_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_yboost_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_nominal_yboost_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_nominal_yboost_ZPT0_350-result.root"
     };
     vector<string> labels = {
-        "pp old set, old analysis", "pp old set, new analysis", "pp new set, new analysis"
+        "pPb data",
+        "pPb MC reco",
+        "PbP data",
+        "PbP MC reco"
     };
-
-    const char* output =  "track_summary/20251002_pp_sanity_ZPT40_350-1_2";
+    const char* output =  "track_summary/20251003_PbP-PPb_compare_UE_afterBoost_ZPT0_350-1_10";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
@@ -48,6 +47,12 @@ void plot_trackCor_closure() {
     vector<TH1*> hZPt;
     vector<TH1*> hZEta;
     vector<TH1*> hVZ;
+    
+    // shift of y_cm = y_lab - 0.465 for pPb
+    // shift of y_cm = - (y_lab + 0.465) for PbP
+    vector<TH1D*> hTrkEta_shifted;
+    vector<TH1D*> hTrkPt_shifted;
+    vector<int> is_ppb = {1, 1, 0, 0}; // 1 for ppb, 0 for pbp
 
     // Loop over all input files
     int i = 0;
@@ -58,16 +63,17 @@ void plot_trackCor_closure() {
             continue;
         }
 
-        TH2D* this_hTrkPtEta = (TH2D*)fin->Get("hTrkPtEtaData_1_2");
-        TH3D* this_hZPtEtaMult = (TH3D*)fin->Get("hZPtEtaMult_1_2");
+        TH2D* this_hTrkPtEta = (TH2D*)fin->Get("hTrkPtEtaData_1_10");
+        TH3D* this_hZPtEtaMult = (TH3D*)fin->Get("hZPtEtaMult_1_10");
 
         TH1D* this_hTrkPt = this_hTrkPtEta->ProjectionX(Form("trkPt_%s", labels[i].c_str()));
         TH1D* this_hTrkEta = this_hTrkPtEta->ProjectionY(Form("trkEta_%s", labels[i].c_str()));
         TH1D* this_hMult = this_hZPtEtaMult->ProjectionZ(Form("mult_%s", labels[i].c_str()));
         TH1D* this_hZPt = this_hZPtEtaMult->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
         TH1D* this_hZEta = this_hZPtEtaMult->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
-        
-        TH1D* this_hVZ = (TH1D*)fin->Get("hVZData");
+
+        TH1D* this_hVZ = (TH1D*)fin->Get("hVZ_1_10");
+        this_hVZ->Scale(1.0 / this_hVZ->Integral());
 
         divideByWidth(this_hTrkPt);
         divideByWidth(this_hTrkEta);
@@ -85,7 +91,7 @@ void plot_trackCor_closure() {
     }
     // Define style vectors to be used in all plots
     std::vector<int> linecolors = {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray};
-    std::vector<int> linestyles = {2, 1, 2, 1, 1, 0};
+    std::vector<int> linestyles = {1, 2, 1, 2, 1, 0};
     std::vector<int> markercolors = {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed};
     std::vector<int> markerstyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
 
@@ -97,8 +103,8 @@ void plot_trackCor_closure() {
         linecolors, linestyles,
         markercolors, markerstyles,
         "y_{ch}", -4, 4,
-        "dN_{ch}/d y_{ch}", -1, -1,
-        "Ratio to Gen-level", 0.5, 2,
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", 0, 12,
+        "Ratio to pPb data", 0.5, 2,
         0,
         false, false, false
     );
@@ -121,8 +127,8 @@ void plot_trackCor_closure() {
         linecolors, linestyles,
         markercolors, markerstyles,
         "p_{T}^{ch}", 1, 15,
-        "dN_{ch}/dp_{T}^{ch}", 1e-3, 1e2,
-        "Ratio to Gen-level", 0.5, 2,
+        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", 1e-3, 1e2,
+        "Ratio to pPb data", 0.5, 2,
         0,
         false, true, false
     );
@@ -146,7 +152,7 @@ void plot_trackCor_closure() {
         markercolors, markerstyles,
         "N_{ch}", 1, 300,
         "counts", -1, -1,
-        "Ratio to Gen-level", 0.5, 1.5,
+        "Ratio to pPb data", 0.5, 1.5,
         0,
         true, false, false
     );
@@ -169,8 +175,8 @@ void plot_trackCor_closure() {
         linecolors, linestyles,
         markercolors, markerstyles,
         "p_{T,Z}", 0, 400,
-        "dN_{Z}/dp_{T,Z}", -1, -1,
-        "Ratio to Gen-level", 0.5, 1.5,
+        "(1/N_{Z}) dN_{Z}/dp_{T,Z}", -1, -1,
+        "Ratio to pPb data", 0.5, 1.5,
         0,
         false, true, false
     );
@@ -192,9 +198,9 @@ void plot_trackCor_closure() {
         hZEta, "", labels,
         linecolors, linestyles,
         markercolors, markerstyles,
-        "y_{Z}", -2.4, 2.4,
-        "dN_{Z}/dy_{Z}", -1, -1,
-        "Ratio to Gen-level", 0.5, 1.5,
+        "y_{Z}", -3, 3,
+        "(1/N_{Z}) dN_{Z}/dy_{Z}", 0, 0.5,
+        "Ratio to pPb data", 0.75, 1.25,
         0,
         false, false, false
     );
@@ -218,7 +224,7 @@ void plot_trackCor_closure() {
         markercolors, markerstyles,
         "V_{Z}", -20, 20,
         "counts", -1, -1,
-        "Ratio to Gen-level", 0.5, 1.5,
+        "Ratio to pPb data", 0.5, 1.5,
         0,
         false, false, false
     );
