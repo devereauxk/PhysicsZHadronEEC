@@ -357,7 +357,7 @@ TPad* plotCMSSimple(TCanvas* c, vector<TH1*> hists, const char* title, vector<st
     const char* xTitle, double xmin, double xmax,
     const char* yTitle, double ymin, double ymax,
     bool logx = false, bool logy = false,
-    bool binnums = false, float horizonalLine = -9999) {
+    bool binnums = false, string horizonalLine = "") {
 
     // Get the canvas pad to pass to other functions
     TPad* pad1 = (TPad*) c->GetPad(0);
@@ -441,8 +441,8 @@ TPad* plotCMSSimple(TCanvas* c, vector<TH1*> hists, const char* title, vector<st
     }
     leg->Draw("SAME");
 
-    if (horizonalLine != -9999) {
-        TF1* line = new TF1("line", "0", -4, 4);
+    if (horizonalLine != "") {
+        TF1* line = new TF1("line", horizonalLine.c_str(), xmin, xmax);
         line->SetLineColor(kGray);
         line->SetLineStyle(7);
         line->Draw("same");

@@ -1,6 +1,6 @@
 #!/bin/bash
-myfile="plots/pp-result.root,plots/hybridPP-result.root,plots/pyquenPP-result.root,plots/jewelPP-result.root,plots/pp-result.root,plots/hybridPP-result.root,plots/pyquenPP-result.root,plots/jewelPP-result.root"
-label="pp","Hybrid","PYQUEN","Jewel@v2.2.0"
+myfile="plots/pp-result.root,plots/hybridPP-result.root,plots/pyquenPP-result.root,plots/jewelPP-result.root,plots/pp-v11-result.root,plots/pp-result.root,plots/hybridPP-result.root,plots/pyquenPP-result.root,plots/jewelPP-result.root,plots/pp-v11-result.root"
+label="pp","Hybrid","PYQUEN","Jewel@v2.2.0,pp@v11"
 colors=1181,1180,1179,1182,15,1183,97,0,1184,1185,1186,1187,1188
 markers=20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20
 extraInfoPhi="40<p_{T}^{Z}<350@GeV","|y_{Z}|<2.4",""

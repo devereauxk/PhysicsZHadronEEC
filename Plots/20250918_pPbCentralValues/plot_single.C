@@ -28,17 +28,13 @@ void NormalizeHistogram(TH1D *h, TH1D *h2) {
     }
 }
 
-void plot_single(const char* input_ZPT = "", const char* output = "", const char* header_label = "") {
+void plot_single() {
 
-    // pp
-    input_ZPT =  {"oldplots/pp-nosub.root"};
-    output =  "summary/20251001_pp_old_ZPT40_350-nosub";
-    header_label = "pp";
 
-    //pPb
-    //input_ZPT =  {"/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_ZPT40_350-result.root"};
-    //output =  "summary/20250930_pPbMC_nominal_ZPT40_350";
-    //header_label = "pPb";
+    const char* input_ZPT = "oldplots/pp-result.root";
+    const char* output =  "single/20251001_pp_old_ZPT40_350-nosub";
+    const char* header_label = "pp";
+
 
     TFile* fin = TFile::Open(input_ZPT, "READ");
     if (!fin || fin->IsZombie()) {
@@ -100,7 +96,7 @@ void plot_single(const char* input_ZPT = "", const char* output = "", const char
         {cmsRed, cmsYellow, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "#Delta y_{ch,Z}", -4, 4,
         "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        false, false, false, 0
+        false, false, false, "0"
     );
 
     AddCMSHeader(
@@ -122,7 +118,7 @@ void plot_single(const char* input_ZPT = "", const char* output = "", const char
         {cmsRed, cmsYellow, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "#Delta#phi_{ch,Z}", -1.5758, 4.7275,
         "d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        false, false, false, 0
+        false, false, false, "0"
     );
 
     AddCMSHeader(
@@ -144,7 +140,7 @@ void plot_single(const char* input_ZPT = "", const char* output = "", const char
         {cmsRed, cmsYellow, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "#Delta y_{ch,Z}", -4, 4,
         "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z} (mixed)", -1, -1,
-        false, false, false, 0
+        false, false, false, "0"
     );
 
     AddCMSHeader(
@@ -166,7 +162,7 @@ void plot_single(const char* input_ZPT = "", const char* output = "", const char
         {cmsRed, cmsYellow, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "#Delta#phi_{ch,Z}", -1.5758, 4.7275,
         "d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z} (mixed)", -1, -1,
-        false, false, false, 0
+        false, false, false, "0"
     );
 
     AddCMSHeader(

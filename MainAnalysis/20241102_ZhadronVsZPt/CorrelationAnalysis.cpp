@@ -117,8 +117,8 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
       }
 
       // Check if the event passes the selection criteria
-      //if (!eventSelection(MZSignal, par)) continue;
-      if (MZSignal->trackPt->size() < 1) continue;
+      if (!eventSelection(MZSignal, par)) continue;
+      //if (MZSignal->trackPt->size() < 1) continue;
 
       float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
@@ -162,7 +162,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
             }
          }
          if (par.PPbWeight > -1) {
-            if (MZSignal->Run > 285956) this_eventZWeight *= par.PPbWeight; // for PPb
+            if (MZSignal->Run < 285950) this_eventZWeight *= par.PPbWeight; // for PPb
             else this_eventZWeight *= 1 - par.PPbWeight; // for PbP
          }
          nZ += this_eventZWeight;
@@ -190,8 +190,8 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
             //==================================================//
             float this_trackWeight = 1;
             if(par.useTrackWeight) {
-               if (par.mix && par.isSelfMixing) {
-                  this_trackWeight *= (*MZSignal->trackWeight)[j] * (*MMix->trackWeight)[j];
+               if (par.mix) {
+                  this_trackWeight *= (*MMix->trackWeight)[j];
                } else {
                   this_trackWeight *= (*MZSignal->trackWeight)[j];
                }
@@ -211,6 +211,8 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
 
             if (hTrkPtEta != 0) hTrkPtEta->Fill(trackPt, trackEta, weight);
          }
+
+         //cout<<MZSignal->Run<<" | "<<this_eventZWeight<<endl;
 
          if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, mult, this_eventZWeight);
          if (hVZ != 0) hVZ->Fill(MZSignal->VZ, this_eventZWeight);
@@ -264,7 +266,7 @@ public:
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
-      //hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, hMix, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
+      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, hMix, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {
