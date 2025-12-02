@@ -83,8 +83,21 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 
 // ======= Check if PPb event is PPb or PbP, returns true if PPb
 bool isPPbEvent(ZHadronMessenger *b) {
-   if (b->Run < 285950) return true;
+   if (b->Run < 285922) return true;
    return false;
+}
+
+// ====== add UE event from EPOS to hard event
+void addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
+   for (unsigned int i = 0; i < ue->trackPt->size(); i++) {
+      hard->trackPt->push_back(ue->trackPt->at(i));
+      hard->trackEta->push_back(ue->trackEta->at(i));
+      hard->trackY->push_back(ue->trackY->at(i));
+      hard->trackPhi->push_back(ue->trackPhi->at(i)); // used for track counting
+      hard->trackMuTagged->push_back(ue->trackMuTagged->at(i));
+      hard->trackWeight->push_back(ue->trackWeight->at(i));
+      hard->trackResidualWeight->push_back(ue->trackResidualWeight->at(i));
+   }
 }
 
 //============================================================//
@@ -108,11 +121,22 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
    int deltaI = (iEnd - iStart) / 100 + 1;
    float dPhi_threshold = M_PI / 2;
 
+   // open EPOS file if needed
+   ZHadronMessenger *MEPOS = nullptr;
+   if (par.useEPOSFile) {
+      TFile *fEPOS = TFile::Open(par.EPOSFile.c_str());
+      if (!fEPOS || fEPOS->IsZombie()) {
+         return -1;
+      }
+      MEPOS = new ZHadronMessenger(*fEPOS, string("Tree"));
+   }
+
    //==================================================//
    // loop over events
    //==================================================//
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
+
       if (i % deltaI == 0) {
          Bar.Update(i - iStart);
          Bar.Print();
@@ -129,7 +153,13 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
       if (par.yBoost != 0) {
          if (par.isPPb) zY = zY - par.yBoost;
          else zY = -(zY + par.yBoost);
-      } 
+      }
+
+      // add UE to signal file particles from EPOS if needed
+      if (par.useEPOSFile) {
+         MEPOS->GetEntry(i % MEPOS->GetEntries());
+         addUEParticles(MZSignal, MEPOS);
+      }
 
       //==================================================//
       // loop over mixed events
@@ -159,19 +189,26 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
          }
          MMix->GetEntry(mix_i);
 
+         // add UE to mix file particles from EPOS if needed
+         if (par.useEPOSFile) {
+            MEPOS->GetEntry(mix_i % MEPOS->GetEntries());
+            addUEParticles(MMix, MEPOS);
+         }
+
          //==================================================//
          // calculate event+Z weight
          //==================================================//
          float this_eventZWeight = 1;
          if (par.useEventWeight) {
             if (par.mix && par.isSelfMixing) {
-               this_eventZWeight *= (MZSignal->EventWeight) * (MMix->EventWeight) * (MZSignal->ZWeight) * (MMix->ZWeight);
+               this_eventZWeight *= (MZSignal->EventWeight) * (MMix->EventWeight) * (MZSignal->ZWeight) * (MMix->ZWeight) * (MZSignal->VZWeight) * (MMix->VZWeight);
             } else {
-               this_eventZWeight *= (MZSignal->EventWeight) * (MZSignal->ZWeight);
+               this_eventZWeight *= (MZSignal->EventWeight) * (MZSignal->ZWeight) * (MZSignal->VZWeight);
             }
          }
          // check event indeed has the right orientation
-         if (!par.isPP && par.isData && isPPbEvent(MZSignal) != par.isPPb) this_eventZWeight = 0;
+         if (!par.isPP && par.isData && isPPbEvent(MZSignal) != par.isPPb)  this_eventZWeight = 0;
+         //cout<<par.isPPb << " " << isPPbEvent(MZSignal) << " " << MZSignal->Run << " ::: " << this_eventZWeight << endl;
 
          nZ += this_eventZWeight;
          
@@ -211,14 +248,23 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
                   this_trackWeight *= (*MZSignal->trackWeight)[j];
                }
             }
-            float weight = this_eventZWeight * this_trackWeight;
 
+            float this_residualWeight = 1;
+            if(par.useResidualWeight) {
+               if (par.mix) {
+                  this_residualWeight *= (*MMix->trackResidualWeight)[j];
+               } else {
+                  this_residualWeight *= (*MZSignal->trackResidualWeight)[j];
+               }
+            }
+
+            float weight = this_eventZWeight * this_trackWeight * this_residualWeight;
+
+            //cout<<trackPt<<" "<<this_trackWeight<<"  ("<<(MZSignal->EventWeight)<<" "<<(MZSignal->ZWeight)<<" "<<(MZSignal->VZWeight)<<") "<<this_eventZWeight<<" "<<weight<<endl;
+            
             //==================================================//
             // fill central values
             //==================================================//
-
-            //if (par.mix) cout<< "(" << trackDeta << ", " << trackDphi << ") " << weight << " = " << this_eventZWeight << " * " << this_trackWeight << endl;
-
             h->Fill(trackDeta, trackDphi, weight);
             h->Fill(-trackDeta, trackDphi, weight);
             h->Fill(trackDeta, trackDphi2, weight);
@@ -330,16 +376,17 @@ int main(int argc, char *argv[])
    Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);
    par.input         = CL.Get      ("Input",   "mergedSample/HISingleMuon-v5.root");         // Input file
    par.mixFile       = CL.Get      ("MixFile", "mergedSample/HISingleMuon-v5.root");         // Input Mix file
+   par.EPOSFile      = CL.Get      ("EPOSFile", "");                                         // EPOS sample, to add UE/background to GenMC hard processes, leave blank if no embeding needed
+   par.useEPOSFile   = !par.EPOSFile.empty();
    par.output        = CL.Get      ("Output",  "output.root");                               // Output file
-   par.residualCor   = CL.Get      ("ResidualCor",  "residualCor");                      	   // Residual correction file
    par.isSelfMixing  = CL.GetBool  ("IsSelfMixing", true);   // Determine if the analysis is self-mixing
    par.isGenZ        = CL.GetBool  ("IsGenZ", false);        // Determine if the analysis is using Gen level Z     
    par.isPUReject    = CL.GetBool  ("IsPUReject", true);     // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
    par.useLeadingTrk = CL.GetBool  ("UseLeadingTrk", false); // Default is false
-   par.useResidualCor= CL.GetBool  ("UseResidualCor", false);// Default is false
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
    par.useEventWeight   = CL.GetBool  ("UseEventWeight", true);     // Default is false
+   par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.

@@ -10,23 +10,43 @@
 #include <string>
 
 void plot_trackCor_closure() {
-
     /*
     vector<string> input_ZPT_files = {
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_ZPT0_350-result.root",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_ZPT0_350-result.root",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_nominal_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_ZPT0_350-result.root",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_nominal_ZPT0_350-result.root"
     };
     vector<string> labels = {
         "pPb data",
+        "pPb MC gen",
         "pPb MC reco",
         "PbP data",
+        "PbP MC gen",
         "PbP MC reco"
     };
-    const char* output =  "track_summary/20251003_PbP-PPb_compare_UE_beforeBoost_ZPT0_350-1_10";
+    const char* output =  "track_summary/20251013_PbP-PPb_compare_UE_beforeBoost_ZPT0_350-1_10";
     */
 
+    vector<string> input_ZPT_files = {
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_yboost_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_yboost_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_yboost_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_nominal_yboost_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_yboost_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_nominal_yboost_ZPT0_350-result.root"
+    };
+    vector<string> labels = {
+        "pPb MC gen",
+        "pPb MC reco",
+        "pPb MC reco + correction"
+    };
+    const char* output =  "track_summary/20251202_closure_pPb_ZPT0_350-0.5_10";
+    const char* trkPT_range = "0.5_10";
+
+    /*
     vector<string> input_ZPT_files = {
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_yboost_ZPT0_350-result.root",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_yboost_ZPT0_350-result.root",
@@ -39,7 +59,9 @@ void plot_trackCor_closure() {
         "PbP data",
         "PbP MC reco"
     };
-    const char* output =  "track_summary/20251003_PbP-PPb_compare_UE_afterBoost_ZPT0_350-1_10";
+    const char* output =  "track_summary/20251017_PbP-PPb_compare_UE_afterBoost_noTrackWeight_ZPT0_350-0.5_10";
+    const char* trkPT_range = "0.5_10";
+    */
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
@@ -50,9 +72,6 @@ void plot_trackCor_closure() {
     
     // shift of y_cm = y_lab - 0.465 for pPb
     // shift of y_cm = - (y_lab + 0.465) for PbP
-    vector<TH1D*> hTrkEta_shifted;
-    vector<TH1D*> hTrkPt_shifted;
-    vector<int> is_ppb = {1, 1, 0, 0}; // 1 for ppb, 0 for pbp
 
     // Loop over all input files
     int i = 0;
@@ -63,8 +82,8 @@ void plot_trackCor_closure() {
             continue;
         }
 
-        TH2D* this_hTrkPtEta = (TH2D*)fin->Get("hTrkPtEtaData_1_10");
-        TH3D* this_hZPtEtaMult = (TH3D*)fin->Get("hZPtEtaMult_1_10");
+        TH2D* this_hTrkPtEta = (TH2D*)fin->Get(Form("hTrkPtEtaData_%s", trkPT_range));
+        TH3D* this_hZPtEtaMult = (TH3D*)fin->Get(Form("hZPtEtaMult_%s", trkPT_range));
 
         TH1D* this_hTrkPt = this_hTrkPtEta->ProjectionX(Form("trkPt_%s", labels[i].c_str()));
         TH1D* this_hTrkEta = this_hTrkPtEta->ProjectionY(Form("trkEta_%s", labels[i].c_str()));
@@ -72,7 +91,7 @@ void plot_trackCor_closure() {
         TH1D* this_hZPt = this_hZPtEtaMult->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
         TH1D* this_hZEta = this_hZPtEtaMult->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
 
-        TH1D* this_hVZ = (TH1D*)fin->Get("hVZ_1_10");
+        TH1D* this_hVZ = (TH1D*)fin->Get(Form("hVZ_%s", trkPT_range));
         this_hVZ->Scale(1.0 / this_hVZ->Integral());
 
         divideByWidth(this_hTrkPt);
@@ -90,10 +109,10 @@ void plot_trackCor_closure() {
         i++;
     }
     // Define style vectors to be used in all plots
-    std::vector<int> linecolors = {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray};
-    std::vector<int> linestyles = {1, 2, 1, 2, 1, 0};
-    std::vector<int> markercolors = {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed};
-    std::vector<int> markerstyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
+    std::vector<int> linecolors = {cmsRed, cmsBlue, cmsRed, kOrange+7, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray};
+    std::vector<int> linestyles = {0, 1, 2, 0, 1, 2, 1, 0};
+    std::vector<int> markercolors = {cmsRed, cmsBlue, cmsRed, kOrange+7, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed};
+    std::vector<int> markerstyles = {mCircleFill, mCircleFill, mCircleFill, mSquareFill, mCircleFill, mCircleFill};
 
     // make canvas
     TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);
@@ -103,8 +122,8 @@ void plot_trackCor_closure() {
         linecolors, linestyles,
         markercolors, markerstyles,
         "y_{ch}", -4, 4,
-        "(1/N_{Z}) dN_{ch}/d y_{ch}", 0, 12,
-        "Ratio to pPb data", 0.5, 2,
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", 0, 30,
+        "Ratio to curve1", 0.5, 2,
         0,
         false, false, false
     );
@@ -126,9 +145,9 @@ void plot_trackCor_closure() {
         hTrkPt, "", labels,
         linecolors, linestyles,
         markercolors, markerstyles,
-        "p_{T}^{ch}", 1, 15,
-        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", 1e-3, 1e2,
-        "Ratio to pPb data", 0.5, 2,
+        "p_{T}^{ch}", 0, 15,
+        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", 1e-3, 1e3,
+        "Ratio to curve1", 0.5, 2,
         0,
         false, true, false
     );
@@ -147,12 +166,12 @@ void plot_trackCor_closure() {
     // make canvas
     TCanvas* c3 = new TCanvas("c3", "c3", 600, 600);
     TPad* p3 = (TPad*) plotCMSRatio(
-        {hMult[0], hMult[1]}, "", labels,
-        linecolors, linestyles,
+        {hMult[0], hMult[1], hMult[2]}, "", labels,
+        {cmsRed, cmsBlue, cmsTeal}, {1, 1, 1},
         markercolors, markerstyles,
         "N_{ch}", 1, 300,
-        "counts", -1, -1,
-        "Ratio to pPb data", 0.5, 1.5,
+        "counts", 0, 0.025,
+        "Ratio to curve1", 0, 2,
         0,
         true, false, false
     );
@@ -176,7 +195,7 @@ void plot_trackCor_closure() {
         markercolors, markerstyles,
         "p_{T,Z}", 0, 400,
         "(1/N_{Z}) dN_{Z}/dp_{T,Z}", -1, -1,
-        "Ratio to pPb data", 0.5, 1.5,
+        "Ratio to curve1", 0.5, 1.5,
         0,
         false, true, false
     );
@@ -200,7 +219,7 @@ void plot_trackCor_closure() {
         markercolors, markerstyles,
         "y_{Z}", -3, 3,
         "(1/N_{Z}) dN_{Z}/dy_{Z}", 0, 0.5,
-        "Ratio to pPb data", 0.75, 1.25,
+        "Ratio to curve1", 0.75, 1.25,
         0,
         false, false, false
     );
@@ -224,7 +243,7 @@ void plot_trackCor_closure() {
         markercolors, markerstyles,
         "V_{Z}", -20, 20,
         "counts", -1, -1,
-        "Ratio to pPb data", 0.5, 1.5,
+        "Ratio to curve1", 0.5, 1.5,
         0,
         false, false, false
     );

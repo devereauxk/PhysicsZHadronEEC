@@ -3,7 +3,7 @@
 # Define common arguments
 source clean.sh
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/pp-v11-Zpt0.root --MixFile mergedSample/pp-v11-Zpt0.root --IsPP true --IsGenZ false --nMix 1 --IsData true --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight --yBoost 0"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/pp-v11-Zpt0.root --MixFile mergedSample/pp-v11-Zpt0.root --IsPP true --IsGenZ false --nMix 1 --IsData true --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}

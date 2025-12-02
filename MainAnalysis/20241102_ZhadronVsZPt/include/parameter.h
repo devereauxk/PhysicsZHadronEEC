@@ -8,7 +8,8 @@ public:
    string input;          // Input file name
    string output;         // Output file name
    string mixFile;        // Mix File name
-   string residualCor;    // Alternative Residual Cor File name
+   string EPOSFile;      // EPOS File name
+   bool useEPOSFile;   // Flag to indicate if EPOS file is used
    float MinZPT;          // Lower limit of Z pt
    float MaxZPT;          // Upper limit of Z pt
    float MinZY;           // Lower limit of Z rapidity
@@ -36,9 +37,9 @@ public:
    int ExtraZWeight;
    bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
    bool useLeadingTrk;    // Flag to see if we use leading track direction as the reference, replacing the role of Z.
-   bool useResidualCor;   // Flag to see if we use alterative tracking correction table.
    bool useTrackWeight;      // Flag to see if we use track efficiency correction
    bool useEventWeight;      // Flag to see if we use event efficiency correction
+   bool useResidualWeight;   // Flag to see if we use residual correction
    bool isPPb;            // Flag to check if this is a PPb analysis
    float yBoost;          // Rapidity boost for pPb analysis
     
@@ -46,7 +47,8 @@ public:
       cout << "Input file: " << input << endl;
       cout << "Output file: " << output << endl;
       cout << "Mix File: " << mixFile << endl;
-      cout << "ResidualCor Tag: " << residualCor << endl;
+      cout << "EPOS File: " << EPOSFile << endl;
+      cout << "Use EPOS File: " << (useEPOSFile ? "true" : "false") << endl;
       cout << "MinZPT: " << MinZPT << " GeV/c" << endl;
       cout << "MaxZPT: " << MaxZPT << " GeV/c" << endl;
       cout << "MinZY: " << MinZY << "" << endl;
@@ -60,9 +62,9 @@ public:
       cout << "isData: " << (isData ? "true" : "false") << endl;
       cout << "isPPb: " << (isPPb ? "true" : "false") << endl;
       cout << "UseLeadingTrk: " << (useLeadingTrk ? "true" : "false") << endl;
-      cout << "UseResidualCor: " << (useResidualCor ? "true" : "false") << endl;
       cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
       cout << "UseEventWeight: " << (useEventWeight ? "true" : "false") << endl;
+      cout << "UseResidualWeight: " << (useResidualWeight ? "true" : "false") << endl;
       cout << "Scale factor: " << scaleFactor << endl;
       cout << "SumHF shift: " << shift << endl;
       cout << "MinHiBin: " << MinHiBin << endl;

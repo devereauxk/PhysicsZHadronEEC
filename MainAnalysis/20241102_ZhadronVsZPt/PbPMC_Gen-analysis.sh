@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Define common arguments
+source clean.sh
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/PbPMC_Gen.root --MixFile pPbSample/PbPMC_Gen.root --IsPP false --IsGenZ false --nMix 1"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/V0.2/PbPMC_Gen.root --MixFile pPbSample/V0.2/PbPMC_Gen.root --EPOSFile mergedEPOS/PbPMC_Gen.root --IsPP false --IsGenZ true --nMix 1 --IsData false --IsPPb false --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}
@@ -12,18 +13,18 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
       min_pt=${pt_range/_*/}
       max_pt=${pt_range/*_/}
 
-      echo ./finalAnalysis.sh "output/$1PbPMC_Gen_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" \
+      echo ./finalAnalysis.sh "output/PbPMC_Gen_${TAG}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" \
          $COMMON_ARGS --MinTrackPT "$min_pt" --MaxTrackPT "$max_pt" \
          --MinZPT "$min_zpt" --MaxZPT "$max_zpt"|bash
    done
 
    # Combine results for the current HiBin and ZPT range
-   hadd -f "plots/$1PbPMC_Gen_ZPT${min_zpt}_${max_zpt}-result.root" \
+   hadd -f "plots/PbPMC_Gen_${TAG}_ZPT${min_zpt}_${max_zpt}-result.root" \
        $(for pt_range in "${PT_RANGES[@]}"; do
-            echo "output/$1PbPMC_Gen_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
+            echo "output/PbPMC_Gen_${TAG}_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
          done)
-   hadd -f "plots/$1PbPMC_Gen_ZPT${min_zpt}_${max_zpt}-nosub.root" \
+   hadd -f "plots/PbPMC_Gen_${TAG}_ZPT${min_zpt}_${max_zpt}-nosub.root" \
        $(for pt_range in "${PT_RANGES[@]}"; do
-            echo "output/$1PbPMC_Gen_ZPT${min_zpt}_${max_zpt}-${pt_range}-nosub.root"
+            echo "output/PbPMC_Gen_${TAG}_ZPT${min_zpt}_${max_zpt}-${pt_range}-nosub.root"
          done)
 done
