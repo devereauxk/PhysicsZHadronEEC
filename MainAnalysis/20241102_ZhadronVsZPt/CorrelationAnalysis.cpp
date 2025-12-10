@@ -93,7 +93,7 @@ void addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
       hard->trackPt->push_back(ue->trackPt->at(i));
       hard->trackEta->push_back(ue->trackEta->at(i));
       hard->trackY->push_back(ue->trackY->at(i));
-      hard->trackPhi->push_back(ue->trackPhi->at(i)); // used for track counting
+      hard->trackPhi->push_back(ue->trackPhi->at(i));
       hard->trackMuTagged->push_back(ue->trackMuTagged->at(i));
       hard->trackWeight->push_back(ue->trackWeight->at(i));
       hard->trackResidualWeight->push_back(ue->trackResidualWeight->at(i));
@@ -103,10 +103,10 @@ void addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, TH2D *h, TH2D *hSub0, TH2D *hTrkPtEta, TH3D* hZPtEtaMult, TH1D* hVZ, const Parameters& par, TNtuple *nt = 0) {
+float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMessenger *MMixEvt, TH2D *h, TH2D *hSub0, TH3D *hTrkPtEtaPhi, TH3D* hZPtEtaMult, TH1D* hVZ, const Parameters& par, TNtuple *nt = 0) {
    float nZ = 0;
    h->Sumw2();
-   if (hTrkPtEta != 0) hTrkPtEta->Sumw2();
+   if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Sumw2();
    if (hZPtEtaMult != 0) hZPtEtaMult->Sumw2();
    par.printParameters();
    unsigned long nEntry = MZSignal->GetEntries() * par.scaleFactor;
@@ -131,9 +131,24 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
       MEPOS = new ZHadronMessenger(*fEPOS, string("Tree"));
    }
 
+   // open track residual correctors if needed
+   TrackResidualCorrector *corrector;
+   TrackResidualCorrector *corrector_0_10;
+   TrackResidualCorrector *corrector_10_20;
+   TrackResidualCorrector *corrector_20_40;
+   TrackResidualCorrector *corrector_40_500;
+   if (par.useResidualWeight) {
+      corrector_0_10   = new TrackResidualCorrector(Form("%s0-10.root",   par.residualWeightFile.c_str()));              
+      corrector_10_20  = new TrackResidualCorrector(Form("%s10-20.root",  par.residualWeightFile.c_str()));
+      corrector_20_40  = new TrackResidualCorrector(Form("%s20-40.root",  par.residualWeightFile.c_str()));
+      corrector_40_500 = new TrackResidualCorrector(Form("%s40-500.root", par.residualWeightFile.c_str()));              
+   }
+
+
    //==================================================//
    // loop over events
    //==================================================//
+   int mix_EPOS_i = 0;
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
 
@@ -191,8 +206,9 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
 
          // add UE to mix file particles from EPOS if needed
          if (par.useEPOSFile) {
-            MEPOS->GetEntry(mix_i % MEPOS->GetEntries());
+            MEPOS->GetEntry(mix_EPOS_i % MEPOS->GetEntries());
             addUEParticles(MMix, MEPOS);
+            mix_EPOS_i++;
          }
 
          //==================================================//
@@ -207,7 +223,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
             }
          }
          // check event indeed has the right orientation
-         if (!par.isPP && par.isData && isPPbEvent(MZSignal) != par.isPPb)  this_eventZWeight = 0;
+         //if (!par.isPP && par.isData && isPPbEvent(MZSignal) != par.isPPb)  this_eventZWeight = 0;
          //cout<<par.isPPb << " " << isPPbEvent(MZSignal) << " " << MZSignal->Run << " ::: " << this_eventZWeight << endl;
 
          nZ += this_eventZWeight;
@@ -251,16 +267,32 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
 
             float this_residualWeight = 1;
             if(par.useResidualWeight) {
+
+               if (zPt < 10) corrector = corrector_0_10;
+               else if (zPt >= 10 && zPt < 20) corrector = corrector_10_20;
+               else if (zPt >= 20 && zPt < 40) corrector = corrector_20_40;
+               else corrector = corrector_40_500;
+
+               float residualCorrection = corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
+               //this_residualWeight *= residualCorrection;
+               
                if (par.mix) {
                   this_residualWeight *= (*MMix->trackResidualWeight)[j];
                } else {
                   this_residualWeight *= (*MZSignal->trackResidualWeight)[j];
                }
+               
             }
 
             float weight = this_eventZWeight * this_trackWeight * this_residualWeight;
 
-            //cout<<trackPt<<" "<<this_trackWeight<<"  ("<<(MZSignal->EventWeight)<<" "<<(MZSignal->ZWeight)<<" "<<(MZSignal->VZWeight)<<") "<<this_eventZWeight<<" "<<weight<<endl;
+            /*
+            if (trackPt > 8) {
+               cout << "(" << trackPt << ", " << trackEta << ") "
+                   << "(" << this_eventZWeight << ", " << this_trackWeight << ", " << this_residualWeight << ") = "
+                   << weight << endl;
+            }
+                   */
             
             //==================================================//
             // fill central values
@@ -270,7 +302,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix, ZHadronMesseng
             h->Fill(trackDeta, trackDphi2, weight);
             h->Fill(-trackDeta, trackDphi2, weight);
 
-            if (hTrkPtEta != 0) hTrkPtEta->Fill(trackPt, trackEta, weight);
+            if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight);
          
          } // end track loop
 
@@ -289,7 +321,7 @@ public:
    TFile *inf, *mixFile, *mixFileClone, *outf;
    TNtuple *ntDiagnose;
    TH1D *hNZ, *hNZMix, *hVZ;
-   TH2D *hTrkPtEta;
+   TH3D *hTrkPtEtaPhi;
    TH3D *hZPtEtaMult;
    TH2D *h = 0, *hSub0 = 0, *hMix = 0;
    ZHadronMessenger *MZHadron, *MMix, *MMixEvt;
@@ -317,12 +349,12 @@ public:
       outf->cd();
       par.mix = false;
       h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
-      hTrkPtEta = new TH2D(Form("hTrkPtEta%s", title.c_str()), "", 100, 0, 100, 48, -2.4, 2.4);
+      hTrkPtEtaPhi = new TH3D(Form("hTrkPtEtaPhi%s", title.c_str()), "", 100, 0, 100, 48, -2.4, 2.4, 48, -M_PI, M_PI);
       hZPtEtaMult = new TH3D(Form("hZPtEtaMult%s", title.c_str()), "", 70, 0, 200, 30, -3, 3, 300, 0, 300);
       hVZ = new TH1D(Form("hVZ%s", title.c_str()), "", 40, -20, 20);
       hSub0 = new TH2D(Form("hSub0%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
-      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, h, hSub0, hTrkPtEta, hZPtEtaMult, hVZ, par)); // Dphi analysis
+      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, h, hSub0, hTrkPtEtaPhi, hZPtEtaMult, hVZ, par)); // Dphi analysis
 
       // Second histogram with mix=true
       par.mix = true;
@@ -339,14 +371,14 @@ public:
       smartWrite(hNZ);
       smartWrite(hNZMix);
       smartWrite(ntDiagnose);
-      smartWrite(hTrkPtEta);
+      smartWrite(hTrkPtEtaPhi);
       smartWrite(hZPtEtaMult);
       smartWrite(hVZ);
    }
 
 private:
    void deleteHistograms() {
-      delete h, hSub0, hMix, hNZ, hNZMix, hTrkPtEta, hZPtEtaMult, hVZ;
+      delete h, hSub0, hMix, hNZ, hNZMix, hTrkPtEtaPhi, hZPtEtaMult, hVZ;
    }
 };
 
@@ -387,6 +419,7 @@ int main(int argc, char *argv[])
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
    par.useEventWeight   = CL.GetBool  ("UseEventWeight", true);     // Default is false
    par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
+   par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.

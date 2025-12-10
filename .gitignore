@@ -1,3 +1,5 @@
 *.root
 *.png
 *.pdf
+CommonCode/binary
+CommonCode/library

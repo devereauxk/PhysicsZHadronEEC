@@ -3,7 +3,11 @@
 # Define common arguments
 source clean.sh
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/V0.2/PPbMC_Reco.root --MixFile pPbSample/V0.2/PPbMC_Reco.root --IsPP false --IsGenZ false --nMix 10 --IsData false --IsPPb true --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight --UseResidualWeight $UseResidualWeight"
+#Input="pPbSample/V0.2/PPbMC_Reco.root"
+Input="pPbSample/V0.3/PPbMC_Reco_Weight.root"
+ResidualWeightFile="residualWeights/20251023_TrackResidualCorrection_V14_PPb_zPt"
+
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input $Input --MixFile $Input --IsPP false --IsGenZ false --nMix 1 --IsData false --IsPPb true --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight --UseResidualWeight $UseResidualWeight --ResidualWeightFile $ResidualWeightFile"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}

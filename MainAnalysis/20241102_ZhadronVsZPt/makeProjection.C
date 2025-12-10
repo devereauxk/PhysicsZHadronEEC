@@ -36,7 +36,7 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     TH2D *hNZData = (TH2D*)file->Get("hNZData"); // Replace with your histogram name
     TH1D *hMixData = (TH1D*)file->Get("hMixData"); // Replace with your histogram name
     TH1D *hNZMixData = (TH1D*)file->Get("hNZMixData"); // Replace with your histogram name
-    TH2D *hTrkPtEta = (TH2D*)file->Get("hTrkPtEtaData"); // Replace with your histogram name
+    TH3D *hTrkPtEtaPhi = (TH3D*)file->Get("hTrkPtEtaPhiData"); // Replace with your histogram name
     TH3D *hZPtEtaMult = (TH3D*)file->Get("hZPtEtaMultData"); // Replace with your histogram name
     TH1D* hVZ = (TH1D*)file->Get("hVZData"); // Replace with your histogram name
 
@@ -73,8 +73,8 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hMixData->Scale(1. / hNZMixData->GetBinContent(1));
     TH1D *hDataAll = (TH1D*) hData->Clone(Form("hDataAll_%s",tag));
 
-    hTrkPtEta->SetName(Form("hTrkPtEtaData_%s",tag));
-    hTrkPtEta->Scale(1. / hNZData->GetBinContent(1));
+    hTrkPtEtaPhi->SetName(Form("hTrkPtEtaPhiData_%s",tag));
+    hTrkPtEtaPhi->Scale(1. / hNZData->GetBinContent(1));
     hZPtEtaMult->SetName(Form("hZPtEtaMult_%s",tag));
     hZPtEtaMult->Scale(1. / hNZData->GetBinContent(1));
     
@@ -105,7 +105,7 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hProjX->Write();
     hNZData->Write();
     hNZMixData->Write();
-    hTrkPtEta->Write();
+    hTrkPtEtaPhi->Write();
     hZPtEtaMult->Write();
     hVZ->Write();
     
