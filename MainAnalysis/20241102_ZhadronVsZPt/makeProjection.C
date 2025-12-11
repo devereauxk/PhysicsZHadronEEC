@@ -39,6 +39,7 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     TH3D *hTrkPtEtaPhi = (TH3D*)file->Get("hTrkPtEtaPhiData"); // Replace with your histogram name
     TH3D *hZPtEtaMult = (TH3D*)file->Get("hZPtEtaMultData"); // Replace with your histogram name
     TH1D* hVZ = (TH1D*)file->Get("hVZData"); // Replace with your histogram name
+    TH3D* hTrkResidualCorrectionPtEtaPhi = (TH3D*)file->Get("hTrkResidualCorrectionPtEtaPhiData"); // Replace with your histogram name
 
     hNZData->SetName(Form("hNZData_%s",tag));
     hNZMixData->SetName(Form("hNZMixData_%s",tag));
@@ -69,14 +70,19 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hData->SetName(Form("hData_%s",tag));
     hData->Scale(1. / hNZData->GetBinContent(1));
     cout<<"NZs: "<<hNZData->GetBinContent(1)<<endl;
+
     hMixData->SetName(Form("hMixData_%s",tag));
     hMixData->Scale(1. / hNZMixData->GetBinContent(1));
     TH1D *hDataAll = (TH1D*) hData->Clone(Form("hDataAll_%s",tag));
 
     hTrkPtEtaPhi->SetName(Form("hTrkPtEtaPhiData_%s",tag));
     hTrkPtEtaPhi->Scale(1. / hNZData->GetBinContent(1));
+
     hZPtEtaMult->SetName(Form("hZPtEtaMult_%s",tag));
     hZPtEtaMult->Scale(1. / hNZData->GetBinContent(1));
+
+    hTrkResidualCorrectionPtEtaPhi->SetName(Form("hTrkResidualCorrectionPtEtaPhi_%s",tag));
+    hTrkResidualCorrectionPtEtaPhi->Scale(1. / hNZData->GetBinContent(1));
     
     // Subtract hMixData from hData
     if (doSub) hData->Add(hMixData, -1);
@@ -108,6 +114,7 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hTrkPtEtaPhi->Write();
     hZPtEtaMult->Write();
     hVZ->Write();
+    hTrkResidualCorrectionPtEtaPhi->Write();
     
     // Cleanup: Close the file
     //file->Close();

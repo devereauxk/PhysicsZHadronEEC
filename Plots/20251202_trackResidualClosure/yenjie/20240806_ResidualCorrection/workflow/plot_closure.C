@@ -4,7 +4,7 @@
 #include <TF1.h>
 #include <iostream>
 
-#include "../../CommonCode/include/KylesPlotting.h" // Kyle's plotting utilities
+#include "../../../../../CommonCode/include/KylesPlotting.h" // Kyle's plotting utilities
 
 #include <vector>
 #include <string>
@@ -18,14 +18,14 @@ void plot_closure() {
 
     //PbP
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_track_nominal_ZPT40_500-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_track_nominal_ZPT40_500-result.root"
+        "output/DY-GEN.root",
+        "output/DY-RECO.root",
     };
     vector<string> labels = {
         "MC Gen + EPOS",
-        "MC Reco",
+        "MC Reco"
     };
-    const char* output =  "plots/PbP_ZPT40_500-0.5_500";
+    const char* output =  "plots/isPP";
 
 
     vector<TH1*> hTrkPt;
@@ -44,19 +44,16 @@ void plot_closure() {
         }
 
         // track pt eta phi
-        TH3D* this_hTrkPtEtaPhi = (TH3D*)fin->Get(Form("hTrkPtEtaPhiData_0.5_500"));
+        TH3D* this_hTrkPtEtaPhi = (TH3D*)fin->Get("h3D");
         TH1D* this_hTrkPt = this_hTrkPtEtaPhi->ProjectionX(Form("trkPt_%s", labels[i].c_str()));
         TH1D* this_hTrkEta = this_hTrkPtEtaPhi->ProjectionY(Form("trkEta_%s", labels[i].c_str()));
         TH1D* this_hTrkPhi = this_hTrkPtEtaPhi->ProjectionZ(Form("trkPhi_%s", labels[i].c_str()));
 
-        // delta phi, delta eta
-        TH1D* this_hDeltaEta = (TH1D*)fin->Get("DeltaEta_Result0.5_500");
-        this_hDeltaEta->SetName(Form("DeltaEta_%s", labels[i].c_str()));
-        TH1D* this_hDeltaPhi = (TH1D*)fin->Get("DeltaPhi_Result0.5_500");
-        this_hDeltaPhi->SetName(Form("DeltaPhi_%s", labels[i].c_str()));
+        TH1D* hNZ = (TH1D*)fin->Get("hNZ");
 
-        this_hDeltaEta->Scale(0.5); // scale by 0.5 since we double count during filling
-        this_hDeltaPhi->Scale(0.5);
+        this_hTrkPt->Scale(1.0 / hNZ->GetBinContent(1));
+        this_hTrkEta->Scale(1.0 / hNZ->GetBinContent(1));
+        this_hTrkPhi->Scale(1.0 / hNZ->GetBinContent(1));
 
         divideByWidth(this_hTrkPt);
         divideByWidth(this_hTrkEta);
@@ -65,9 +62,6 @@ void plot_closure() {
         hTrkPt.push_back(this_hTrkPt);
         hTrkEta.push_back(this_hTrkEta);
         hTrkPhi.push_back(this_hTrkPhi);
-
-        hDeltaEta.push_back(this_hDeltaEta);
-        hDeltaPhi.push_back(this_hDeltaPhi);
 
         i++;
     }
@@ -80,8 +74,8 @@ void plot_closure() {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "p_{T}^{ch}", 0, 10,
-        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -27, 160,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -1, -1,
+        "Ratio to Gen+EPOS", 0.9, 1.1,
         0,
         true, false, false
     );
@@ -126,58 +120,5 @@ void plot_closure() {
 
     cTrk3->Update();
     cTrk3->SaveAs(Form("%s-phi.pdf", output));
-
-
-    // make canvas
-    TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);
-
-    TPad* p1 = (TPad*) plotCMSRatio(
-        hDeltaEta, "", labels,
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "#Delta y_{ch,Z}", -4, 4,
-        "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1.5, 1.5,
-        "Ratio to Gen+EPOS", 0.5, 1.5,
-        0,
-        false, false, false
-    );
-
-    AddCMSHeader(
-        p1,
-        "Internal",
-        false
-    );
-
-    AddUPCHeader(p1, "8 TeV", "pPb");
-    p1->Update();
-
-    c1->SaveAs(Form("%s-DeltaEta.pdf", output));
-
-
-
-    // make canvas
-    TCanvas* c2 = new TCanvas("c2", "c2", 600, 600);
-    
-    TPad* p2 = (TPad*) plotCMSRatio(
-        hDeltaPhi, "", labels,
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "#Delta#phi_{ch,Z}", -1.5758, 4.7275,
-        "d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -2.5, 9,
-        "Ratio to Gen+EPOS", 0, 2,
-        0,
-        false, false, false
-    );
-
-    AddCMSHeader(
-        p2,
-        "Internal",
-        false
-    );
-
-    AddUPCHeader(p2, "8 TeV", "pPb");
-    p2->Update();
-
-    c2->SaveAs(Form("%s-DeltaPhi.pdf", output));
 
 }
