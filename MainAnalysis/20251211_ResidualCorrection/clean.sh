@@ -1,9 +1,9 @@
 THISFOLDER=$(pwd)
 rm ExecuteCorrelationAnalysis
-rm -rf ../../../../CommonCode/binary/
-rm -rf ../../../../CommonCode/library/
+rm -rf ../../CommonCode/binary/
+rm -rf ../../CommonCode/library/
 
-cd ../../../../
+cd ../../
 source SetupAnalysis.sh
 cd CommonCode/
 make

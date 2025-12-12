@@ -168,17 +168,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    int deltaI = (iEnd - iStart) / 100 + 1;
    float dPhi_threshold = M_PI / 2;
 
-   // open EPOS file if needed
-   /*
-   ZHadronMessenger *MEPOS = nullptr;
-   if (par.useEPOSFile) {
-      TFile *fEPOS = TFile::Open(par.EPOSFile.c_str());
-      if (!fEPOS || fEPOS->IsZombie()) {
-         return -1;
-      }
-      MEPOS = new ZHadronMessenger(*fEPOS, string("Tree"));
-   }
-
    // open track residual correctors if needed
    TrackResidualCorrector *corrector;
    TrackResidualCorrector *corrector_0_10;
@@ -191,7 +180,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       corrector_20_40  = new TrackResidualCorrector(Form("%s20-40.root",  par.residualWeightFile.c_str()));
       corrector_40_500 = new TrackResidualCorrector(Form("%s40-500.root", par.residualWeightFile.c_str()));              
    }
-      */
 
 
    //==================================================//
@@ -219,30 +207,26 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          else zY = -(zY + par.yBoost);
       }
 
-      // add UE to signal file particles from EPOS if needed
-      /*
-      if (par.useEPOSFile) {
-         MEPOS->GetEntry(i % MEPOS->GetEntries());
-         addUEParticles(MZSignal, MEPOS);
-      }
-      */
-
       if (par.useEPOSFile) MZUE->GetEntry(i);
 
       //==================================================//
       // residual correction
       //==================================================//
+      if (zPt < 10) corrector = corrector_0_10;
+      else if (zPt >= 10 && zPt < 20) corrector = corrector_10_20;
+      else if (zPt >= 20 && zPt < 40) corrector = corrector_20_40;
+      else corrector = corrector_40_500;
+
       for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
          if (!trackSelection(MZSignal, par, j)) continue;
          float trackPhi  = (*MZSignal->trackPhi)[j];
          if (trackPhi<0) trackPhi+= 2 * M_PI;
          float trackEta  = (*MZSignal->trackEta)[j];
          float trackPt   = (*MZSignal->trackPt)[j];
-         //float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
          float weight = 1; //MZSignal->EventWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
                //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
                weight*= (*MZSignal->trackWeight)[j]/(*MZSignal->trackResidualWeight)[j];
-               //weight*= residualCorrection;
+               if (par.useResidualWeight) weight*= corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
          if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight); // coopted
       }
       if (par.useEPOSFile){
@@ -252,12 +236,10 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             if (trackPhi<0) trackPhi+= 2 * M_PI;
             float trackEta  = (*MZUE->trackEta)[j];
             float trackPt   = (*MZUE->trackPt)[j];
-            //float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
             float weight = 1; //MZUE->EventWeight; //MZUE->ZWeight: somehow the Z weight in gen and reco are different.
                   //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
                   weight*= (*MZUE->trackWeight)[j]/(*MZUE->trackResidualWeight)[j];
-                  //weight*= residualCorrection;
-            //if (trackPt>20) cout <<"track pt: "<<trackPt<<" "<<residualCorrection<<endl;       
+                  if (par.useResidualWeight) weight*= corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
             if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight); // coopted
          }
       }

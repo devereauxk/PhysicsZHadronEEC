@@ -5,7 +5,7 @@ source clean.sh
 source config.sh
 #Input="pPbSample/V0.2/PPbMC_Reco.root"
 Input="pPbSample/V0.3/PPbMC_Reco_Weight.root"
-ResidualWeightFile="residualWeights/20251023_TrackResidualCorrection_V14_PPb_zPt"
+ResidualWeightFile="my_residualWeights/20251212_TrackResidualCorrection_V16_PPb_zPt"
 
 COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input $Input --MixFile $Input --IsPP false --IsGenZ false --nMix 1 --IsData false --IsPPb true --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight --UseResidualWeight $UseResidualWeight --ResidualWeightFile $ResidualWeightFile"
 

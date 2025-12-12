@@ -6,9 +6,9 @@ source config.sh
 #Input="pPbSample/V0.2/PPbMC_Reco.root"
 #Input="pPbSample/V0.2/PbPMC_Reco.root"
 Input="mergedSample/PbPMC_Reco_v0.2.root"
-ResidualWeightFile="residualWeights/20251023_TrackResidualCorrection_V14_PbP_zPt"
+ResidualWeightFile="my_residualWeights/20251212_TrackResidualCorrection_V16_PbP_zPt"
 
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input $Input --MixFile $Input --IsPP true --IsGenZ true --nMix 1 --IsData false --IsPPb false --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight --UseResidualWeight $UseResidualWeight --ResidualWeightFile $ResidualWeightFile"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input $Input --MixFile $Input --IsPP false --IsGenZ true --nMix 1 --IsData false --IsPPb false --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight --UseResidualWeight $UseResidualWeight --ResidualWeightFile $ResidualWeightFile"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}

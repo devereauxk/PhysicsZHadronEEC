@@ -9,24 +9,23 @@
 #include <vector>
 #include <string>
 
-void plot_closure() {
+void plot_closure_pPb() {
 
     // The first input file is considered the baseline (Gen+EPOS)
     // currently using a certain ZPT and track PT range
-    // track pT: 0.5-10 GeV
-    // Z pT: 0-40 GeV
 
-    //PbP
+    //pPb
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_track_nominal_ZPT40_500-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_track_nominal_ZPT40_500-result.root"
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_track_nominal_V16_ZPT40_500-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_track_nominal_V16_ZPT40_500-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_track_residual_V16_ZPT40_500-result.root"
     };
     vector<string> labels = {
         "MC Gen + EPOS",
         "MC Reco",
+        "MC Reco (residual)"
     };
-    const char* output =  "plots/PbP_ZPT40_500-0.5_500";
-
+    const char* output =  "plots/pPb_ZPT40_500-0.5_500_V16";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;

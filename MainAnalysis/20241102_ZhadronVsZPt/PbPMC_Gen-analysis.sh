@@ -3,7 +3,7 @@
 # Define common arguments
 source clean.sh
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/V0.2/PbPMC_Gen.root --MixFile pPbSample/V0.2/PbPMC_Gen.root --IsPP true --IsGenZ true --nMix 1 --IsData false --IsPPb false --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight"
+COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input pPbSample/V0.2/PbPMC_Gen.root --MixFile pPbSample/V0.2/PbPMC_Gen.root --IsPP false --IsGenZ true --nMix 1 --IsData false --IsPPb false --yBoost $yBoost --UseTrackWeight $UseTrackWeight --UseEventWeight $UseEventWeight"
 
 if [ "${EmbedEPOS}" -eq 1 ]; then
    COMMON_ARGS="$COMMON_ARGS --EPOSFile mergedEPOS/PbPMC_Gen.root"

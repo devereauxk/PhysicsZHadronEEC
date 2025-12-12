@@ -6,7 +6,7 @@ UseEventWeight=0
 UseResidualWeight=0
 yBoost=0
 EmbedEPOS=1
-TAG="track_nominal"
+TAG="track_nominal_V16"
 
 # nominal = track + event, (if gen) EPOS
 # residual = nominal + residual
