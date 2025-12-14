@@ -12,9 +12,7 @@ root -l -q -b "merge_corrections.C(\"output/correction_1.root\",\"output/correct
 root -l -q -b correction.C
 mv correction.root output/correction_3.root
 
-root -l -q -b plot_corrections.C+
-#mv corrections.pdf corrections_pp_$minZpt_$maxZpt.pdf
+root -l -q -b plot_corrections.C
+mv corrections.pdf corrections_pp_${minZpt}_${maxZpt}.pdf
 
-root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"output/20251014_TrackResidualCorrection_V14_zPt$minZpt_$maxZpt_pp.root\")"
-
-
+root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"output/20251214_TrackResidualCorrection_V17_pp_zPt${minZpt}-${maxZpt}.root\")"

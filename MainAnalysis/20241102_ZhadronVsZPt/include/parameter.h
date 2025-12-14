@@ -36,7 +36,6 @@ public:
    bool isJewel;             // Flag to check if this is a Jewel analysis
    int ExtraZWeight;
    bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
-   bool useLeadingTrk;    // Flag to see if we use leading track direction as the reference, replacing the role of Z.
    bool useTrackWeight;      // Flag to see if we use track efficiency correction
    bool useEventWeight;      // Flag to see if we use event efficiency correction
    bool useResidualWeight;   // Flag to see if we use residual correction
@@ -62,7 +61,6 @@ public:
       cout << "isPP: " << (isPP ? "true" : "false") << endl;
       cout << "isData: " << (isData ? "true" : "false") << endl;
       cout << "isPPb: " << (isPPb ? "true" : "false") << endl;
-      cout << "UseLeadingTrk: " << (useLeadingTrk ? "true" : "false") << endl;
       cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
       cout << "UseEventWeight: " << (useEventWeight ? "true" : "false") << endl;
       cout << "UseResidualWeight: " << (useResidualWeight ? "true" : "false") << endl;
