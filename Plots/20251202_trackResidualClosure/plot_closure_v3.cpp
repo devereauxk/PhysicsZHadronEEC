@@ -1,35 +1,43 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TH2D.h>
+#include <TH3D.h>
 #include <TF1.h>
 #include <iostream>
+using namespace std;
 
 #include "../../CommonCode/include/KylesPlotting.h" // Kyle's plotting utilities
+
+#include "CommandLine.h"
+#include "SetStyle.h"
 
 #include <vector>
 #include <string>
 
-void plot_closure_pPb_v2() {
+int main(int argc, char *argv[]) {
 
-    // The first input file is considered the baseline (Gen+EPOS)
-    // currently using a certain ZPT and track PT range
+    CommandLine CL(argc, argv);
 
-    string collisionType = "pPb";
-    string zPtRange = "40_500";
-    string tag = "V16_nmix5";
+    string collisionType = CL.Get("collisionType", "pPb");
+    string zPtRange = CL.Get("zPtRange", "40_500");
+    string tag = CL.Get("tag", "V16_nmix5");
 
-    //pPb
+    cout<<"Collision Type: "<<collisionType<<endl;
+    cout<<"Z Pt Range: "<<zPtRange<<endl;
+    cout<<"Tag: "<<tag<<endl;
+
+    // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_luna_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_residual_%s_luna_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_V16_nmix5_ZPT%s", collisionType.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_residual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "MC Gen + EPOS",
         "MC Reco",
-        "MC Reco (corrected, skim)",
+        "MC Reco (corrected)",
     };
-    string output = Form("plots/%s/%s_ZPT%s_%s-nosub-skim-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), tag.c_str());
+    string output = Form("plots/%s/%s_ZPT%s_%s-nosub-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), tag.c_str());
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
@@ -47,6 +55,9 @@ void plot_closure_pPb_v2() {
     // Loop over nosub files
     int i = 0;
     for (const auto& input_ZPT : input_ZPT_files) {
+
+        cout<<"opening file: "<<Form("%s-nosub.root", input_ZPT.c_str())<<endl;
+
         TFile* fin = TFile::Open(Form("%s-nosub.root", input_ZPT.c_str()), "READ");
         if (!fin || fin->IsZombie()) {
             std::cerr << "Error: Unable to open file " << input_ZPT << std::endl;
@@ -81,6 +92,9 @@ void plot_closure_pPb_v2() {
         TH1D* this_hDeltaPhi_mix = this_hMixData2D->ProjectionY(Form("hMixPhi_%d", i), 0, 10);
         TH1D* this_hDeltaEta_mix = this_hMixData2D->ProjectionX(Form("hMixEta_%d", i), 6, 10);
 
+        divideByWidth(this_hDeltaPhi_mix);
+        divideByWidth(this_hDeltaEta_mix);
+
         hMixData.push_back(this_hMixData2D);
         hDeltaEta_mix.push_back(this_hDeltaEta_mix);
         hDeltaPhi_mix.push_back(this_hDeltaPhi_mix);
@@ -93,6 +107,9 @@ void plot_closure_pPb_v2() {
         TH1D* this_hDeltaPhi_my = this_myResult2D->ProjectionY(Form("DeltaPhi_my_%d", i), 0, 10);
         TH1D* this_hDeltaEta_my = this_myResult2D->ProjectionX(Form("DeltaEta_my_%d", i), 6, 10);
 
+        divideByWidth(this_hDeltaPhi_my);
+        divideByWidth(this_hDeltaEta_my);
+
         hDeltaEta_my.push_back(this_hDeltaEta_my);
         hDeltaPhi_my.push_back(this_hDeltaPhi_my);
 
@@ -103,11 +120,12 @@ void plot_closure_pPb_v2() {
     vector<TH1*> hDeltaEta;
     vector<TH1*> hDeltaPhi;
 
-    for (int i = 0; i < input_ZPT_files.size(); i++) {
-        TFile* fin = TFile::Open(Form("%s-result.root", input_ZPT_files[i].c_str()), "READ");
-        cout<<"Opening file: "<<Form("%s-result.root", input_ZPT_files[i].c_str())<<endl;
+    for (const auto& input_ZPT : input_ZPT_files) {
+
+        TFile* fin = TFile::Open(Form("%s-result.root", input_ZPT.c_str()), "READ");
+        
         if (!fin || fin->IsZombie()) {
-            std::cerr << "Error: Unable to open file " << input_ZPT_files[i] << std::endl;
+            std::cerr << "Error: Unable to open file " << input_ZPT << std::endl;
             continue;
         }
 
@@ -118,6 +136,8 @@ void plot_closure_pPb_v2() {
 
         hDeltaEta.push_back(this_hDeltaEta);
         hDeltaPhi.push_back(this_hDeltaPhi);
+
+        i++;
         
     }
 
@@ -192,9 +212,9 @@ void plot_closure_pPb_v2() {
         markerColors, markerStyles,
         "All #Delta y_{ch,Z}", -4, 4,
         "d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
-        "Ratio to Gen+EPOS", 0.9, 1.1,
+        "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
-        false, false, false
+        false, false, true
     );
 
     AddCMSHeader(
@@ -217,10 +237,10 @@ void plot_closure_pPb_v2() {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "All #Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "Ratio to Gen+EPOS", 0.9, 1.1,
+        "d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", 15, 50,
+        "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
-        false, false, false
+        false, false, true
     );
 
     AddCMSHeader(
@@ -242,9 +262,9 @@ void plot_closure_pPb_v2() {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Mixed d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
-        "Ratio to Gen+EPOS", 0.9, 1.1,
+        "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
-        false, false, false
+        false, false, true
     );
 
     AddCMSHeader(
@@ -262,10 +282,10 @@ void plot_closure_pPb_v2() {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "Mixed d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "Ratio to Gen+EPOS", 0.9, 1.1,
+        "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", 15, 50,
+        "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
-        false, false, false
+        false, false, true
     );
 
     AddCMSHeader(
@@ -284,10 +304,10 @@ void plot_closure_pPb_v2() {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
-        "Result d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
-        "Ratio to Gen+EPOS", 0.9, 1.1,
+        "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
+        "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
-        false, false, false
+        false, false, true
     );
 
     AddCMSHeader(
@@ -306,9 +326,9 @@ void plot_closure_pPb_v2() {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "Ratio to Gen+EPOS", 0.9, 1.1,
+        "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
-        false, false, false
+        false, false, true
     );
 
     AddCMSHeader(
@@ -326,10 +346,10 @@ void plot_closure_pPb_v2() {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
-        "Result d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
-        "Ratio to Gen+EPOS", 0.9, 1.1,
+        "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
+        "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
-        false, false, false
+        false, false, true
     );
 
     AddCMSHeader(
@@ -356,4 +376,6 @@ void plot_closure_pPb_v2() {
     }
     fout->Close();
     */
+
+    return 0;
 }

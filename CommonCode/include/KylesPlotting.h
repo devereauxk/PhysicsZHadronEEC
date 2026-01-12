@@ -162,7 +162,7 @@ void plotRatioLogy(vector<TH1*> hists, const char* title, vector<string> labels,
 
             // Calculate statistical errors for the ratio
             if (errorBars) {
-                setErrors(hRatio, hist, hists.at(baseline));
+                //setErrors(hRatio, hist, hists.at(baseline));
                 hRatio->Draw("E SAME");
             } else {
                 hRatio->Draw("HIST SAME");
@@ -457,7 +457,8 @@ TPad* plotCMSRatio(vector<TH1*> hists, const char* title, vector<string> labels,
     const char* xTitle, double xmin, double xmax,
     const char* yTitle, double ymin, double ymax,
     const char* rTitle, double rmin, double rmax,
-    int baseline = 0, bool logx = false, bool logy = false,
+    int baseline = 0,
+    bool logx = false, bool logy = false,
     bool errorBars = true) {
 
     // linestyle options
@@ -547,10 +548,17 @@ TPad* plotCMSRatio(vector<TH1*> hists, const char* title, vector<string> labels,
             }
         }
 
-        if (linestyles[i] == 0) hist->Draw("SAME");
-        else if (linestyles[i] == -1) hist->Draw("P SAME");
-        else hist->Draw("HIST SAME");
+        // get draw command sequence
+        string drawCommand = "SAME";
+
+        if (linestyles[i] == -1) drawCommand = "P " + drawCommand;
+        else if (linestyles[i] != 0) drawCommand = "HIST " + drawCommand;
+
+        if (errorBars && linestyles[i] == -1) drawCommand = "E " + drawCommand;
+
+        hist->Draw(drawCommand.c_str());
         
+
         if (linestyles[i] == 0) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "pl");
         else if (linestyles[i] == -1) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "p");
         else leg->AddEntry(hist, Form("%s", labels[i].c_str()), "l");
@@ -559,6 +567,13 @@ TPad* plotCMSRatio(vector<TH1*> hists, const char* title, vector<string> labels,
         if (i != baseline) {
             TH1* hRatio = (TH1*)hist->Clone(Form("ratio_%s_%d", title, i));
             hRatio->Divide(hists[baseline]);
+
+            /*
+            cout<<"num : " << hist->GetBinContent(3) << " +/- " << hist->GetBinError(3) << endl;
+            cout<<"denom : " << hists[baseline]->GetBinContent(3) << " +/- " << hists[baseline]->GetBinError(3) << endl;
+            cout<<"ratio : " << hRatio->GetBinContent(3) << " +/- " << hRatio->GetBinError(3) << endl;
+            */
+
             hRatio->GetXaxis()->SetTitle(xTitle);
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
@@ -571,11 +586,9 @@ TPad* plotCMSRatio(vector<TH1*> hists, const char* title, vector<string> labels,
             hRatio->SetLineColor(linecolors[i]);
             hRatio->SetLineStyle(linestyles[i]);
             hRatio->SetLineWidth(2);
-            hRatio->Draw("HIST SAME");
 
             // Draw error bars on the ratio plot if requested
             if (errorBars) {
-                setErrors(hRatio, hist, hists.at(baseline));
                 hRatio->Draw("E SAME");
             } else {
                 hRatio->Draw("HIST SAME");
@@ -718,7 +731,7 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
 
             // Draw error bars on the ratio plot if requested
             if (errorBars) {
-                setErrors(hRatio, hist, hists.at(baseline));
+                //setErrors(hRatio, hist, hists.at(baseline));
                 hRatio->Draw("E SAME");
             } else {
                 hRatio->Draw("HIST SAME");

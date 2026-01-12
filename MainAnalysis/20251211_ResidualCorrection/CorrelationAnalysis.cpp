@@ -128,7 +128,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
              float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
              float weight = 1; //MZSignal->EventWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
 	                 //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
-                   weight*= (*MZSignal->trackWeight)[j]/(*MZSignal->trackResidualWeight)[j];
+                   weight*= (*MZSignal->trackWeight)[j]; // /(*MZSignal->trackResidualWeight)[j];
                    weight*= residualCorrection;
              //if (trackPt>20) cout <<"track pt: "<<trackPt<<" "<<residualCorrection<<endl;       
              h->Fill( trackPt, trackEta, trackPhi, weight);
@@ -143,7 +143,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
                 float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
                 float weight = 1; //MZUE->EventWeight; //MZUE->ZWeight: somehow the Z weight in gen and reco are different.
    	                 //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
-                      weight*= (*MZUE->trackWeight)[j]/(*MZUE->trackResidualWeight)[j];
+                      weight*= (*MZUE->trackWeight)[j]; ///(*MZUE->trackResidualWeight)[j];
                       weight*= residualCorrection;
                 //if (trackPt>20) cout <<"track pt: "<<trackPt<<" "<<residualCorrection<<endl;       
                 h->Fill( trackPt, trackEta, trackPhi, weight);

@@ -16,11 +16,11 @@ void plot_central_pPb() {
 
     //pPb
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_residual_V17_nmix5_ZPT0_20-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_V16_nmix5_ZPT0_20-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_V16_nmix5_ZPT0_20-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_residual_V16_nmix5_ZPT0_20-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_residual_V16_nmix5_ZPT0_20-result.root"
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_residual_V17_nmix5_ZPT0_10-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_V16_nmix5_ZPT0_10-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_V16_nmix5_ZPT0_10-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_residual_V16_nmix5_ZPT0_10-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_residual_V16_nmix5_ZPT0_10-result.root"
     };
     vector<string> labels = {
         "pp DATA",
@@ -29,8 +29,8 @@ void plot_central_pPb() {
         "MC Reco (corrected)",
         "pPb DATA (corrected)"
     };
-    const char* pT_range = "0.5_3";
-    const char* output =  "plots/pp-pPb_ZPT0_20-0.5_3_nmix5-data";
+    const char* pT_range = "1_2";
+    const char* output =  "plots/pp-pPb_ZPT0_10-1_2_nmix5-data";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
@@ -191,7 +191,7 @@ void plot_central_pPb() {
 
 
     // save histograms
-    TFile* fout = TFile::Open(Form("%s-closure.root", output), "RECREATE");
+    TFile* fout = TFile::Open(Form("%s.root", output), "RECREATE");
     fout->cd();
     for (size_t i = 0; i < hTrkPt.size(); i++) {
         hTrkPt[i]->Write();

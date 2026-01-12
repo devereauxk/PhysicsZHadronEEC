@@ -3,13 +3,11 @@
 # Define common arguments
 source clean.sh
 source config.sh
-COMMON_ARGS="--Input pPbSample/V0.2/PbPMC_Gen.root --MixFile pPbSample/V0.2/PbPMC_Gen.root --IsPP false --IsGenZ true --IsData false --IsPPb false"
+COMMON_ARGS="--IsPP false --IsGenZ true --IsData false --IsPPb false"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}
    max_zpt=${zpt_range/*_/}
-
-   echo "max_zpt : $max_zpt" 
 
    for pt_range in "${PT_RANGES[@]}"; do
       min_pt=${pt_range/_*/}

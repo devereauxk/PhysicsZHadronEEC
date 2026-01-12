@@ -3,7 +3,7 @@
 # Define common arguments
 source clean.sh
 source config.sh
-COMMON_ARGS="--Input pPbSample/V0.2/PbPMC_Reco.root --MixFile pPbSample/V0.2/PbPMC_Reco.root --IsPP false --IsGenZ false --IsData false --IsPPb false"
+COMMON_ARGS="--IsPP false --IsGenZ false --IsData false --IsPPb false"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}

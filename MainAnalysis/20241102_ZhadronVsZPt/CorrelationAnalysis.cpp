@@ -105,6 +105,17 @@ void addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
    }
 }
 
+bool isSameZpTBin(float zPt_sig, float zPt_bkg) {
+   if (zPt_sig < 10 && zPt_bkg < 10)         return true;
+   if (zPt_sig >= 10 && zPt_sig < 20 &&
+         zPt_bkg >= 10 && zPt_bkg < 20)      return true;
+   if (zPt_sig >= 20 && zPt_sig < 40 &&
+         zPt_bkg >= 20 && zPt_bkg < 40)      return true;
+   if (zPt_sig >= 40 && zPt_bkg >= 40)       return true;
+
+   return false;
+}
+
 double* getLogBins(float min, float max, int nBins) {
    double* bins = new double[nBins + 1];
    double logMin = log10(min);
@@ -128,7 +139,7 @@ double* getLinBins(float min, float max, int nBins) {
 
    return bins;
 }
-
+ 
 
 //============================================================//
 // Z hadron dphi calculation
@@ -136,12 +147,13 @@ double* getLinBins(float min, float max, int nBins) {
 float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                ZHadronMessenger *MMixEvt, ZHadronMessenger *MZUE,    
                TH2D *h, TH2D *hSub0, TH3D *hTrkPtEtaPhi, TH3D* hZPtEtaMult,
-               TH1D* hVZ, TH3D* hTrkResidualCorrectionPtEtaPhi,
+               TH1D* hVZ, TH1D* hZmass, TH3D* hTrkResidualCorrectionPtEtaPhi,
                const Parameters& par, TNtuple *nt = 0) {
    float nZ = 0;
    h->Sumw2();
    if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Sumw2();
    if (hZPtEtaMult != 0) hZPtEtaMult->Sumw2();
+   if (hZmass != 0) hZmass->Sumw2();
    if (hTrkResidualCorrectionPtEtaPhi != 0) hTrkResidualCorrectionPtEtaPhi->Sumw2();
    par.printParameters();
    unsigned long nEntry = MZSignal->GetEntries() * par.scaleFactor;
@@ -162,7 +174,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    TrackResidualCorrector *corrector_10_20;
    TrackResidualCorrector *corrector_20_40;
    TrackResidualCorrector *corrector_40_500;
-   if (par.useResidualWeight) {
+   if (par.useResidualWeight && par.residualWeightFile != "") {
       corrector_0_10   = new TrackResidualCorrector(Form("%s0-10.root",   par.residualWeightFile.c_str()));              
       corrector_10_20  = new TrackResidualCorrector(Form("%s10-20.root",  par.residualWeightFile.c_str()));
       corrector_20_40  = new TrackResidualCorrector(Form("%s20-40.root",  par.residualWeightFile.c_str()));
@@ -189,6 +201,9 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
+      float zMass = (par.isGenZ ? (*MZSignal->genZMass)[0] : (*MZSignal->zMass)[0]);
+
+      if(hZmass != 0) hZmass->Fill(zMass);
 
       // boost to CM frame
       if (par.yBoost != 0) {
@@ -218,8 +233,13 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          float trackPt   = (*MZSignal->trackPt)[j];
          float weight = 1; //MZSignal->EventWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
                //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
-               weight*= (*MZSignal->trackWeight)[j]/(*MZSignal->trackResidualWeight)[j];
-               if (par.useResidualWeight) weight*= corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
+               weight*= (*MZSignal->trackWeight)[j];
+               if (par.useResidualWeight)
+               {
+                  weight /= (*MZSignal->trackResidualWeight)[j];
+                  if (par.residualWeightFile != "") weight *= corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
+               }
+               
          if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight); // coopted
       }
 
@@ -238,13 +258,18 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                if (mix_i >= MMixEvt->GetEntries()) mix_i = 0;
                if (mixstart_i == mix_i) break;
                MMixEvt->GetEntry(mix_i);
+
+               // event selection
+               if (!eventSelection(MMixEvt, par)) continue;
+
                // only mix PPb with PPb and PbP with PbP
                if (!par.isPP && par.isData && isPPbEvent(MZSignal) != isPPbEvent(MMixEvt)) continue;
-               if (par.isSelfMixing) {
-                  if (eventSelection(MMixEvt, par) && i != mix_i) foundMix = true;
-               } else {
-                  if (matching(MZSignal, MMixEvt, par.shift)) foundMix = true;
-               }
+
+               // only mix with Z events of similar Z pT
+               float mix_zPt = (par.isGenZ ? (*MMixEvt->genZPt)[0] : (*MMixEvt->zPt)[0]);
+               if (!isSameZpTBin(zPt, mix_zPt)) continue;
+
+               if (i != mix_i) foundMix = true;
             }
          }
          
@@ -315,15 +340,22 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
             if(par.useTrackWeight) {
                if (par.mix) {
-                  this_trackWeight *= (*MMix->trackWeight)[j] / (*MMix->trackResidualWeight)[j];
+                  this_trackWeight *= (*MMix->trackWeight)[j];
                } else {
-                  this_trackWeight *= (*MZSignal->trackWeight)[j] / (*MZSignal->trackResidualWeight)[j];
+                  this_trackWeight *= (*MZSignal->trackWeight)[j];
                }
             }
 
             if(par.useResidualWeight) {
-               float residualCorrection = corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
-               this_residualWeight *= residualCorrection;
+               if (par.mix) {
+                  this_residualWeight /= (*MMix->trackResidualWeight)[j];
+               } else {
+                  this_residualWeight /= (*MZSignal->trackResidualWeight)[j];
+               }
+               if (par.residualWeightFile != "")
+               {
+                  this_residualWeight *= corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
+               }
             }
 
             float weight = this_eventZWeight * this_trackWeight * this_residualWeight;
@@ -357,6 +389,7 @@ public:
    TH1D *hNZ, *hNZMix, *hVZ;
    TH3D *hTrkPtEtaPhi;
    TH3D *hZPtEtaMult;
+   TH1D *hZmass;
    TH2D *h = 0, *hSub0 = 0, *hMix = 0;
    ZHadronMessenger *MZHadron, *MMix, *MMixEvt, *MZHadronUE;
    string title;
@@ -425,15 +458,17 @@ public:
 
       hTrkResidualCorrectionPtEtaPhi = new TH3D(Form("hTrkResidualCorrectionPtEtaPhi%s", title.c_str()), "", nbinsX, &binEdgesX[0], nbinsY, &binEdgesY[0], nbinsZ, &binEdgesZ[0]);
 
+      hZmass = new TH1D(Form("hZmass%s", title.c_str()), "", 40, 60, 120);
+
       hSub0 = new TH2D(Form("hSub0%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
-      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, MZHadronUE, h, hSub0, hTrkPtEtaPhi, hZPtEtaMult, hVZ, hTrkResidualCorrectionPtEtaPhi, par)); // Dphi analysis
+      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, MZHadronUE, h, hSub0, hTrkPtEtaPhi, hZPtEtaMult, hVZ, hZmass, hTrkResidualCorrectionPtEtaPhi, par)); // Dphi analysis
 
       // Second histogram with mix=true
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
-      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, MZHadronUE, hMix, 0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
+      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {
@@ -447,12 +482,13 @@ public:
       smartWrite(hTrkPtEtaPhi);
       smartWrite(hZPtEtaMult);
       smartWrite(hVZ);
+      smartWrite(hZmass);
       smartWrite(hTrkResidualCorrectionPtEtaPhi);
    }
 
 private:
    void deleteHistograms() {
-      delete h, hSub0, hMix, hNZ, hNZMix, hTrkPtEtaPhi, hZPtEtaMult, hVZ, hTrkResidualCorrectionPtEtaPhi;
+      delete h, hSub0, hMix, hNZ, hNZMix, hTrkPtEtaPhi, hZPtEtaMult, hVZ, hZmass, hTrkResidualCorrectionPtEtaPhi;
    }
 };
 

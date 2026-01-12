@@ -16,16 +16,16 @@ void plot_closure_PbP_v2() {
 
     //PbP
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_V16_nmix10_ZPT40_500-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_nominal_V16_nmix10_ZPT40_500-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_residual_V16_nmix10_ZPT40_500-result.root"
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_V16_nmix5_ZPT40_500-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_nominal_V16_nmix5_ZPT40_500-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_residual_V16_nmix5_ZPT40_500-result.root"
     };
     vector<string> labels = {
         "MC Gen + EPOS",
         "MC Reco",
         "MC Reco (corrected)"
     };
-    const char* output =  "plots/PbP_ZPT40_500-0.5_500_nmix10-closure";
+    const char* output =  "plots/PbP_ZPT40_500-0.5_500_nmix5-closure";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;

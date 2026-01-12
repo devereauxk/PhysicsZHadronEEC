@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Number of threads per instance
-nThread=60
+nThread=50 # NOT MORE THAT 50 (week spent)
 
 # Array to hold the names of the output files
 declare -a outputFileNames

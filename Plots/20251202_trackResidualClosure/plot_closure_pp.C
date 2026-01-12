@@ -16,16 +16,16 @@ void plot_closure_pp() {
 
     //pythia
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythia_Gen_nominal_V17_nmix5_ZPT40_500-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythia_nominal_V17_nmix5_ZPT40_500-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythia_residual_V17_nmix5_ZPT40_500-result.root"
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythia_Gen_nominal_V17_nmix5_ZPT10_20-nosub.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythia_nominal_V17_nmix5_ZPT10_20-nosub.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythia_residual_V17_nmix5_ZPT10_20-nosub.root"
     };
     vector<string> labels = {
         "pythia Gen",
         "pythia Reco",
         "pythia Reco (corrected)"
     };
-    const char* output =  "plots/pp_ZPT40_500-0.5_500_nmix5-closure";
+    const char* output =  "plots/pp_ZPT10_20-0.5_500_nmix5-nosub-closure";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;

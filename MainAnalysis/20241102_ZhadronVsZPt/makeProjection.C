@@ -39,6 +39,7 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     TH3D *hTrkPtEtaPhi = (TH3D*)file->Get("hTrkPtEtaPhiData"); // Replace with your histogram name
     TH3D *hZPtEtaMult = (TH3D*)file->Get("hZPtEtaMultData"); // Replace with your histogram name
     TH1D* hVZ = (TH1D*)file->Get("hVZData"); // Replace with your histogram name
+    TH1D* hZmass = (TH1D*)file->Get("hZmassData"); // Replace with your histogram name
     TH3D* hTrkResidualCorrectionPtEtaPhi = (TH3D*)file->Get("hTrkResidualCorrectionPtEtaPhiData"); // Replace with your histogram name
 
     hNZData->SetName(Form("hNZData_%s",tag));
@@ -81,6 +82,9 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hZPtEtaMult->SetName(Form("hZPtEtaMult_%s",tag));
     hZPtEtaMult->Scale(1. / hNZData->GetBinContent(1));
 
+    hZmass->SetName(Form("hZmassData_%s",tag));
+    //hZmass->Scale(1. / hNZData->GetBinContent(1));
+
     hTrkResidualCorrectionPtEtaPhi->SetName(Form("hTrkResidualCorrectionPtEtaPhi_%s",tag));
     hTrkResidualCorrectionPtEtaPhi->Scale(1. / hNZData->GetBinContent(1));
     
@@ -114,6 +118,7 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hTrkPtEtaPhi->Write();
     hZPtEtaMult->Write();
     hVZ->Write();
+    hZmass->Write();
     hTrkResidualCorrectionPtEtaPhi->Write();
     
     // Cleanup: Close the file
