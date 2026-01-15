@@ -74,6 +74,8 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
     if ((*b->trackPt)[j]>par.MaxTrackPT) return false;  
     if ((*b->trackPt)[j]<par.MinTrackPT) return false;
     if ((!par.includeHole)&&(*b->trackWeight)[j]<0) return false;
+    if ((*b->trackEta)[j] > 2.4) return false;
+    if ((*b->trackEta)[j] < -2.4) return false;
     return true;
 }
 
@@ -88,73 +90,67 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 // Z hadron dphi calculation
 //============================================================//
 float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const Parameters& par) {
-    if (par.isAddUE) {
-       if (MZUE->GetEntries()<MZSignal->GetEntries()) {
-          cout <<"Error! Smaller number of UE events than Z events"<<endl;
-          return -1;
-       }   
-    }
-    float nZ = 0;
-    h->Sumw2();
-    par.printParameters();
-    unsigned long nEntry = MZSignal->GetEntries() * par.scaleFactor;
-    unsigned long iStart = nEntry * (par.nChunk - 1) / par.nThread;
-    unsigned long iEnd = nEntry * par.nChunk / par.nThread;
-    unsigned int targetMix = ((par.nMix - 1) * par.mix + 1);
+   if (par.isAddUE) {
+      if (MZUE->GetEntries()<MZSignal->GetEntries()) {
+         cout <<"Error! Smaller number of UE events than Z events"<<endl;
+         return -1;
+      }   
+   }
+   float nZ = 0;
+   h->Sumw2();
+   par.printParameters();
+   unsigned long nEntry = MZSignal->GetEntries() * par.scaleFactor;
+   unsigned long iStart = nEntry * (par.nChunk - 1) / par.nThread;
+   unsigned long iEnd = nEntry * par.nChunk / par.nThread;
+   unsigned int targetMix = ((par.nMix - 1) * par.mix + 1);
 
-    ProgressBar Bar(cout, iEnd - iStart);
-    Bar.SetStyle(1);
-    unsigned long mix_i = iStart;
-    unsigned long mixstart_i = mix_i;
-    int deltaI = (iEnd-iStart)/100+1;
-    TrackResidualCorrector corrector(par.residualFile.c_str());              
+   ProgressBar Bar(cout, iEnd - iStart);
+   Bar.SetStyle(1);
+   unsigned long mix_i = iStart;
+   unsigned long mixstart_i = mix_i;
+   int deltaI = (iEnd-iStart)/100+1;
+   ZResidualCorrector corrector(par.residualFile.c_str());              
 
-    for (unsigned long i = iStart; i < iEnd; i++) {
-       MZSignal->GetEntry(i);
-       if (par.isAddUE) MZUE->GetEntry(i);
-       
-       if (i % deltaI == 0) {
-          Bar.Update(i - iStart);
-          Bar.Print();
-       }
-       // Check if the event passes the selection criteria
-       if (eventSelection(MZSignal, par)) {
-          for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
-             if (!trackSelection(MZSignal, par, j)) continue;
-             float trackPhi  = (*MZSignal->trackPhi)[j];
-             if (trackPhi<0) trackPhi+= 2 * M_PI;
-             float trackEta  = (*MZSignal->trackEta)[j];
-             float trackPt   = (*MZSignal->trackPt)[j];
-             float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-             float weight = 1; //MZSignal->EventWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
-	                 //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
-                   weight*= (*MZSignal->trackWeight)[j]/(*MZSignal->trackResidualWeight)[j];
-                   weight*= residualCorrection;
-             //if (trackPt>20) cout <<"track pt: "<<trackPt<<" "<<residualCorrection<<endl;       
-             cout <<weight<<endl;
-             h->Fill( trackPt, trackEta, trackPhi, weight);
-          }
-          if (par.isAddUE) {
-             for (unsigned long j = 0; j < MZUE->trackPhi->size(); j++) {
-                if (!trackSelection(MZUE, par, j)) continue;
-                float trackPhi  = (*MZUE->trackPhi)[j];
-                if (trackPhi<0) trackPhi+= 2 * M_PI;
-                float trackEta  = (*MZUE->trackEta)[j];
-                float trackPt   = (*MZUE->trackPt)[j];
-                float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-                float weight = 1; //MZUE->EventWeight; //MZUE->ZWeight: somehow the Z weight in gen and reco are different.
-   	                 //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
-                      weight*= (*MZUE->trackWeight)[j]/(*MZUE->trackResidualWeight)[j];
-                      weight*= residualCorrection;
-                //if (trackPt>20) cout <<"track pt: "<<trackPt<<" "<<residualCorrection<<endl;       
-                h->Fill( trackPt, trackEta, trackPhi, weight);
-             }
-          }
-          nZ++;
+   for (unsigned long i = iStart; i < iEnd; i++) {
+      MZSignal->GetEntry(i);
+      if (par.isAddUE) MZUE->GetEntry(i % MZUE->GetEntries());
+   
+      if (i % deltaI == 0) {
+         Bar.Update(i - iStart);
+         Bar.Print();
+      }
+      // Check if the event passes the selection criteria
+      if (!eventSelection(MZSignal, par)) continue;
 
-       }
-    }
-    return nZ;
+      float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
+      float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
+      float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
+
+      float mult = 0;
+      for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
+         if (!trackSelection(MZSignal, par, j)) continue;
+         float trackWeight = (*MZSignal->trackWeight)[j];
+         mult += trackWeight;
+      }
+      if (par.isAddUE) {
+         for (unsigned long j = 0; j < MZUE->trackPhi->size(); j++) {
+            if (!trackSelection(MZUE, par, j)) continue;
+            float trackWeight = (*MZUE->trackWeight)[j];
+            mult += trackWeight;
+         }
+      }
+
+      float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight;
+      float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, mult);
+      this_eventWeight *= residualCorrection;
+
+      h->Fill(zPt, zY, mult, this_eventWeight);
+
+      nZ += this_eventWeight; //1;
+
+   }
+   return nZ;
+
 }
 
 class DataAnalyzer {
@@ -180,28 +176,28 @@ public:
   void analyze(Parameters& par) {
     // First histogram with mix=false
     par.mix = false;
-    const int nbinsX = 25;
+    const int nbinsX = 50;
     const double xMin = 0.5;
-    const double xMax = 10;
+    const double xMax = 100;
     std::vector<double> binEdgesX(nbinsX + 1);
     
-
     for (int i = 0; i <= nbinsX; ++i) binEdgesX[i] = xMin * std::pow(xMax / xMin, double(i) / nbinsX);
-    binEdgesX[nbinsX]=200;
+    binEdgesX[nbinsX]=350;
 
-    const int nbinsY = 50;
+    const int nbinsY = 25;
     const double yMin = -2.4;
     const double yMax = 2.4;
     std::vector<double> binEdgesY(nbinsY + 1);
 
     for (int i = 0; i <= nbinsY; ++i) binEdgesY[i] = yMin + (yMax - yMin) * i / nbinsY;
 
-    const int nbinsZ = 50;
-    const double zMin = 0;
-    const double zMax = 2 * M_PI;
+    const int nbinsZ = 30;
+    const double zMin = 1;
+    const double zMax = 150;
     std::vector<double> binEdgesZ(nbinsZ + 1);
 
     for (int i = 0; i <= nbinsZ; ++i) binEdgesZ[i] = zMin + (zMax - zMin) * i / nbinsZ;
+    binEdgesZ[nbinsZ]=500;
 
     h = new TH3D("h3D", "Histogram Title; p_{T} (GeV/c); #eta; #phi",
                      nbinsX, &binEdgesX[0],

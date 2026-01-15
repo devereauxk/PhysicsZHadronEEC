@@ -39,8 +39,8 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
    if ((*b->trackPt)[j] > par.MaxTrackPT) return false;  
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
-   //if ((*b->trackEta)[j] > 2.4) return false;
-   //if ((*b->trackEta)[j] < -2.4) return false;
+   if ((*b->trackEta)[j] > 2.4) return false;
+   if ((*b->trackEta)[j] < -2.4) return false;
    return true;
 }
 
@@ -75,6 +75,16 @@ bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0]) < par.MinZPT) return 0;
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0]) > par.MaxZPT) return 0;
 
+   /*
+   if (b->genZMass->size()==0   || b->zMass->size()==0) return 0;
+   if ((*b->genZMass)[0]<60 || (*b->zMass)[0]<60) return 0;
+   if ((*b->genZMass)[0]>120 || (*b->zMass)[0]>120) return 0;
+   if (fabs((*b->genZY)[0])<=par.MinZY || fabs((*b->zY)[0])<=par.MinZY) return 0;
+   if (fabs((*b->genZY)[0])>=par.MaxZY || fabs((*b->zY)[0])>=par.MaxZY) return 0;
+   if ((*b->genZPt)[0]<par.MinZPT || (*b->zPt)[0]<par.MinZPT) return 0;
+   if ((*b->genZPt)[0]>par.MaxZPT || (*b->zPt)[0]>par.MaxZPT) return 0;
+   */
+
    return 1;
 }
 
@@ -93,7 +103,16 @@ bool isPPbEvent(ZHadronMessenger *b) {
 }
 
 // ====== add UE event from EPOS to hard event
-void addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
+vector<float>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
+   // returns a mask vector hard event = hard track weight, UE event = appropriate eventWeight * VZ weight
+   // should be able to use the weight out of the box
+
+   vector<float>* UEmask = new vector<float>;
+   for (unsigned int i = 0; i < hard->trackPt->size(); i++) {
+      float eventWeight = hard->EventWeight * hard->VZWeight;
+      UEmask->push_back(eventWeight);
+   }
+
    for (unsigned int i = 0; i < ue->trackPt->size(); i++) {
       hard->trackPt->push_back(ue->trackPt->at(i));
       hard->trackEta->push_back(ue->trackEta->at(i));
@@ -102,7 +121,11 @@ void addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
       hard->trackMuTagged->push_back(ue->trackMuTagged->at(i));
       hard->trackWeight->push_back(ue->trackWeight->at(i));
       hard->trackResidualWeight->push_back(ue->trackResidualWeight->at(i));
+
+      float eventWeight = hard->EventWeight * ue->VZWeight;
+      UEmask->push_back(eventWeight);
    }
+   return UEmask;
 }
 
 bool isSameZpTBin(float zPt_sig, float zPt_bkg) {
@@ -212,9 +235,10 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       }
 
       // add UE event
+      vector<float>* UEmaskSignal = 0;
       if (par.useEPOSFile) {
          MZUE->GetEntry(i % MZUE->GetEntries());
-         addUEParticles(MZSignal, MZUE);
+         UEmaskSignal = addUEParticles(MZSignal, MZUE);
       }
 
       //==================================================//
@@ -231,14 +255,20 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          if (trackPhi<0) trackPhi+= 2 * M_PI;
          float trackEta  = (*MZSignal->trackEta)[j];
          float trackPt   = (*MZSignal->trackPt)[j];
-         float weight = 1; //MZSignal->EventWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
-               //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
-               weight*= (*MZSignal->trackWeight)[j];
-               if (par.useResidualWeight)
-               {
-                  weight /= (*MZSignal->trackResidualWeight)[j];
-                  if (par.residualWeightFile != "") weight *= corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
-               }
+         float weight = 1;
+         if (par.useEPOSFile) {
+            weight = UEmaskSignal->at(j);
+         } else {
+            weight = MZSignal->EventWeight * MZSignal->VZWeight;
+         }
+         //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
+         //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
+         weight*= (*MZSignal->trackWeight)[j];
+         if (par.useResidualWeight)
+         {
+            weight /= (*MZSignal->trackResidualWeight)[j];
+            if (par.residualWeightFile != "") weight *= corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
+         }
                
          if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight); // coopted
       }
@@ -275,40 +305,45 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          
          MMix->GetEntry(mix_i);
 
-         nZ++;
-
          // add UE event
+         vector<float>* UEmaskMix = 0;
          if (par.useEPOSFile) {
             mix_EPOS_i = (mix_EPOS_i + 1) % MZUE->GetEntries();
             if (mix_EPOS_i == i) mix_EPOS_i = (mix_EPOS_i + 1) % MZUE->GetEntries();
             MZUE->GetEntry(mix_EPOS_i);
-            addUEParticles(MMix, MZUE);
+            UEmaskMix = addUEParticles(MMix, MZUE);
          }
          
          //==================================================//
          // calculate event+Z weight
          //==================================================//
-         float this_eventZWeight = 1;
-         /*
+         float eventWeight = 1;
          if (par.useEventWeight) {
             if (par.mix && par.isSelfMixing) {
-               this_eventZWeight *= (MZSignal->EventWeight) * (MMix->EventWeight) * (MZSignal->ZWeight) * (MMix->ZWeight) * (MZSignal->VZWeight) * (MMix->VZWeight);
+               eventWeight *= (MZSignal->EventWeight) * (MMix->EventWeight) * (MZSignal->VZWeight) * (MMix->VZWeight);
             } else {
-               this_eventZWeight *= (MZSignal->EventWeight) * (MZSignal->ZWeight) * (MZSignal->VZWeight);
+               eventWeight *= (MZSignal->EventWeight) * (MZSignal->VZWeight);
             }
          }
          // check event indeed has the right orientation
-         //if (!par.isPP && par.isData && isPPbEvent(MZSignal) != par.isPPb)  this_eventZWeight = 0;
-         //cout<<par.isPPb << " " << isPPbEvent(MZSignal) << " " << MZSignal->Run << " ::: " << this_eventZWeight << endl;
+         //if (!par.isPP && par.isData && isPPbEvent(MZSignal) != par.isPPb)  this_eventWeight = 0;
+         //cout<<par.isPPb << " " << isPPbEvent(MZSignal) << " " << MZSignal->Run << " ::: " << eventWeight << endl;
 
-         //nZ += this_eventZWeight;
-         */
+         nZ += eventWeight;
          
          //==================================================//
          // loop over tracks
          //==================================================//
          int mult = 0;
          for (unsigned long j = 0; j < (par.mix ? MMix->trackPhi->size() : MZSignal->trackPhi->size()); j++) {
+            
+            // Calcualate event weight specially for UE tracks
+            float this_eventWeight = 1;
+            if (par.useEPOSFile) {
+              this_eventWeight = (par.mix ? UEmaskMix->at(j) : UEmaskSignal->at(j));
+            } else {
+              this_eventWeight = eventWeight;
+            }
 
             // Check if the event passes the selection criteria
             if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
@@ -336,8 +371,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             // calculate track weight
             //==================================================//
             float this_trackWeight = 1;
-            float this_residualWeight = 1;
-
+            
             if(par.useTrackWeight) {
                if (par.mix) {
                   this_trackWeight *= (*MMix->trackWeight)[j];
@@ -346,6 +380,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                }
             }
 
+            float this_residualWeight = 1;
             if(par.useResidualWeight) {
                if (par.mix) {
                   this_residualWeight /= (*MMix->trackResidualWeight)[j];
@@ -358,8 +393,10 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                }
             }
 
-            float weight = this_eventZWeight * this_trackWeight * this_residualWeight;
+            float weight = this_eventWeight * this_trackWeight * this_residualWeight;
             
+            if (hTrkResidualCorrectionPtEtaPhi != 0) hTrkResidualCorrectionPtEtaPhi->Fill(trackPt, trackEta, trackPhi, this_trackWeight);
+
             //==================================================//
             // fill central values
             //==================================================//
@@ -368,12 +405,11 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             h->Fill(trackDeta, trackDphi2, weight);
             h->Fill(-trackDeta, trackDphi2, weight);
 
-            if (hTrkResidualCorrectionPtEtaPhi != 0) hTrkResidualCorrectionPtEtaPhi->Fill(trackPt, trackEta, trackPhi, this_trackWeight);
          
          } // end track loop
 
-         if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, mult, this_eventZWeight);
-         if (hVZ != 0) hVZ->Fill(MZSignal->VZ, this_eventZWeight);
+         if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, mult, eventWeight);
+         if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeight);
 
       } // end mix event loop
 
@@ -427,23 +463,23 @@ public:
       outf->cd();
       par.mix = false;
 
-      const int nbinsX = 25;
+      const int nbinsX = 60;
       const double xMin = 0.5;
-      const double xMax = 10;
+      const double xMax = 20;
       std::vector<double> binEdgesX(nbinsX + 1);
       
 
       for (int i = 0; i <= nbinsX; ++i) binEdgesX[i] = xMin * std::pow(xMax / xMin, double(i) / nbinsX);
-      binEdgesX[nbinsX]=200;
+      binEdgesX[nbinsX]=500;
 
-      const int nbinsY = 50;
+      const int nbinsY = 75;
       const double yMin = -2.4;
       const double yMax = 2.4;
       std::vector<double> binEdgesY(nbinsY + 1);
 
       for (int i = 0; i <= nbinsY; ++i) binEdgesY[i] = yMin + (yMax - yMin) * i / nbinsY;
 
-      const int nbinsZ = 50;
+      const int nbinsZ = 75;
       const double zMin = 0;
       const double zMax = 2 * M_PI;
       std::vector<double> binEdgesZ(nbinsZ + 1);
@@ -526,7 +562,8 @@ int main(int argc, char *argv[])
    par.isPUReject    = CL.GetBool  ("IsPUReject", true);     // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
-   par.useEventWeight   = CL.GetBool  ("UseEventWeight", true);     // Default is false
+   par.useEventWeight   = CL.GetBool  ("UseEventWeight", false);     // Default is false
+   par.useZWeight       = CL.GetBool  ("UseZWeight", false);         // Default is false
    par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample

@@ -38,6 +38,7 @@ public:
    bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
    bool useTrackWeight;      // Flag to see if we use track efficiency correction
    bool useEventWeight;      // Flag to see if we use event efficiency correction
+   bool useZWeight;          // Flag to see if we use Z efficiency correction
    bool useResidualWeight;   // Flag to see if we use residual correction
    string residualWeightFile; // Residual weight file
    bool isPPb;            // Flag to check if this is a PPb analysis
@@ -61,8 +62,9 @@ public:
       cout << "isPP: " << (isPP ? "true" : "false") << endl;
       cout << "isData: " << (isData ? "true" : "false") << endl;
       cout << "isPPb: " << (isPPb ? "true" : "false") << endl;
-      cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
       cout << "UseEventWeight: " << (useEventWeight ? "true" : "false") << endl;
+      cout << "UseZWeight: " << (useZWeight ? "true" : "false") << endl;
+      cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
       cout << "UseResidualWeight: " << (useResidualWeight ? "true" : "false") << endl;
       cout << "ResidualWeightFile: " << residualWeightFile << endl;
       cout << "Scale factor: " << scaleFactor << endl;

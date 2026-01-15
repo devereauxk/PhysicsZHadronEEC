@@ -1,6 +1,13 @@
-minZpt=$1
-maxZpt=$2
-name=$3
+WORKINGDIR=$(pwd)
+cd ..
+./clean.sh
+cd $WORKINGDIR
+sleep 1
+
+minZpt=0
+maxZpt=500
+name="20260115_ZCorrection_V1"
+
 
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin -10 --MaxHiBin 1000  --Input mergedSample/PPbMC_Reco_v0.2.root     --IsGen false --IsPP false --IsGenZ false
 ./finalAnalysis.sh output/DY GEN   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin -10 --MaxHiBin 1000  --Input mergedSample/PPbMC_Gen_v0.2.root --InputUE mergedSample/PPbEPOS_Gen_v0.2_1XX.root --IsGen true --IsPP false --IsGenZ true

@@ -74,6 +74,8 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
     if ((*b->trackPt)[j]>par.MaxTrackPT) return false;  
     if ((*b->trackPt)[j]<par.MinTrackPT) return false;
     if ((!par.includeHole)&&(*b->trackWeight)[j]<0) return false;
+    if ((*b->trackEta)[j] > 2.4) return false;
+    if ((*b->trackEta)[j] < -2.4) return false;
     return true;
 }
 
@@ -112,6 +114,8 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
     for (unsigned long i = iStart; i < iEnd; i++) {
        MZSignal->GetEntry(i);
        if (par.isAddUE) MZUE->GetEntry(i);
+
+       // no selections at all on the UE TODO
        
        if (i % deltaI == 0) {
           Bar.Update(i - iStart);
@@ -119,6 +123,16 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
        }
        // Check if the event passes the selection criteria
        if (eventSelection(MZSignal, par)) {
+
+         // KD: partition of weights here is nontrivial, but I think is proper. For +EPOS events we need to add on UE, for these events EventWeight==1, trackWeight==1, VZWeight allowed to vary. For Z counting however we should use
+         // nZ = hard EventWeight * hard VZ
+         // track (hard) = hard EventWeight * hard VZ * hard trackWeight * [residual]
+         // track (UE) = UE EventWeight * UE VZ * UE trackWeight * [residual]
+         // IMPORTANT: for closure the central value script should use same weighting strat as here
+         // TODO missing Z scale factor now since not in skim for pPb sets yet
+
+         float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight;
+
           for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
              if (!trackSelection(MZSignal, par, j)) continue;
              float trackPhi  = (*MZSignal->trackPhi)[j];
@@ -126,7 +140,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
              float trackEta  = (*MZSignal->trackEta)[j];
              float trackPt   = (*MZSignal->trackPt)[j];
              float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-             float weight = 1; //MZSignal->EventWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
+             float weight = this_eventWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
 	                 //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
                    weight*= (*MZSignal->trackWeight)[j]; // /(*MZSignal->trackResidualWeight)[j];
                    weight*= residualCorrection;
@@ -141,7 +155,8 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
                 float trackEta  = (*MZUE->trackEta)[j];
                 float trackPt   = (*MZUE->trackPt)[j];
                 float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-                float weight = 1; //MZUE->EventWeight; //MZUE->ZWeight: somehow the Z weight in gen and reco are different.
+                float weight = MZSignal->EventWeight * MZUE->VZWeight;
+                //MZUE->ZWeight: somehow the Z weight in gen and reco are different.
    	                 //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
                       weight*= (*MZUE->trackWeight)[j]; ///(*MZUE->trackResidualWeight)[j];
                       weight*= residualCorrection;
@@ -149,7 +164,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
                 h->Fill( trackPt, trackEta, trackPhi, weight);
              }
           }
-          nZ++;
+          nZ += this_eventWeight; //1;
 
        }
     }

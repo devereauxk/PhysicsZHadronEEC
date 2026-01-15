@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
 
     string collisionType = CL.Get("collisionType", "pPb");
     string zPtRange = CL.Get("zPtRange", "40_500");
+    string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
 
     cout<<"Collision Type: "<<collisionType<<endl;
@@ -28,8 +29,10 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_V16_nmix5_ZPT%s", collisionType.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
+        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_V19_test_ZPT%s", collisionType.c_str(), zPtRange.c_str()),
+        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_V19_test_ZPT%s", collisionType.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_residual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
@@ -65,7 +68,7 @@ int main(int argc, char *argv[]) {
         }
 
         // track pt eta phi
-        TH3D* this_hTrkPtEtaPhi = (TH3D*)fin->Get(Form("hTrkPtEtaPhiData_0.5_500"));
+        TH3D* this_hTrkPtEtaPhi = (TH3D*)fin->Get(Form("hTrkPtEtaPhiData_%s", trkPtRange.c_str()));
         TH1D* this_hTrkPt = this_hTrkPtEtaPhi->ProjectionX(Form("trkPt_%d", i));
         TH1D* this_hTrkEta = this_hTrkPtEtaPhi->ProjectionY(Form("trkEta_%d", i));
         TH1D* this_hTrkPhi = this_hTrkPtEtaPhi->ProjectionZ(Form("trkPhi_%d", i));
@@ -79,16 +82,16 @@ int main(int argc, char *argv[]) {
         hTrkPhi.push_back(this_hTrkPhi);
 
         // delta phi, delta eta
-        TH1D* this_hDeltaEta_all = (TH1D*)fin->Get("DeltaEta_Result0.5_500");
+        TH1D* this_hDeltaEta_all = (TH1D*)fin->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
         this_hDeltaEta_all->SetName(Form("DeltaEta_all_%d", i));
-        TH1D* this_hDeltaPhi_all = (TH1D*)fin->Get("DeltaPhi_Result0.5_500");
+        TH1D* this_hDeltaPhi_all = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
         this_hDeltaPhi_all->SetName(Form("DeltaPhi_all_%d", i));
 
         hDeltaEta_all.push_back(this_hDeltaEta_all); 
         hDeltaPhi_all.push_back(this_hDeltaPhi_all);
 
         // mixed
-        TH2D* this_hMixData2D = (TH2D*)fin->Get("hMixData_0.5_500");
+        TH2D* this_hMixData2D = (TH2D*)fin->Get(Form("hMixData_%s", trkPtRange.c_str()));
         TH1D* this_hDeltaPhi_mix = this_hMixData2D->ProjectionY(Form("hMixPhi_%d", i), 0, 10);
         TH1D* this_hDeltaEta_mix = this_hMixData2D->ProjectionX(Form("hMixEta_%d", i), 6, 10);
 
@@ -100,7 +103,7 @@ int main(int argc, char *argv[]) {
         hDeltaPhi_mix.push_back(this_hDeltaPhi_mix);
 
         // my calculation
-        TH2D* this_hData2D = (TH2D*)fin->Get("hData_0.5_500");
+        TH2D* this_hData2D = (TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str()));
         TH2D* this_myResult2D = (TH2D*)this_hData2D->Clone(Form("myResult2D_%d", i));
         this_myResult2D->Add(this_hMixData2D, -1);
 
@@ -129,9 +132,9 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        TH1D* this_hDeltaEta = (TH1D*)fin->Get("DeltaEta_Result0.5_500");
+        TH1D* this_hDeltaEta = (TH1D*)fin->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
         this_hDeltaEta->SetName(Form("DeltaEta_%d", i));
-        TH1D* this_hDeltaPhi = (TH1D*)fin->Get("DeltaPhi_Result0.5_500");
+        TH1D* this_hDeltaPhi = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
         this_hDeltaPhi->SetName(Form("DeltaPhi_%d", i));
 
         hDeltaEta.push_back(this_hDeltaEta);

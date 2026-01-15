@@ -13,7 +13,7 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
       min_pt=${pt_range/_*/}
       max_pt=${pt_range/*_/}
 
-      echo ./finalAnalysis.sh "output/pPbMC_Gen_${1}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" "${15}" "${16}" "${17}" "${18}" "${19}" "${20}" \
+      echo ./finalAnalysis.sh "output/pPbMC_Gen_${1}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" "${15}" "${16}" "${17}" "${18}" "${19}" "${20}" "${21}" "${22}" "${23}" "${24}" "${25}" "${26}" "${27}" "${28}" "${29}" "${30}" \
          $COMMON_ARGS --MinTrackPT "$min_pt" --MaxTrackPT "$max_pt" \
          --MinZPT "$min_zpt" --MaxZPT "$max_zpt" | bash
    done
