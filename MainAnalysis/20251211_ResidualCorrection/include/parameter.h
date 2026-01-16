@@ -9,6 +9,7 @@ public:
     string inputUE;          // Input file name for UE
     string output;         // Output file name
     string residualFile;        // Mix File name
+    string ZWeightFile;        // Z Weight File name
     float MinZPT;          // Lower limit of Z pt
     float MaxZPT;          // Upper limit of Z pt
     float MinZY;          // Lower limit of Z rapidity
@@ -40,6 +41,7 @@ public:
        cout << "Input file: " << input << endl;
        cout << "Output file: " << output << endl;
        cout << "Residla File: " << residualFile << endl;
+       cout << "Z Weight File: " << ZWeightFile << endl;
        cout << "MinZPT: " << MinZPT << " GeV/c" << endl;
        cout << "MaxZPT: " << MaxZPT << " GeV/c" << endl;
        cout << "MinZY: " << MinZY << "" << endl;

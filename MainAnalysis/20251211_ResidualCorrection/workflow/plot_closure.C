@@ -4,12 +4,12 @@
 #include <TF1.h>
 #include <iostream>
 
-#include "../../../../../CommonCode/include/KylesPlotting.h" // Kyle's plotting utilities
+#include "../../../CommonCode/include/KylesPlotting.h" // Kyle's plotting utilities
 
 #include <vector>
 #include <string>
 
-void plot_closure() {
+void plot_closure(const char* output = "plots/isPbP") {
 
     // The first input file is considered the baseline (Gen+EPOS)
     // currently using a certain ZPT and track PT range
@@ -19,14 +19,14 @@ void plot_closure() {
     //PbP
     vector<string> input_ZPT_files = {
         "output/DY-GEN.root",
-        "output/DY-RECO.root",
+        "output/DY-RECO-noResidual.root",
+        "output/DY-RECO.root"
     };
     vector<string> labels = {
-        "MC Gen + EPOS",
-        "MC Reco"
+        "MC DY-GEN",
+        "MC DY-RECO",
+        "MC DY-RECO (corrected)"
     };
-    const char* output =  "plots/isPP";
-
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;

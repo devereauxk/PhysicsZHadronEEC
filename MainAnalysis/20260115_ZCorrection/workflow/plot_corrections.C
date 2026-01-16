@@ -96,6 +96,7 @@ void plot_corrections() {
     hMultCorr1->SetTitle("Z Mult Dependent Correction");
     hMultCorr1->GetYaxis()->SetRangeUser(0.8,1.2);
     hMultCorr1->GetXaxis()->CenterTitle();
+    hMultCorr1->GetXaxis()->SetTitle("Mult");
     hMultCorr1->SetTitleOffset(1.1,"X");
     hMultCorr1->SetTitleOffset(1.1,"X");
     hMultCorr1->SetTitleSize(0.055,"X");

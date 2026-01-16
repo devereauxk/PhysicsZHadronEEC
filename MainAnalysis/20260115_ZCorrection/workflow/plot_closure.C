@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-void plot_closure() {
+void plot_closure(const char* output = "plots/isPbP") {
 
     // The first input file is considered the baseline (Gen+EPOS)
     // currently using a certain ZPT and track PT range
@@ -19,14 +19,14 @@ void plot_closure() {
     //PbP
     vector<string> input_ZPT_files = {
         "output/DY-GEN.root",
+        "output/DY-RECO-noResidual.root",
         "output/DY-RECO.root",
     };
     vector<string> labels = {
-        "MC Gen + EPOS",
-        "MC Reco"
+        "MC DY-GEN",
+        "MC DY-RECO",
+        "MC DY-RECO (corrected)"
     };
-    const char* output =  "plots/isPbP";
-
 
     vector<TH1*> hZPt;
     vector<TH1*> hZEta;
@@ -111,8 +111,8 @@ void plot_closure() {
         hZMult, "", labels,
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "#Mult_{Z}", 2, 500,
-        "(1/N_{Z}) dN_{Z}/d #Mult_{Z}", -1, -1,
+        "mult", 2, 500,
+        "counts", -1, -1,
         "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
         true, false, false

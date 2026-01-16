@@ -86,6 +86,16 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
     return 0;
 }
 
+float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
+    float mult = 0;
+    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
+        if (!trackSelection(b, par, j)) continue;
+        float trackWeight = (*b->trackWeight)[j];
+        mult += trackWeight;
+    }
+    return mult;
+}
+
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
@@ -109,7 +119,13 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
     unsigned long mix_i = iStart;
     unsigned long mixstart_i = mix_i;
     int deltaI = (iEnd-iStart)/100+1;
-    TrackResidualCorrector corrector(par.residualFile.c_str());              
+    TrackResidualCorrector corrector(par.residualFile.c_str());
+    
+    // open Z correction if needed
+    ZResidualCorrector *Zcorrector;
+    if (par.ZWeightFile != "") {
+       Zcorrector = new ZResidualCorrector(par.ZWeightFile.c_str());
+    }
 
     for (unsigned long i = iStart; i < iEnd; i++) {
        MZSignal->GetEntry(i);
@@ -131,7 +147,12 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
          // IMPORTANT: for closure the central value script should use same weighting strat as here
          // TODO missing Z scale factor now since not in skim for pPb sets yet
 
-         float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight;
+         float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
+         float zY  = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
+         float multSignal = getMultiplicity(MZSignal, par);
+         float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, multSignal) : 1;
+
+         float this_eventWeight = MZSignal->EventWeight * ZWeight;
 
           for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
              if (!trackSelection(MZSignal, par, j)) continue;
@@ -140,7 +161,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
              float trackEta  = (*MZSignal->trackEta)[j];
              float trackPt   = (*MZSignal->trackPt)[j];
              float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-             float weight = this_eventWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
+             float weight = this_eventWeight * MZSignal->VZWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
 	                 //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
                    weight*= (*MZSignal->trackWeight)[j]; // /(*MZSignal->trackResidualWeight)[j];
                    weight*= residualCorrection;
@@ -155,7 +176,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
                 float trackEta  = (*MZUE->trackEta)[j];
                 float trackPt   = (*MZUE->trackPt)[j];
                 float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-                float weight = MZSignal->EventWeight * MZUE->VZWeight;
+                float weight = this_eventWeight * MZUE->VZWeight;
                 //MZUE->ZWeight: somehow the Z weight in gen and reco are different.
    	                 //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
                       weight*= (*MZUE->trackWeight)[j]; ///(*MZUE->trackResidualWeight)[j];
@@ -164,6 +185,8 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
                 h->Fill( trackPt, trackEta, trackPhi, weight);
              }
           }
+
+          this_eventWeight *= MZSignal->VZWeight;
           nZ += this_eventWeight; //1;
 
        }
@@ -278,6 +301,7 @@ int main(int argc, char *argv[])
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
    par.isHiBinUp     = CL.GetBool  ("IsHiBinUp", false);   // Default is false
    par.isHiBinDown   = CL.GetBool  ("IsHiBinDown", false); // Default is false
+   par.ZWeightFile   = CL.Get      ("ZWeightFile", "");           // Z weight file
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);     // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);         // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);          // Specifies which chunk (segment) of the data to process, used in parallel processing.

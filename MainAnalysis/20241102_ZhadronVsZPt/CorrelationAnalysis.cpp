@@ -103,15 +103,10 @@ bool isPPbEvent(ZHadronMessenger *b) {
 }
 
 // ====== add UE event from EPOS to hard event
-vector<float>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
-   // returns a mask vector hard event = hard track weight, UE event = appropriate eventWeight * VZ weight
-   // should be able to use the weight out of the box
+vector<int>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
+   // returns a mask vector hard event = 0, UE event = 0
 
-   vector<float>* UEmask = new vector<float>;
-   for (unsigned int i = 0; i < hard->trackPt->size(); i++) {
-      float eventWeight = hard->EventWeight * hard->VZWeight;
-      UEmask->push_back(eventWeight);
-   }
+   vector<int>* UEmask = new vector<int>(hard->trackPt->size(), 0);
 
    for (unsigned int i = 0; i < ue->trackPt->size(); i++) {
       hard->trackPt->push_back(ue->trackPt->at(i));
@@ -121,9 +116,7 @@ vector<float>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
       hard->trackMuTagged->push_back(ue->trackMuTagged->at(i));
       hard->trackWeight->push_back(ue->trackWeight->at(i));
       hard->trackResidualWeight->push_back(ue->trackResidualWeight->at(i));
-
-      float eventWeight = hard->EventWeight * ue->VZWeight;
-      UEmask->push_back(eventWeight);
+      UEmask->push_back(1);
    }
    return UEmask;
 }
@@ -137,6 +130,16 @@ bool isSameZpTBin(float zPt_sig, float zPt_bkg) {
    if (zPt_sig >= 40 && zPt_bkg >= 40)       return true;
 
    return false;
+}
+
+float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
+   float mult = 0;
+   for (unsigned long j = 0; j < b->trackPt->size(); j++) {
+      if (!trackSelection(b, par, j)) continue;
+      float trackWeight = (*b->trackWeight)[j];
+      mult += trackWeight;
+   }
+   return mult;
 }
 
 double* getLogBins(float min, float max, int nBins) {
@@ -191,6 +194,12 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    int deltaI = (iEnd - iStart) / 100 + 1;
    float dPhi_threshold = M_PI / 2;
 
+   // open Z correction if needed
+   ZResidualCorrector *Zcorrector;
+   if (par.useZWeight && par.ZWeightFile != "") {
+      Zcorrector = new ZResidualCorrector(par.ZWeightFile.c_str());
+   }
+
    // open track residual correctors if needed
    TrackResidualCorrector *corrector;
    TrackResidualCorrector *corrector_0_10;
@@ -226,6 +235,8 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       float zMass = (par.isGenZ ? (*MZSignal->genZMass)[0] : (*MZSignal->zMass)[0]);
 
+      float multSignal = getMultiplicity(MZSignal, par);
+
       if(hZmass != 0) hZmass->Fill(zMass);
 
       // boost to CM frame
@@ -235,7 +246,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       }
 
       // add UE event
-      vector<float>* UEmaskSignal = 0;
+      vector<int>* UEmaskSignal = 0;
       if (par.useEPOSFile) {
          MZUE->GetEntry(i % MZUE->GetEntries());
          UEmaskSignal = addUEParticles(MZSignal, MZUE);
@@ -256,10 +267,15 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          float trackEta  = (*MZSignal->trackEta)[j];
          float trackPt   = (*MZSignal->trackPt)[j];
          float weight = 1;
-         if (par.useEPOSFile) {
-            weight = UEmaskSignal->at(j);
+         weight *= MZSignal->EventWeight;
+         if (par.useZWeight && par.ZWeightFile != "") {
+            float this_ZWeight = Zcorrector->GetCorrectionFactor(zPt, zY, multSignal);
+            weight *= this_ZWeight;
+         }
+         if (par.useEPOSFile && UEmaskSignal->at(j)) {
+            weight *= MZUE->VZWeight;
          } else {
-            weight = MZSignal->EventWeight * MZSignal->VZWeight;
+            weight = MZSignal->VZWeight;
          }
          //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
          //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
@@ -306,7 +322,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          MMix->GetEntry(mix_i);
 
          // add UE event
-         vector<float>* UEmaskMix = 0;
+         vector<int>* UEmaskMix = 0;
          if (par.useEPOSFile) {
             mix_EPOS_i = (mix_EPOS_i + 1) % MZUE->GetEntries();
             if (mix_EPOS_i == i) mix_EPOS_i = (mix_EPOS_i + 1) % MZUE->GetEntries();
@@ -317,37 +333,48 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          //==================================================//
          // calculate event+Z weight
          //==================================================//
-         float eventWeight = 1;
+         // event weight
+         float eventWeight = 1;     // use this on hard event particles
+         float eventWeightUE = 1;   // use this on UE particles
          if (par.useEventWeight) {
             if (par.mix && par.isSelfMixing) {
                eventWeight *= (MZSignal->EventWeight) * (MMix->EventWeight) * (MZSignal->VZWeight) * (MMix->VZWeight);
+               if (par.useEPOSFile) eventWeightUE *= (MZSignal->EventWeight) * (MZSignal->VZWeight) * (MMix->EventWeight) * (MZUE->VZWeight); // TODO is this done correctly?
             } else {
                eventWeight *= (MZSignal->EventWeight) * (MZSignal->VZWeight);
+               if (par.useEPOSFile) eventWeightUE *= (MZSignal->EventWeight) * (MZUE->VZWeight);
             }
          }
          // check event indeed has the right orientation
          //if (!par.isPP && par.isData && isPPbEvent(MZSignal) != par.isPPb)  this_eventWeight = 0;
          //cout<<par.isPPb << " " << isPPbEvent(MZSignal) << " " << MZSignal->Run << " ::: " << eventWeight << endl;
 
+         // Z weight
+         if (par.useZWeight && par.ZWeightFile != "") {
+            float this_ZWeight = Zcorrector->GetCorrectionFactor(zPt, zY, multSignal);
+            eventWeight *= this_ZWeight;
+            eventWeightUE *= this_ZWeight;
+         }
+
          nZ += eventWeight;
+         if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, mult, eventWeight);
+         if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeight);
          
          //==================================================//
          // loop over tracks
          //==================================================//
-         int mult = 0;
          for (unsigned long j = 0; j < (par.mix ? MMix->trackPhi->size() : MZSignal->trackPhi->size()); j++) {
             
             // Calcualate event weight specially for UE tracks
             float this_eventWeight = 1;
-            if (par.useEPOSFile) {
-              this_eventWeight = (par.mix ? UEmaskMix->at(j) : UEmaskSignal->at(j));
+            if (par.useEPOSFile && (par.mix ? UEmaskMix->at(j) : UEmaskSignal->at(j))) {
+              this_eventWeight = eventWeightUE;
             } else {
               this_eventWeight = eventWeight;
             }
 
             // Check if the event passes the selection criteria
             if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
-            mult++;
             
             float trackDphi  = par.mix ? DeltaPhi((*MMix->trackPhi)[j], zPhi)
                                        : DeltaPhi((*MZSignal->trackPhi)[j], zPhi);
@@ -408,9 +435,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          
          } // end track loop
 
-         if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, mult, eventWeight);
-         if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeight);
-
       } // end mix event loop
 
    } // end event loop
@@ -459,15 +483,49 @@ public:
    }
 
    void analyze(Parameters& par) {
+
+      //==================================================//
       // First histogram with mix=false
+      //==================================================//
+
       outf->cd();
       par.mix = false;
 
+      // Z residual correction histogram
+      const int nbinsX_z = 50;
+      const double xMin_z = 0.5;
+      const double xMax_z = 100;
+      std::vector<double> binEdgesX_z(nbinsX_z + 1);
+      
+      for (int i = 0; i <= nbinsX_z; ++i) binEdgesX_z[i] = xMin_z * std::pow(xMax_z / xMin_z, double(i) / nbinsX_z);
+      binEdgesX_z[nbinsX_z]=350;
+
+      const int nbinsY_z = 25;
+      const double yMin_z = -2.4;
+      const double yMax_z = 2.4;
+      std::vector<double> binEdgesY_z(nbinsY_z + 1);
+
+      for (int i = 0; i <= nbinsY_z; ++i) binEdgesY_z[i] = yMin_z + (yMax_z - yMin_z) * i / nbinsY_z;
+
+      const int nbinsZ_z = 30;
+      const double zMin_z = 1;
+      const double zMax_z = 150;
+      std::vector<double> binEdgesZ_z(nbinsZ_z + 1);
+
+      for (int i = 0; i <= nbinsZ_z; ++i) binEdgesZ_z[i] = zMin_z + (zMax_z - zMin_z) * i / nbinsZ_z;
+      binEdgesZ_z[nbinsZ_z]=500;
+
+      hZPtEtaMult = new TH3D("hZPtEtaMultData", "Histogram Title; p_{T} (GeV/c); #eta; mult",
+                     nbinsX_z, &binEdgesX_z[0],
+                     nbinsY_z, &binEdgesY_z[0],
+                     nbinsZ_z, &binEdgesZ_z[0]);
+
+
+      // track residual correction histogram
       const int nbinsX = 60;
       const double xMin = 0.5;
       const double xMax = 20;
       std::vector<double> binEdgesX(nbinsX + 1);
-      
 
       for (int i = 0; i <= nbinsX; ++i) binEdgesX[i] = xMin * std::pow(xMax / xMin, double(i) / nbinsX);
       binEdgesX[nbinsX]=500;
@@ -486,21 +544,25 @@ public:
 
       for (int i = 0; i <= nbinsZ; ++i) binEdgesZ[i] = zMin + (zMax - zMin) * i / nbinsZ;
 
-
-      h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
-      hTrkPtEtaPhi = new TH3D(Form("hTrkPtEtaPhi%s", title.c_str()), "", nbinsX, &binEdgesX[0], nbinsY, &binEdgesY[0], nbinsZ, &binEdgesZ[0]);
-      hZPtEtaMult = new TH3D(Form("hZPtEtaMult%s", title.c_str()), "", 70, 0, 200, 30, -3, 3, 300, 0, 300);
-      hVZ = new TH1D(Form("hVZ%s", title.c_str()), "", 40, -20, 20);
+      hTrkPtEtaPhi = new TH3D("hTrkPtEtaPhiData", "Histogram Title; p_{T} (GeV/c); #eta; #phi",
+                     nbinsX, &binEdgesX[0],
+                     nbinsY, &binEdgesY[0],
+                     nbinsZ, &binEdgesZ[0]);
 
       hTrkResidualCorrectionPtEtaPhi = new TH3D(Form("hTrkResidualCorrectionPtEtaPhi%s", title.c_str()), "", nbinsX, &binEdgesX[0], nbinsY, &binEdgesY[0], nbinsZ, &binEdgesZ[0]);
-
+      
+      hVZ = new TH1D(Form("hVZ%s", title.c_str()), "", 40, -20, 20);
       hZmass = new TH1D(Form("hZmass%s", title.c_str()), "", 40, 60, 120);
-
+      
+      h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hSub0 = new TH2D(Form("hSub0%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
       hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, MZHadronUE, h, hSub0, hTrkPtEtaPhi, hZPtEtaMult, hVZ, hZmass, hTrkResidualCorrectionPtEtaPhi, par)); // Dphi analysis
-
+      
+      //==================================================//
       // Second histogram with mix=true
+      //==================================================//
+
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
@@ -564,6 +626,7 @@ int main(int argc, char *argv[])
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
    par.useEventWeight   = CL.GetBool  ("UseEventWeight", false);     // Default is false
    par.useZWeight       = CL.GetBool  ("UseZWeight", false);         // Default is false
+   par.ZWeightFile     = CL.Get      ("ZWeightFile", "");           // Z weight file
    par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample

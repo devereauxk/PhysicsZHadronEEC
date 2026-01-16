@@ -199,7 +199,7 @@ public:
     for (int i = 0; i <= nbinsZ; ++i) binEdgesZ[i] = zMin + (zMax - zMin) * i / nbinsZ;
     binEdgesZ[nbinsZ]=500;
 
-    h = new TH3D("h3D", "Histogram Title; p_{T} (GeV/c); #eta; #phi",
+    h = new TH3D("h3D", "Histogram Title; p_{T} (GeV/c); #eta; mult",
                      nbinsX, &binEdgesX[0],
                      nbinsY, &binEdgesY[0],
                      nbinsZ, &binEdgesZ[0]);
