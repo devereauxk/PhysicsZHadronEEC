@@ -27,7 +27,7 @@ mv output/${name}_PPb.root output/${name}_PPb_zPt$minZpt-$maxZpt.root
 
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin -10 --MaxHiBin 1000  --Input mergedSample/PbPMC_Reco_v0.2.root     --IsGen false --IsPP false --IsGenZ false --ZWeightFile $ZWeightFile_PbP
 cp output/DY-RECO.root output/DY-RECO-noResidual.root
-./finalAnalysis.sh output/DY GEN   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin -10 --MaxHiBin 1000  --Input mergedSample/PbPMC_Gen_v0.2.root --InputUE mergedSample/PbPEPOS_Gen_v0.2_1XX.root --IsGen true --IsPP false --IsGenZ false
+./finalAnalysis.sh output/DY GEN   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin -10 --MaxHiBin 1000  --Input mergedSample/PbPMC_Gen_v0.2.root --InputUE mergedSample/PbPEPOS_Gen_v0.2_1XX.root --IsGen true --IsPP false --IsGenZ true
 root -l -q -b correction.C
 mv correction.root output/correction_1.root
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin -10 --MaxHiBin 1000  --Input mergedSample/PbPMC_Reco_v0.2.root     --residualFile output/correction_1.root --IsGen false --IsPP false --IsGenZ false --ZWeightFile $ZWeightFile_PbP

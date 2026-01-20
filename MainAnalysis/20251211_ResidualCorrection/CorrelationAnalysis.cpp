@@ -152,7 +152,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
          float multSignal = getMultiplicity(MZSignal, par);
          float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, multSignal) : 1;
 
-         float this_eventWeight = MZSignal->EventWeight * ZWeight;
+         float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight * ZWeight;
 
           for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
              if (!trackSelection(MZSignal, par, j)) continue;
@@ -161,11 +161,10 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
              float trackEta  = (*MZSignal->trackEta)[j];
              float trackPt   = (*MZSignal->trackPt)[j];
              float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-             float weight = this_eventWeight * MZSignal->VZWeight; //MZSignal->ZWeight: somehow the Z weight in gen and reco are different.
+             float weight = this_eventWeight;
 	                 //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
                    weight*= (*MZSignal->trackWeight)[j]; // /(*MZSignal->trackResidualWeight)[j];
-                   weight*= residualCorrection;
-             //if (trackPt>20) cout <<"track pt: "<<trackPt<<" "<<residualCorrection<<endl;       
+                   weight*= residualCorrection;     
              h->Fill( trackPt, trackEta, trackPhi, weight);
           }
           if (par.isAddUE) {
@@ -176,17 +175,14 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
                 float trackEta  = (*MZUE->trackEta)[j];
                 float trackPt   = (*MZUE->trackPt)[j];
                 float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-                float weight = this_eventWeight * MZUE->VZWeight;
-                //MZUE->ZWeight: somehow the Z weight in gen and reco are different.
+                float weight = this_eventWeight * MZUE->VZWeight * MZUE->EventWeight;
    	                 //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
                       weight*= (*MZUE->trackWeight)[j]; ///(*MZUE->trackResidualWeight)[j];
-                      weight*= residualCorrection;
-                //if (trackPt>20) cout <<"track pt: "<<trackPt<<" "<<residualCorrection<<endl;       
+                      weight*= residualCorrection;    
                 h->Fill( trackPt, trackEta, trackPhi, weight);
              }
           }
 
-          this_eventWeight *= MZSignal->VZWeight;
           nZ += this_eventWeight; //1;
 
        }

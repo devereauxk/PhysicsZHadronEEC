@@ -19,18 +19,6 @@ using namespace std;
 #include "ProgressBar.h"           // Yi's fish progress bar
 #include "TrackResidualCorrector.h" // Residual correction
 
-//============================================================//
-// Function to check for configuration errors
-//============================================================//
-bool checkError(const Parameters& par) {
-    if (par.isHiBinUp && par.isHiBinDown) {
-        std::cout << "Error! Cannot do hiBinUp and hiBinDown simultaneously!" << std::endl;
-        return true;  // Return true indicates an error was found
-    }
-
-    // No errors found
-    return false;
-}
 
 //======= eventSelection =====================================//
 // Check if the event mass eventSelection criteria
@@ -38,13 +26,8 @@ bool checkError(const Parameters& par) {
 // MinHiBin , hiBin < MaxHiBin
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
-   int effectiveHiBin = par.isHiBinUp ? b->hiBinUp : (par.isHiBinDown ? b->hiBinDown : b->hiBin);
-
-   bool foundZ = false;            
    if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
-   if (effectiveHiBin< par.MinHiBin) return 0;
-   if (effectiveHiBin>=par.MaxHiBin) return 0;
-   /*
+
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size())==0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0])<60) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0])>120) return 0;
@@ -52,7 +35,8 @@ bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if (fabs((par.isGenZ ? (*b->genZY)[0] : (*b->zY)[0]))>=par.MaxZY) return 0;
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0])<par.MinZPT) return 0;
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0])>par.MaxZPT) return 0;
-   */
+   
+   /*
    if (b->genZMass->size()==0   || b->zMass->size()==0) return 0;
    if ((*b->genZMass)[0]<60 || (*b->zMass)[0]<60) return 0;
    if ((*b->genZMass)[0]>120 || (*b->zMass)[0]>120) return 0;
@@ -60,10 +44,9 @@ bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if (fabs((*b->genZY)[0])>=par.MaxZY || fabs((*b->zY)[0])>=par.MaxZY) return 0;
    if ((*b->genZPt)[0]<par.MinZPT || (*b->zPt)[0]<par.MinZPT) return 0;
    if ((*b->genZPt)[0]>par.MaxZPT || (*b->zPt)[0]>par.MaxZPT) return 0;
-
-
-   foundZ=1;   
-   return foundZ;
+   */
+   
+   return 1;
 }
 
 //======= trackSelection =====================================//
@@ -89,7 +72,7 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const Parameters& par) {
+float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *hEventWeight, const Parameters& par) {
    if (par.isAddUE) {
       if (MZUE->GetEntries()<MZSignal->GetEntries()) {
          cout <<"Error! Smaller number of UE events than Z events"<<endl;
@@ -111,14 +94,24 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
    int deltaI = (iEnd-iStart)/100+1;
    ZResidualCorrector corrector(par.residualFile.c_str());              
 
+   float totalMult = 0;
+   float totalWeight = 0;
+
+   int i_EPOS = iStart;
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
-      if (par.isAddUE) MZUE->GetEntry(i % MZUE->GetEntries());
    
       if (i % deltaI == 0) {
          Bar.Update(i - iStart);
          Bar.Print();
       }
+
+      // get UE from EPOS file if needed
+      if (par.isAddUE) {
+         i_EPOS++;
+         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+      }
+
       // Check if the event passes the selection criteria
       if (!eventSelection(MZSignal, par)) continue;
 
@@ -137,18 +130,35 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
             if (!trackSelection(MZUE, par, j)) continue;
             float trackWeight = (*MZUE->trackWeight)[j];
             mult += trackWeight;
+            //cout<<" added UE track weight: "<<trackWeight<<endl;
          }
       }
+
+      // fill with event weight
+      hEventWeight->Fill(MZSignal->EventWeight * MZSignal->VZWeight);
+
+      // fill with average track weight
+      //float totalParts = MZSignal->trackPhi->size();
+      //if (par.isAddUE) totalParts += MZUE->trackPhi->size();
+      //hEventWeight->Fill(mult / totalParts);
 
       float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight;
       float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, mult);
       this_eventWeight *= residualCorrection;
+
+      totalMult += mult;
+      totalWeight += this_eventWeight;
+      //cout<<i<<" [passed] mult: "<<mult<<" weight : "<<this_eventWeight<<endl;
 
       h->Fill(zPt, zY, mult, this_eventWeight);
 
       nZ += this_eventWeight; //1;
 
    }
+   cout<<"Total number of Zs: "<<nZ<<endl;
+
+   cout<<"Total multiplicity: "<<totalMult<<endl;
+   cout<<"Total weights: "<<totalWeight<<endl;
    return nZ;
 
 }
@@ -204,19 +214,25 @@ public:
                      nbinsY, &binEdgesY[0],
                      nbinsZ, &binEdgesZ[0]);
     //    h = new TH3D("h3D", "Histogram Title; p_{T} (GeV/c); #eta; #phi", 50,0,10,50,-2.4,2.4,50, 0,2*M_PI);
+
+    hEventWeight = new TH1D("hEventWeight", "", 500, 0, 3);
+    hEventWeight->Sumw2();
+
     hNZ = new TH1D("hNZ","",1,0,100);
-    hNZ->Fill(1, get3D(MZHadron, MZHadronUE, h, par));
+    hNZ->Fill(1, get3D(MZHadron, MZHadronUE, h, hEventWeight, par));
   }
   
   void writeHistograms(TFile* outf) {
     outf->cd();
     smartWrite(h);
     smartWrite(hNZ);
+    smartWrite(hEventWeight);
   }
 
   TFile *inf, *infUE, *residualFile, *residualFileClone, *outf;
   TH3D *h=0;
   TH1D *hNZ=0;
+  TH1D *hEventWeight=0;
   ZHadronMessenger *MZHadron, *MZHadronUE;
   string title;
   
@@ -243,7 +259,6 @@ int main(int argc, char *argv[])
    bool  IsData      = CL.GetBool  ("IsData", false);      // Determines whether the analysis is being run on actual data.
    bool  IsPP        = CL.GetBool  ("IsPP", false);        // Flag to indicate if the analysis is for Proton-Proton collisions.
    bool  IsJewel     = CL.GetBool  ("IsJewel", false);     // Flag to indicate if the analysis is for Jewel since the hole for Jewel is not hadronized
-   cout <<MinTrackPT<<" "<<MaxTrackPT<<endl;
    if (IsPP) {
       MinHiBin=-2;
       MaxHiBin=10000;
@@ -258,8 +273,6 @@ int main(int argc, char *argv[])
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     
    par.isPUReject    = CL.GetBool  ("IsPUReject", true);  // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
-   par.isHiBinUp     = CL.GetBool  ("IsHiBinUp", false);   // Default is false
-   par.isHiBinDown   = CL.GetBool  ("IsHiBinDown", false); // Default is false
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);     // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);         // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);          // Specifies which chunk (segment) of the data to process, used in parallel processing.
@@ -273,7 +286,6 @@ int main(int argc, char *argv[])
    par.isPP = IsPP;
    par.isJewel = IsJewel;
    
-   if (checkError(par)) return -1;
    if (par.inputUE=="") par.isAddUE = false; else par.isAddUE = true;
           
    // Analyze Data

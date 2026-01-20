@@ -3,8 +3,8 @@
 //============================================================//
 class Parameters {
 public:
-    Parameters( float MinZPT, float MaxZPT, float MinTrackPT, float MaxTrackPT, int MinHiBin = 0, int MaxHiBin = 200, bool mix = false, float scaleFactor = 1.0, float nMix = 1)
-    : MinZPT(MinZPT), MaxZPT(MaxZPT), MinTrackPT(MinTrackPT), MaxTrackPT(MaxTrackPT), MinHiBin(MinHiBin), MaxHiBin(MaxHiBin), mix(mix), scaleFactor(scaleFactor), nMix(nMix) {}
+    Parameters( float MinZPT, float MaxZPT, float MinTrackPT, float MaxTrackPT, bool mix = false, float scaleFactor = 1.0, float nMix = 1)
+    : MinZPT(MinZPT), MaxZPT(MaxZPT), MinTrackPT(MinTrackPT), MaxTrackPT(MaxTrackPT), mix(mix), scaleFactor(scaleFactor), nMix(nMix) {}
     string input;          // Input file name
     string inputUE;          // Input file name for UE
     string output;         // Output file name
@@ -17,8 +17,6 @@ public:
     float MaxTrackPT;      // Upper limit of track pt
     float scaleFactor;     // Scale factor
     float shift;           // shift in sumHF when doing mb matching
-    int MinHiBin;          // Lower limit of hiBin
-    int MaxHiBin;          // Upper limit of hiBin
     int nThread;           // Number of Threads
     int nChunk;            // Process the Nth chunk
     bool mix;              // Mix flag
@@ -29,8 +27,6 @@ public:
     bool isGenZ;           // isGenZ flag
     bool isMuTagged;       // Flag to enable/disable muon tagging requirement
     bool isPUReject;       // Flag to reject PU sample for systemaitcs.
-    bool isHiBinUp;        // Flag to do systematics with HiBinUp
-    bool isHiBinDown;      // Flag to do systematics with HiBinDown
     bool isPP;             // Flag to check if this is a PP analysis
     bool isJewel;             // Flag to check if this is a Jewel analysis
     int ExtraZWeight;
@@ -52,8 +48,6 @@ public:
        cout << "isPP: " << (isPP ? "true" : "false") << endl;
        cout << "Scale factor: " << scaleFactor << endl;
        cout << "SumHF shift: " << shift << endl;
-       cout << "MinHiBin: " << MinHiBin << endl;
-       cout << "MaxHiBin: " << MaxHiBin << endl;
        cout << "Number of Threads: " << nThread << endl;
        cout << "Process the Nth chunk: " << nChunk << endl;
        cout << "Mix flag: " << (mix ? "true" : "false") << endl;
@@ -81,12 +75,6 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     
     TH1D* hMaxTrackPT = new TH1D("parMaxTrackPT", "parMaxTrackPT", 1, 0, 1);
     hMaxTrackPT->SetBinContent(1, par.MaxTrackPT);
-    
-    TH1D* hMinHiBin = new TH1D("parMinHiBin", "parMinHiBin", 1, 0, 1);
-    hMinHiBin->SetBinContent(1, par.MinHiBin);
-    
-    TH1D* hMaxHiBin = new TH1D("parMaxHiBin", "parMaxHiBin", 1, 0, 1);
-    hMaxHiBin->SetBinContent(1, par.MaxHiBin);
     
     TH1D* hMix = new TH1D("parMix", "parMix", 1, 0, 1);
     hMix->SetBinContent(1, par.mix);
@@ -118,12 +106,6 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     TH1D* hIsPUReject = new TH1D("parIsPUReject", "parIsPUReject", 1, 0, 1);
     hIsPUReject->SetBinContent(1, par.isPUReject);
     
-    TH1D* hIsHiBinUp = new TH1D("parIsHiBinUp", "parIsHiBinUp", 1, 0, 1);
-    hIsHiBinUp->SetBinContent(1, par.isHiBinUp);
-    
-    TH1D* hIsHiBinDown = new TH1D("parIsHiBinDown", "parIsHiBinDown", 1, 0, 1);
-    hIsHiBinDown->SetBinContent(1, par.isHiBinDown);
-    
     TH1D* hIsPP = new TH1D("parIsPP", "parIsPP", 1, 0, 1);
     hIsPP->SetBinContent(1, par.isPP);
     
@@ -138,8 +120,6 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     hMaxZPT->Write();
     hMinTrackPT->Write();
     hMaxTrackPT->Write();
-    hMinHiBin->Write();
-    hMaxHiBin->Write();
     hMix->Write();
     hScaleFactor->Write();
     hShift->Write();
@@ -150,8 +130,6 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     hIsGenZ->Write();
     hIsMuTagged->Write();
     hIsPUReject->Write();
-    hIsHiBinUp->Write();
-    hIsHiBinDown->Write();
     hIsPP->Write();
     hMinZY->Write();
     hMaxZY->Write();
@@ -161,8 +139,6 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     delete hMaxZPT;
     delete hMinTrackPT;
     delete hMaxTrackPT;
-    delete hMinHiBin;
-    delete hMaxHiBin;
     delete hMix;
     delete hScaleFactor;
     delete hShift;
@@ -173,8 +149,6 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     delete hIsGenZ;
     delete hIsMuTagged;
     delete hIsPUReject;
-    delete hIsHiBinUp;
-    delete hIsHiBinDown;
     delete hIsPP;
     delete hMinZY;
     delete hMaxZY;
