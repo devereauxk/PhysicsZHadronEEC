@@ -4,7 +4,7 @@ cd ..
 cd $WORKINGDIR
 sleep 1
 
-name="20260120_TrackResidualCorrection_V21"
+name="20260120_TrackResidualCorrection_V21_ZWeight_V3"
 ./pPb-DY-analysis.sh 0 10 $name
 ./pPb-DY-analysis.sh 10 20 $name
 ./pPb-DY-analysis.sh 20 40 $name

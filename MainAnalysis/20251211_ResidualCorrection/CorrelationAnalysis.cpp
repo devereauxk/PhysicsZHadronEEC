@@ -19,32 +19,14 @@ using namespace std;
 #include "ProgressBar.h"           // Yi's fish progress bar
 #include "TrackResidualCorrector.h" // Residual correction
 
-//============================================================//
-// Function to check for configuration errors
-//============================================================//
-bool checkError(const Parameters& par) {
-    if (par.isHiBinUp && par.isHiBinDown) {
-        std::cout << "Error! Cannot do hiBinUp and hiBinDown simultaneously!" << std::endl;
-        return true;  // Return true indicates an error was found
-    }
-
-    // No errors found
-    return false;
-}
 
 //======= eventSelection =====================================//
 // Check if the event mass eventSelection criteria
 // MinZPT < zPt < MaxZPT
-// MinHiBin , hiBin < MaxHiBin
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
-   int effectiveHiBin = par.isHiBinUp ? b->hiBinUp : (par.isHiBinDown ? b->hiBinDown : b->hiBin);
-
-   bool foundZ = false;            
    if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
-   if (effectiveHiBin< par.MinHiBin) return 0;
-   if (effectiveHiBin>=par.MaxHiBin) return 0;
-   /*
+
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size())==0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0])<60) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0])>120) return 0;
@@ -52,7 +34,8 @@ bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if (fabs((par.isGenZ ? (*b->genZY)[0] : (*b->zY)[0]))>=par.MaxZY) return 0;
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0])<par.MinZPT) return 0;
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0])>par.MaxZPT) return 0;
-   */
+   
+   /*
    if (b->genZMass->size()==0   || b->zMass->size()==0) return 0;
    if ((*b->genZMass)[0]<60 || (*b->zMass)[0]<60) return 0;
    if ((*b->genZMass)[0]>120 || (*b->zMass)[0]>120) return 0;
@@ -60,10 +43,9 @@ bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if (fabs((*b->genZY)[0])>=par.MaxZY || fabs((*b->zY)[0])>=par.MaxZY) return 0;
    if ((*b->genZPt)[0]<par.MinZPT || (*b->zPt)[0]<par.MinZPT) return 0;
    if ((*b->genZPt)[0]>par.MaxZPT || (*b->zPt)[0]>par.MaxZPT) return 0;
-
-
-   foundZ=1;   
-   return foundZ;
+   */
+   
+   return 1;
 }
 
 //======= trackSelection =====================================//
@@ -100,94 +82,100 @@ float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
 // Z hadron dphi calculation
 //============================================================//
 float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const Parameters& par) {
-    if (par.isAddUE) {
-       if (MZUE->GetEntries()<MZSignal->GetEntries()) {
-          cout <<"Error! Smaller number of UE events than Z events"<<endl;
-          return -1;
-       }   
+   if (par.isAddUE) {
+      if (MZUE->GetEntries()<MZSignal->GetEntries()) {
+         cout <<"Error! Smaller number of UE events than Z events"<<endl;
+         return -1;
+      }   
+   }
+   float nZ = 0;
+   h->Sumw2();
+   par.printParameters();
+   unsigned long nEntry = MZSignal->GetEntries() * par.scaleFactor;
+   unsigned long iStart = nEntry * (par.nChunk - 1) / par.nThread;
+   unsigned long iEnd = nEntry * par.nChunk / par.nThread;
+   unsigned int targetMix = ((par.nMix - 1) * par.mix + 1);
+
+   ProgressBar Bar(cout, iEnd - iStart);
+   Bar.SetStyle(1);
+   unsigned long mix_i = iStart;
+   unsigned long mixstart_i = mix_i;
+   int deltaI = (iEnd-iStart)/100+1;
+   TrackResidualCorrector corrector(par.residualFile.c_str());
+   
+   // open Z correction if needed
+   ZResidualCorrector *Zcorrector;
+   if (par.ZWeightFile != "") {
+      Zcorrector = new ZResidualCorrector(par.ZWeightFile.c_str());
+   }
+
+   int i_EPOS = iStart;
+   for (unsigned long i = iStart; i < iEnd; i++) {
+      MZSignal->GetEntry(i);
+      
+      if (i % deltaI == 0) {
+         Bar.Update(i - iStart);
+         Bar.Print();
+      }
+
+      // get UE from EPOS file if needed
+      if (par.isAddUE) {
+         i_EPOS++;
+         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+      }
+
+      // Check if the event passes the selection criteria
+      if (!eventSelection(MZSignal, par)) continue;
+
+      // KD: partition of weights here is nontrivial, but I think is proper. For +EPOS events we need to add on UE, for these events EventWeight==1, trackWeight==1, VZWeight allowed to vary. For Z counting however we should use
+      // nZ = hard EventWeight * hard VZ
+      // track (hard) = hard EventWeight * hard VZ * hard trackWeight * [residual]
+      // track (UE) = UE EventWeight * UE VZ * UE trackWeight * [residual]
+      // IMPORTANT: for closure the central value script should use same weighting strat as here
+      // TODO missing Z scale factor now since not in skim for pPb sets yet
+
+      float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
+      float zY  = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
+      float mult = getMultiplicity(MZSignal, par);
+      if (par.isAddUE) mult += getMultiplicity(MZUE, par);
+      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, mult) : 1;
+
+      float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight * ZWeight;
+
+      for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
+         if (!trackSelection(MZSignal, par, j)) continue;
+         float trackPhi  = (*MZSignal->trackPhi)[j];
+         if (trackPhi<0) trackPhi+= 2 * M_PI;
+         float trackEta  = (*MZSignal->trackEta)[j];
+         float trackPt   = (*MZSignal->trackPt)[j];
+         float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
+         float weight = this_eventWeight;
+         //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
+         weight*= (*MZSignal->trackWeight)[j];
+         weight*= residualCorrection;     
+         h->Fill( trackPt, trackEta, trackPhi, weight);
+      }
+      if (par.isAddUE) {
+         for (unsigned long j = 0; j < MZUE->trackPhi->size(); j++) {
+            if (!trackSelection(MZUE, par, j)) continue;
+            float trackPhi  = (*MZUE->trackPhi)[j];
+            if (trackPhi<0) trackPhi+= 2 * M_PI;
+            float trackEta  = (*MZUE->trackEta)[j];
+            float trackPt   = (*MZUE->trackPt)[j];
+            float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
+            float weight = this_eventWeight * MZUE->VZWeight * MZUE->EventWeight;
+            //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
+            weight*= (*MZUE->trackWeight)[j];
+            weight*= residualCorrection;    
+            h->Fill( trackPt, trackEta, trackPhi, weight);
+         }
+      }
+      nZ += this_eventWeight; //1;
+
     }
-    float nZ = 0;
-    h->Sumw2();
-    par.printParameters();
-    unsigned long nEntry = MZSignal->GetEntries() * par.scaleFactor;
-    unsigned long iStart = nEntry * (par.nChunk - 1) / par.nThread;
-    unsigned long iEnd = nEntry * par.nChunk / par.nThread;
-    unsigned int targetMix = ((par.nMix - 1) * par.mix + 1);
-
-    ProgressBar Bar(cout, iEnd - iStart);
-    Bar.SetStyle(1);
-    unsigned long mix_i = iStart;
-    unsigned long mixstart_i = mix_i;
-    int deltaI = (iEnd-iStart)/100+1;
-    TrackResidualCorrector corrector(par.residualFile.c_str());
-    
-    // open Z correction if needed
-    ZResidualCorrector *Zcorrector;
-    if (par.ZWeightFile != "") {
-       Zcorrector = new ZResidualCorrector(par.ZWeightFile.c_str());
-    }
-
-    for (unsigned long i = iStart; i < iEnd; i++) {
-       MZSignal->GetEntry(i);
-       if (par.isAddUE) MZUE->GetEntry(i);
-
-       // no selections at all on the UE TODO
-       
-       if (i % deltaI == 0) {
-          Bar.Update(i - iStart);
-          Bar.Print();
-       }
-       // Check if the event passes the selection criteria
-       if (eventSelection(MZSignal, par)) {
-
-         // KD: partition of weights here is nontrivial, but I think is proper. For +EPOS events we need to add on UE, for these events EventWeight==1, trackWeight==1, VZWeight allowed to vary. For Z counting however we should use
-         // nZ = hard EventWeight * hard VZ
-         // track (hard) = hard EventWeight * hard VZ * hard trackWeight * [residual]
-         // track (UE) = UE EventWeight * UE VZ * UE trackWeight * [residual]
-         // IMPORTANT: for closure the central value script should use same weighting strat as here
-         // TODO missing Z scale factor now since not in skim for pPb sets yet
-
-         float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
-         float zY  = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
-         float multSignal = getMultiplicity(MZSignal, par);
-         float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, multSignal) : 1;
-
-         float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight * ZWeight;
-
-          for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
-             if (!trackSelection(MZSignal, par, j)) continue;
-             float trackPhi  = (*MZSignal->trackPhi)[j];
-             if (trackPhi<0) trackPhi+= 2 * M_PI;
-             float trackEta  = (*MZSignal->trackEta)[j];
-             float trackPt   = (*MZSignal->trackPt)[j];
-             float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-             float weight = this_eventWeight;
-	                 //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
-                   weight*= (*MZSignal->trackWeight)[j]; // /(*MZSignal->trackResidualWeight)[j];
-                   weight*= residualCorrection;     
-             h->Fill( trackPt, trackEta, trackPhi, weight);
-          }
-          if (par.isAddUE) {
-             for (unsigned long j = 0; j < MZUE->trackPhi->size(); j++) {
-                if (!trackSelection(MZUE, par, j)) continue;
-                float trackPhi  = (*MZUE->trackPhi)[j];
-                if (trackPhi<0) trackPhi+= 2 * M_PI;
-                float trackEta  = (*MZUE->trackEta)[j];
-                float trackPt   = (*MZUE->trackPt)[j];
-                float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-                float weight = this_eventWeight * MZUE->VZWeight * MZUE->EventWeight;
-   	                 //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
-                      weight*= (*MZUE->trackWeight)[j]; ///(*MZUE->trackResidualWeight)[j];
-                      weight*= residualCorrection;    
-                h->Fill( trackPt, trackEta, trackPhi, weight);
-             }
-          }
-
-          nZ += this_eventWeight; //1;
-
-       }
-    }
+    cout<<"Total number of Zs: "<<nZ<<endl;
     return nZ;
+
 }
 
 class DataAnalyzer {
@@ -275,18 +263,11 @@ int main(int argc, char *argv[])
    float MaxZPT      = CL.GetDouble("MaxZPT", 200);        // Maximum Z particle transverse momentum threshold for event selection.
    float MinTrackPT  = CL.GetDouble("MinTrackPT", 1);      // Minimum track transverse momentum threshold for track selection.
    float MaxTrackPT  = CL.GetDouble("MaxTrackPT", 2);      // Maximum track transverse momentum threshold for track selection.
-   int   MinHiBin    = CL.GetInt   ("MinHiBin", 0);        // Minimum hiBin value for event selection.
-   int   MaxHiBin    = CL.GetInt   ("MaxHiBin", 200);      // Maximum hiBin value for event selection.
    bool  IsData      = CL.GetBool  ("IsData", false);      // Determines whether the analysis is being run on actual data.
    bool  IsPP        = CL.GetBool  ("IsPP", false);        // Flag to indicate if the analysis is for Proton-Proton collisions.
    bool  IsJewel     = CL.GetBool  ("IsJewel", false);     // Flag to indicate if the analysis is for Jewel since the hole for Jewel is not hadronized
-   cout <<MinTrackPT<<" "<<MaxTrackPT<<endl;
-   if (IsPP) {
-      MinHiBin=-2;
-      MaxHiBin=10000;
-   }
 
-   Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);
+   Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT);
    par.input         = CL.Get      ("Input",   "mergedSample/HISingleMuon-v5.root");            // Input file
    par.inputUE       = CL.Get      ("InputUE", "");                                             // Input file for UE
    par.residualFile  = CL.Get      ("residualFile", "");            // Input Mix file
@@ -295,8 +276,6 @@ int main(int argc, char *argv[])
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     
    par.isPUReject    = CL.GetBool  ("IsPUReject", true);  // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
-   par.isHiBinUp     = CL.GetBool  ("IsHiBinUp", false);   // Default is false
-   par.isHiBinDown   = CL.GetBool  ("IsHiBinDown", false); // Default is false
    par.ZWeightFile   = CL.Get      ("ZWeightFile", "");           // Z weight file
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);     // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);         // The number of threads to be used for parallel processing.
@@ -311,7 +290,6 @@ int main(int argc, char *argv[])
    par.isPP = IsPP;
    par.isJewel = IsJewel;
    
-   if (checkError(par)) return -1;
    if (par.inputUE=="") par.isAddUE = false; else par.isAddUE = true;
           
    // Analyze Data

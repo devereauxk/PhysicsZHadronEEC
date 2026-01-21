@@ -31,14 +31,12 @@ int main(int argc, char *argv[]) {
     vector<string> input_ZPT_files = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_V19_test_ZPT%s", collisionType.c_str(), zPtRange.c_str()),
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_V19_test_ZPT%s", collisionType.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_residual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        "MC Gen + EPOS",
-        "MC Reco",
-        "MC Reco (corrected)",
+        "MC DY-GEN",
+        "MC DY-RECO",
+        "MC DY-RECO (corrected)"
     };
     string output = Form("plots/%s/%s_ZPT%s_%s-nosub-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), tag.c_str());
 
@@ -159,7 +157,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "p_{T}^{ch}", 0, 10,
         "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -27, 160,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.9, 1.1,
         0,
         true, false, false
     );
@@ -182,7 +180,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "y_{ch}", -4, 4,
         "(1/N_{Z}) dN_{ch}/d y_{ch}", 8, 22,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.9, 1.1,
         0,
         false, false, false
     );
@@ -197,7 +195,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#phi_{ch}", -3.2, 3.2,
         "(1/N_{Z}) dN_{ch}/d #phi_{ch}", 6, 18,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.9, 1.1,
         0,
         false, false, false
     );
@@ -205,6 +203,7 @@ int main(int argc, char *argv[]) {
     cTrk3->Update();
     cTrk3->SaveAs(Form("%s-phi.pdf", output.c_str()));
 
+    return 0;
 
     // make canvas
     TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);
@@ -215,7 +214,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "All #Delta y_{ch,Z}", -4, 4,
         "d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, true
     );
@@ -241,7 +240,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "All #Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", 15, 50,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, true
     );
@@ -265,7 +264,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Mixed d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, true
     );
@@ -286,7 +285,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", 15, 50,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, true
     );
@@ -308,7 +307,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, true
     );
@@ -329,7 +328,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, true
     );
@@ -350,7 +349,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, true
     );

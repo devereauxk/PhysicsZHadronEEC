@@ -58,7 +58,6 @@ bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
 //======= eventSelection =====================================//
 // Check if the event mass eventSelection criteria
 // MinZPT < zPt < MaxZPT
-// MinHiBin , hiBin < MaxHiBin
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
@@ -275,8 +274,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
       nZ += eventWeightSignal;
 
-      continue;
-
       //==================================================//
       // boost to CM frame
       //==================================================//
@@ -302,11 +299,10 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          float trackEta  = (*MZSignal->trackEta)[j];
          float trackPt   = (*MZSignal->trackPt)[j];
          float residualCorrection = ((par.residualWeightFile=="")||par.isGenZ==1)? 1 : corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
-         float weight = eventWeightSignal * residualCorrection;
+         float weight = eventWeightSignal;
          //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
          weight*= (*MZSignal->trackWeight)[j];
-         if (par.useResidualWeight) weight*= residualCorrection;
-               
+         if (par.useResidualWeight) weight*= residualCorrection;  
          if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight);
       }
       if (par.useEPOSFile) {
@@ -324,6 +320,8 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight);
          }
       }
+
+      continue;
 
       //==================================================//
       // loop over mixed events
@@ -620,18 +618,11 @@ int main(int argc, char *argv[])
    float MaxZPT      = CL.GetDouble("MaxZPT", 200);          // Maximum Z particle transverse momentum threshold for event selection.
    float MinTrackPT  = CL.GetDouble("MinTrackPT", 1);        // Minimum track transverse momentum threshold for track selection.
    float MaxTrackPT  = CL.GetDouble("MaxTrackPT", 2);        // Maximum track transverse momentum threshold for track selection.
-   int   MinHiBin    = CL.GetInt   ("MinHiBin", -10);          // Minimum hiBin value for event selection.
-   int   MaxHiBin    = CL.GetInt   ("MaxHiBin", 1000);        // Maximum hiBin value for event selection.
    bool  IsData      = CL.GetBool  ("IsData", false);        // Determines whether the analysis is being run on actual data.
    bool  IsPP        = CL.GetBool  ("IsPP", true);          // Flag to indicate if the analysis is for Proton-Proton collisions.
    bool  IsJewel     = CL.GetBool  ("IsJewel", false);       // Flag to indicate if the analysis is for Jewel since the hole for Jewel is not hadronized
 
-   if (IsPP) {                                                                         
-      MinHiBin=-2;
-      MaxHiBin=1000000;
-   }
-
-   Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);
+   Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT);
    par.input         = CL.Get      ("Input",   "mergedSample/HISingleMuon-v5.root");         // Input file
    par.mixFile       = CL.Get      ("MixFile", "mergedSample/HISingleMuon-v5.root");         // Input Mix file
    par.EPOSFile      = CL.Get      ("EPOSFile", "");                                         // EPOS sample, to add UE/background to GenMC hard processes, leave blank if no embeding needed

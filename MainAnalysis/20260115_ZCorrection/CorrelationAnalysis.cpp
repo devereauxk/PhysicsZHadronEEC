@@ -23,7 +23,6 @@ using namespace std;
 //======= eventSelection =====================================//
 // Check if the event mass eventSelection criteria
 // MinZPT < zPt < MaxZPT
-// MinHiBin , hiBin < MaxHiBin
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
@@ -69,6 +68,16 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
     return 0;
 }
 
+float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
+    float mult = 0;
+    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
+        if (!trackSelection(b, par, j)) continue;
+        float trackWeight = (*b->trackWeight)[j];
+        mult += trackWeight;
+    }
+    return mult;
+}
+
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
@@ -94,9 +103,6 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
    int deltaI = (iEnd-iStart)/100+1;
    ZResidualCorrector corrector(par.residualFile.c_str());              
 
-   float totalMult = 0;
-   float totalWeight = 0;
-
    int i_EPOS = iStart;
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
@@ -118,21 +124,9 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
       float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
-
-      float mult = 0;
-      for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
-         if (!trackSelection(MZSignal, par, j)) continue;
-         float trackWeight = (*MZSignal->trackWeight)[j];
-         mult += trackWeight;
-      }
-      if (par.isAddUE) {
-         for (unsigned long j = 0; j < MZUE->trackPhi->size(); j++) {
-            if (!trackSelection(MZUE, par, j)) continue;
-            float trackWeight = (*MZUE->trackWeight)[j];
-            mult += trackWeight;
-            //cout<<" added UE track weight: "<<trackWeight<<endl;
-         }
-      }
+      
+      float mult = getMultiplicity(MZSignal, par);
+      if (par.isAddUE) mult += getMultiplicity(MZUE, par);
 
       // fill with event weight
       hEventWeight->Fill(MZSignal->EventWeight * MZSignal->VZWeight);
@@ -146,19 +140,12 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
       float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, mult);
       this_eventWeight *= residualCorrection;
 
-      totalMult += mult;
-      totalWeight += this_eventWeight;
-      //cout<<i<<" [passed] mult: "<<mult<<" weight : "<<this_eventWeight<<endl;
-
       h->Fill(zPt, zY, mult, this_eventWeight);
 
       nZ += this_eventWeight; //1;
 
    }
    cout<<"Total number of Zs: "<<nZ<<endl;
-
-   cout<<"Total multiplicity: "<<totalMult<<endl;
-   cout<<"Total weights: "<<totalWeight<<endl;
    return nZ;
 
 }
@@ -254,17 +241,11 @@ int main(int argc, char *argv[])
    float MaxZPT      = CL.GetDouble("MaxZPT", 200);        // Maximum Z particle transverse momentum threshold for event selection.
    float MinTrackPT  = CL.GetDouble("MinTrackPT", 1);      // Minimum track transverse momentum threshold for track selection.
    float MaxTrackPT  = CL.GetDouble("MaxTrackPT", 2);      // Maximum track transverse momentum threshold for track selection.
-   int   MinHiBin    = CL.GetInt   ("MinHiBin", 0);        // Minimum hiBin value for event selection.
-   int   MaxHiBin    = CL.GetInt   ("MaxHiBin", 200);      // Maximum hiBin value for event selection.
    bool  IsData      = CL.GetBool  ("IsData", false);      // Determines whether the analysis is being run on actual data.
    bool  IsPP        = CL.GetBool  ("IsPP", false);        // Flag to indicate if the analysis is for Proton-Proton collisions.
    bool  IsJewel     = CL.GetBool  ("IsJewel", false);     // Flag to indicate if the analysis is for Jewel since the hole for Jewel is not hadronized
-   if (IsPP) {
-      MinHiBin=-2;
-      MaxHiBin=10000;
-   }
 
-   Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT, MinHiBin, MaxHiBin);
+   Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT);
    par.input         = CL.Get      ("Input",   "mergedSample/HISingleMuon-v5.root");            // Input file
    par.inputUE       = CL.Get      ("InputUE", "");                                             // Input file for UE
    par.residualFile  = CL.Get      ("residualFile", "");            // Input Mix file

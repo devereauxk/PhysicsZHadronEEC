@@ -11,7 +11,7 @@
 
 void plot_closure(const char* output = "plots/isPbP") {
 
-    // The first input file is considered the baseline (Gen+EPOS)
+    // The first input file is considered the baseline (GEN)
     // currently using a certain ZPT and track PT range
     // track pT: 0.5-10 GeV
     // Z pT: 0-40 GeV
@@ -75,7 +75,7 @@ void plot_closure(const char* output = "plots/isPbP") {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "p_{T}^{ch}", 0, 10,
         "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -1, -1,
-        "Ratio to Gen+EPOS", 0.9, 1.1,
+        "Ratio to GEN", 0.9, 1.1,
         0,
         true, false, false
     );
@@ -98,7 +98,7 @@ void plot_closure(const char* output = "plots/isPbP") {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "y_{ch}", -4, 4,
         "(1/N_{Z}) dN_{ch}/d y_{ch}", 8, 22,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, false
     );
@@ -113,7 +113,7 @@ void plot_closure(const char* output = "plots/isPbP") {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "#phi_{ch}", -3.2, 3.2,
         "(1/N_{Z}) dN_{ch}/d #phi_{ch}", 6, 18,
-        "Ratio to Gen+EPOS", 0.8, 1.2,
+        "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, false
     );
