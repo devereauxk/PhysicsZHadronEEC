@@ -99,7 +99,7 @@ bool isPPbEvent(ZHadronMessenger *b) {
 
 // ====== add UE event from EPOS to hard event
 vector<int>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
-   // returns a mask vector hard event = 0, UE event = 0
+   // returns a mask vector hard event = 0, UE event = 1
 
    vector<int>* UEmask = new vector<int>(hard->trackPt->size(), 0);
 
@@ -212,9 +212,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    //==================================================//
    // loop over events
    //==================================================//
-   float totalMult = 0;
-   float totalWeight = 0;
-
    int i_EPOS = iStart;
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
@@ -225,9 +222,11 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       }
 
       // get UE from EPOS file if needed
+      vector<int>* UEmaskSignal = nullptr;
       if (par.useEPOSFile) {
          i_EPOS++;
          MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+         UEmaskSignal = addUEParticles(MZSignal, MZUE);
       }
 
       // Check if the event passes the selection criteria
@@ -240,37 +239,20 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       float zMass = (par.isGenZ ? (*MZSignal->genZMass)[0] : (*MZSignal->zMass)[0]);
 
       //==================================================//
-      // calculate signal event weight
+      // calculate event weights
       //==================================================//
       float eventWeightSignal = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
 
-      //float multSignal = getMultiplicity(MZSignal, par);
-      //if (par.useEPOSFile) multSignal += getMultiplicity(MZUE, par);
-      float multSignal = 0;
-      for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
-         if (!trackSelection(MZSignal, par, j)) continue;
-         float trackWeight = (*MZSignal->trackWeight)[j];
-         multSignal += trackWeight;
-      }
-      if (par.useEPOSFile) {
-         for (unsigned long j = 0; j < MZUE->trackPhi->size(); j++) {
-            if (!trackSelection(MZUE, par, j)) continue;
-            float trackWeight = (*MZUE->trackWeight)[j];
-            multSignal += trackWeight;
-            //cout<<" added UE track weight: "<<trackWeight<<endl;
-         }
-      }
-      
+      float multSignal = getMultiplicity(MZSignal, par);
       float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, multSignal) : 1;
-      eventWeightSignal *= (par.useZWeight ? ZWeight : 1);
+      if (par.useZWeight) eventWeightSignal *= ZWeight;
+
+      float eventWeightSignalUE = eventWeightSignal;
+      if (par.useEPOSFile) eventWeightSignalUE *= MZUE->VZWeight * MZUE->EventWeight;
 
       if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, multSignal, eventWeightSignal);
       if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeightSignal);
-      if(hZmass != 0) hZmass->Fill(zMass);
-
-      //cout<<i<<" [passed] mult: "<<multSignal<<" + "<<UEmult<<"["<<i_EPOS<<"] = "<<multSignal + UEmult<<" weight : "<<eventWeightSignal<<endl;
-      totalMult += multSignal;
-      totalWeight += eventWeightSignal;
+      if (hZmass != 0) hZmass->Fill(zMass);
 
       nZ += eventWeightSignal;
 
@@ -299,26 +281,11 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          float trackEta  = (*MZSignal->trackEta)[j];
          float trackPt   = (*MZSignal->trackPt)[j];
          float residualCorrection = ((par.residualWeightFile=="")||par.isGenZ==1)? 1 : corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
-         float weight = eventWeightSignal;
+         float weight = (par.useEPOSFile && UEmaskSignal->at(j)==1) ? eventWeightSignalUE : eventWeightSignal;
          //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
          weight*= (*MZSignal->trackWeight)[j];
          if (par.useResidualWeight) weight*= residualCorrection;  
          if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight);
-      }
-      if (par.useEPOSFile) {
-         for (unsigned long j = 0; j < MZUE->trackPhi->size(); j++) {
-            if (!trackSelection(MZUE, par, j)) continue;
-            float trackPhi  = (*MZUE->trackPhi)[j];
-            if (trackPhi<0) trackPhi+= 2 * M_PI;
-            float trackEta  = (*MZUE->trackEta)[j];
-            float trackPt   = (*MZUE->trackPt)[j];
-            float residualCorrection = ((par.residualWeightFile=="")||par.isGenZ==1)? 1 : corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
-            float weight = eventWeightSignal * MZUE->VZWeight * MZUE->EventWeight;
-            //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
-            weight*= (*MZUE->trackWeight)[j];
-            if (par.useResidualWeight) weight*= residualCorrection;    
-            if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight);
-         }
       }
 
       continue;
@@ -356,25 +323,29 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          MMix->GetEntry(mix_i);
 
          // add UE event
-         // if par.mix==False, may call new UE EPOS event for signal event
+         // if par.mix==False, do not call new UE EPOS event for signal event
+         vector<int>* UEmaskMix = 0;
          if (par.mix && par.useEPOSFile) {
             i_EPOS++;
             MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+            UEmaskMix = addUEParticles(MMix, MZUE);
          }
 
          //==================================================//
          // calculate mix event weight
          //==================================================//
-         float eventWeightMix = eventWeightSignal;
-         if (par.mix) {
-            eventWeightMix *= (par.useEventWeight ? MMix->EventWeight * MMix->VZWeight : 1);
+         float zPtMix = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
+         float zYMix = (par.isGenZ ? (*MMix->genZY)[0] : (*MMix->zY)[0]);
+         float multMix = getMultiplicity(MMix, par);
+         float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, multMix) : 1;
 
-            float zPtMix = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
-            float zYMix = (par.isGenZ ? (*MMix->genZY)[0] : (*MMix->zY)[0]);
-            float multMix = getMultiplicity(MMix, par);
-            float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, multMix) : 1;
-            eventWeightMix *= ZWeightMix;
-         }
+         float eventWeightMix = eventWeightSignal;
+         if (par.useEventWeight) eventWeightMix *= MMix->EventWeight * MMix->VZWeight;
+         if (par.useZWeight) eventWeightMix *= ZWeightMix;
+
+         float eventWeightMixUE = eventWeightSignalUE;
+         if (par.useEventWeight) eventWeightMixUE *= MMix->EventWeight * MMix->VZWeight;
+         if (par.useZWeight) eventWeightMixUE *= ZWeightMix;
          
          //==================================================//
          // loop over tracks
@@ -395,16 +366,29 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
             float trackPt   = par.mix ? (*MMix->trackPt)[j] : (*MZSignal->trackPt)[j];
 
+            // boost will not affect trackDeta as track and Z boosted by same amount
+            // boost nonetheless applied for Z and track-specific histograms
             if (par.yBoost != 0 && !par.isPP) {
                if (par.isPPb) trackEta = trackEta - par.yBoost;
                else trackEta = -(trackEta + par.yBoost);
             }
-            // boost will not affect trackDeta as track and Z boosted by same amount
-            // boost nonetheless applied for Z and track-specific histograms
 
             //==================================================//
-            // calculate track weight
+            // calculate total weight
             //==================================================//
+
+            // event + VZ + Z residual weight
+            // four cases: 1) mix UE 2) mix no UE 3) signal UE 4) signal no UE
+            float this_eventWeight = 1;
+            if (par.mix) {
+               if (UEmaskMix->at(j) == 1) this_eventWeight = eventWeightMixUE;
+               else this_eventWeight = eventWeightMix;
+            } else {
+               if (UEmaskSignal->at(j) == 1) this_eventWeight = eventWeightSignalUE;
+               else this_eventWeight = eventWeightSignal;
+            }
+
+            // track weight
             float this_trackWeight = 1;
             if(par.useTrackWeight) {
                if (par.mix) {
@@ -413,7 +397,8 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                   this_trackWeight *= (*MZSignal->trackWeight)[j];
                }
             }
-
+            
+            // track residual weight
             float this_residualWeight = 1;
             if(par.useResidualWeight) {
                /*
@@ -428,10 +413,9 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                   this_residualWeight *= corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
                }
             }
+            if (hTrkResidualCorrectionPtEtaPhi != 0) hTrkResidualCorrectionPtEtaPhi->Fill(trackPt, trackEta, trackPhi, this_residualWeight);
 
-            float weight = (par.mix ? eventWeightMix : eventWeightSignal) * this_trackWeight * this_residualWeight;
-            
-            if (hTrkResidualCorrectionPtEtaPhi != 0) hTrkResidualCorrectionPtEtaPhi->Fill(trackPt, trackEta, trackPhi, this_trackWeight);
+            float weight = this_eventWeight * this_trackWeight * this_residualWeight;
 
             //==================================================//
             // fill central values
@@ -449,10 +433,8 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    } // end event loop
 
    cout<<"Total number of Zs: "<<nZ<<endl;
-   cout<<"Total multiplicity: "<<totalMult<<endl;
-   cout<<"Total weights: "<<totalWeight<<endl;
-
    return nZ;
+
 }
 
 class DataAnalyzer {
