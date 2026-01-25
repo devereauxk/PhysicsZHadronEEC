@@ -1,18 +1,27 @@
-minZpt=40
-maxZpt=500
-./finalAnalysis.sh output/$1DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin 0 --MaxHiBin 20  --Input mergedSample/pythia-v11-Zpt0.root     --IsGen false --IsPP true --IsGenZ true
-./finalAnalysis.sh output/$1DY GEN   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin 0 --MaxHiBin 20  --Input mergedSample/pythia-gen-v11-Zpt0.root --IsGen true --IsPP true --IsGenZ true
+minZpt=$1
+maxZpt=$2
+name=$3
+
+ZWeightFile_pp="my_ZWeights/20260123_ZCorrection_V3_pp_zPt0-500.root"
+
+# pp
+./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input mergedSample/pythia-v11-Zpt0.root     --IsGen false --IsPP true --IsGenZ false --ZWeightFile $ZWeightFile_pp
+cp output/DY-RECO.root output/DY-RECO-noResidual.root
+./finalAnalysis.sh output/DY GEN   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input mergedSample/pythia-gen-v11-Zpt0.root --IsGen true --IsPP true --IsGenZ true
 root -l -q -b correction.C
 mv correction.root output/correction_1.root
-./finalAnalysis.sh output/$1DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin 0 --MaxHiBin 20  --Input mergedSample/pythia-v11-Zpt0.root     --residualFile output/correction_1.root --IsGen false --IsPP true --IsGenZ true
+./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input mergedSample/pythia-v11-Zpt0.root     --residualFile output/correction_1.root --IsGen false --IsPP true --IsGenZ false --ZWeightFile $ZWeightFile_pp
 root -l -q -b correction.C
 mv correction.root output/correction_2.root
 root -l -q -b "merge_corrections.C(\"output/correction_1.root\",\"output/correction_2.root\",\"output/correction_12.root\")"
-./finalAnalysis.sh output/$1DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --MinHiBin 0 --MaxHiBin 20  --Input mergedSample/pythia-v11-Zpt0.root     --residualFile output/correction_12.root --IsGen false --IsPP true --IsGenZ true
+./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input mergedSample/pythia-v11-Zpt0.root     --residualFile output/correction_12.root --IsGen false --IsPP true --IsGenZ false --ZWeightFile $ZWeightFile_pp
 root -l -q -b correction.C
 mv correction.root output/correction_3.root
 
 root -l -q -b plot_corrections.C
-mv corrections.pdf corrections_pp_${minZpt}_${maxZpt}.pdf
+mv corrections.pdf plots/corrections_pp_${name}_${minZpt}_${maxZpt}.pdf
+root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"output/${name}_pp.root\")"
+mv output/${name}_pp.root output/${name}_pp_zPt$minZpt-$maxZpt.root
 
-root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"output/20251214_TrackResidualCorrection_V17_pp_zPt${minZpt}-${maxZpt}.root\")"
+./finalAnalysis.sh output/DY RECO $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input mergedSample/pythia-v11-Zpt0.root     --residualFile output/${name}_pp_zPt$minZpt-$maxZpt.root --IsGen false --IsPP true --IsGenZ false --ZWeightFile $ZWeightFile_pp
+root -l -q -b "plot_closure.C(\"plots/ispp_ZPT${minZpt}_${maxZpt}\")"

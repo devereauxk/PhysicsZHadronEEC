@@ -73,6 +73,9 @@ int main(int argc, char *argv[]) {
         hDeltaEta_all.push_back(this_hDeltaEta_all); 
         hDeltaPhi_all.push_back(this_hDeltaPhi_all);
 
+        this_hDeltaEta_all->Print("all");
+        this_hDeltaPhi_all->Print("all");
+
         // mixed
         TH2D* this_hMixData2D = (TH2D*)fin->Get(Form("hMixData_%s", trkPtRange.c_str()));
         TH1D* this_hDeltaPhi_mix = this_hMixData2D->ProjectionY(Form("hMixPhi_%d", i), 0, 10);
@@ -142,7 +145,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "All #Delta y_{ch,Z}", -4, 4,
         "d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
-        "Ratio to GEN", 0.8, 1.2,
+        "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
     );
@@ -168,7 +171,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "All #Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", 15, 50,
-        "Ratio to GEN", 0.8, 1.2,
+        "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
     );
@@ -192,7 +195,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Mixed d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
-        "Ratio to GEN", 0.8, 1.2,
+        "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
     );
@@ -213,7 +216,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", 15, 50,
-        "Ratio to GEN", 0.8, 1.2,
+        "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
     );
@@ -269,6 +272,8 @@ int main(int argc, char *argv[]) {
     AddUPCHeader(pResult2, "8 TeV", "pPb");
     cResult2->Update();
     cResult2->SaveAs(Form("%s-DeltaPhi-result.pdf", output.c_str()));
+
+    return 0;
 
     TCanvas* cResult1_my = new TCanvas("cResult1_my", "cResult1_my", 600, 600);
     TPad* pResult1_my = (TPad*) plotCMSRatio(

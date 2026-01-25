@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "y_{ch}", -4, 4,
-        "(1/N_{Z}) dN_{ch}/d y_{ch}", 8, 22,
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", (collisionType == "pp" ? -1 : 8), (collisionType == "pp" ? -1 : 22),
         "Ratio to GEN", 0.9, 1.1,
         0,
         false, false, false
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#phi_{ch}", -3.2, 3.2,
-        "(1/N_{Z}) dN_{ch}/d #phi_{ch}", 6, 18,
+        "(1/N_{Z}) dN_{ch}/d #phi_{ch}", (collisionType == "pp" ? -1 : 6), (collisionType == "pp" ? -1 : 18),
         "Ratio to GEN", 0.9, 1.1,
         0,
         false, false, false

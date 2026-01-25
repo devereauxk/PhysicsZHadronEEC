@@ -127,7 +127,7 @@ bool isSameZpTBin(float zPt_sig, float zPt_bkg) {
    return false;
 }
 
-float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
+float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector *corrector) {
    float mult = 0;
    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
       if (!trackSelection(b, par, j)) continue;
@@ -221,14 +221,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          Bar.Print();
       }
 
-      // get UE from EPOS file if needed
-      vector<int>* UEmaskSignal = nullptr;
-      if (par.useEPOSFile) {
-         i_EPOS++;
-         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
-         UEmaskSignal = addUEParticles(MZSignal, MZUE);
-      }
-
       // Check if the event passes the selection criteria
       if (!eventSelection(MZSignal, par)) continue;
       //if (MZSignal->trackPt->size() < 1) continue;
@@ -238,12 +230,27 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       float zMass = (par.isGenZ ? (*MZSignal->genZMass)[0] : (*MZSignal->zMass)[0]);
 
+      if (zPt < 10) corrector = corrector_0_10;
+      else if (zPt >= 10 && zPt < 20) corrector = corrector_10_20;
+      else if (zPt >= 20 && zPt < 40) corrector = corrector_20_40;
+      else corrector = corrector_40_500;
+
+      float nHard = getMultiplicity(MZSignal, par, corrector);
+
+      // get UE from EPOS file if needed
+      vector<int>* UEmaskSignal = nullptr;
+      if (par.useEPOSFile) {
+         i_EPOS++;
+         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+         UEmaskSignal = addUEParticles(MZSignal, MZUE);
+      }
+
       //==================================================//
       // calculate event weights
       //==================================================//
       float eventWeightSignal = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
 
-      float multSignal = getMultiplicity(MZSignal, par);
+      float multSignal = getMultiplicity(MZSignal, par, corrector);
       float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, multSignal) : 1;
       if (par.useZWeight) eventWeightSignal *= ZWeight;
 
@@ -253,8 +260,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       if (hZPtEtaMult != 0) hZPtEtaMult->Fill(zPt, zY, multSignal, eventWeightSignal);
       if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeightSignal);
       if (hZmass != 0) hZmass->Fill(zMass);
-
-      nZ += eventWeightSignal;
 
       //==================================================//
       // boost to CM frame
@@ -269,11 +274,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       //==================================================//
       // get track residual corrector
       // correcting MMix or MSignal particles here, we force both Zs in mixed events to be in the same track residual correction Z bin though, so we just use the sig Z here
-      if (zPt < 10) corrector = corrector_0_10;
-      else if (zPt >= 10 && zPt < 20) corrector = corrector_10_20;
-      else if (zPt >= 20 && zPt < 40) corrector = corrector_20_40;
-      else corrector = corrector_40_500;
-
       for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
          if (!trackSelection(MZSignal, par, j)) continue;
          float trackPhi  = (*MZSignal->trackPhi)[j];
@@ -287,8 +287,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          if (par.useResidualWeight) weight*= residualCorrection;  
          if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight);
       }
-
-      continue;
 
       //==================================================//
       // loop over mixed events
@@ -322,9 +320,11 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          
          MMix->GetEntry(mix_i);
 
+         if (foundMix) nHard = getMultiplicity(MMix, par, corrector);
+
          // add UE event
          // if par.mix==False, do not call new UE EPOS event for signal event
-         vector<int>* UEmaskMix = 0;
+         vector<int>* UEmaskMix = nullptr;
          if (par.mix && par.useEPOSFile) {
             i_EPOS++;
             MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
@@ -334,18 +334,43 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          //==================================================//
          // calculate mix event weight
          //==================================================//
-         float zPtMix = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
-         float zYMix = (par.isGenZ ? (*MMix->genZY)[0] : (*MMix->zY)[0]);
-         float multMix = getMultiplicity(MMix, par);
-         float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, multMix) : 1;
-
          float eventWeightMix = eventWeightSignal;
-         if (par.useEventWeight) eventWeightMix *= MMix->EventWeight * MMix->VZWeight;
-         if (par.useZWeight) eventWeightMix *= ZWeightMix;
-
          float eventWeightMixUE = eventWeightSignalUE;
-         if (par.useEventWeight) eventWeightMixUE *= MMix->EventWeight * MMix->VZWeight;
-         if (par.useZWeight) eventWeightMixUE *= ZWeightMix;
+         if (par.mix) {
+            float zPtMix = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
+            float zYMix = (par.isGenZ ? (*MMix->genZY)[0] : (*MMix->zY)[0]);
+            float multMix = getMultiplicity(MMix, par, corrector);
+            float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, multMix) : 1;
+            
+            if (par.useEventWeight) eventWeightMix *= MMix->EventWeight * MMix->VZWeight;
+            if (par.useZWeight) eventWeightMix *= ZWeightMix;
+
+            if (par.useEventWeight) eventWeightMixUE *= MMix->EventWeight * MMix->VZWeight;
+            if (par.useZWeight) eventWeightMixUE *= ZWeightMix;
+         }
+
+         float totalEventWeight = 1;
+         if (par.mix) {
+            if (par.useEPOSFile) {
+               //float nHard = MMix->trackPt->size() - MZUE->trackPt->size();
+               float nUE = getMultiplicity(MZUE, par, corrector);
+               if (nHard + nUE == 0) continue;
+               totalEventWeight = (nHard * eventWeightMix + nUE * eventWeightMixUE) / (nHard + nUE);
+            } else {
+               totalEventWeight = eventWeightMix;
+            }
+         } else {
+            if (par.useEPOSFile) {
+               //float nHard = MZSignal->trackPt->size() - MZUE->trackPt->size();
+               float nUE = getMultiplicity(MZUE, par, corrector);
+               if (nHard + nUE == 0) continue;
+               totalEventWeight = (nHard * eventWeightSignal + nUE * eventWeightSignalUE) / (nHard + nUE);
+            } else {
+               totalEventWeight = eventWeightSignal;
+            }
+         }
+
+         nZ += (par.mix) ? eventWeightMix : eventWeightSignal;
          
          //==================================================//
          // loop over tracks
@@ -376,15 +401,14 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             //==================================================//
             // calculate total weight
             //==================================================//
-
             // event + VZ + Z residual weight
             // four cases: 1) mix UE 2) mix no UE 3) signal UE 4) signal no UE
             float this_eventWeight = 1;
             if (par.mix) {
-               if (UEmaskMix->at(j) == 1) this_eventWeight = eventWeightMixUE;
+               if (par.useEPOSFile && UEmaskMix->at(j) == 1) this_eventWeight = eventWeightMixUE;
                else this_eventWeight = eventWeightMix;
             } else {
-               if (UEmaskSignal->at(j) == 1) this_eventWeight = eventWeightSignalUE;
+               if (par.useEPOSFile && UEmaskSignal->at(j) == 1) this_eventWeight = eventWeightSignalUE;
                else this_eventWeight = eventWeightSignal;
             }
 
@@ -432,6 +456,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
    } // end event loop
 
+   cout<<endl;
    cout<<"Total number of Zs: "<<nZ<<endl;
    return nZ;
 
