@@ -221,6 +221,14 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          Bar.Print();
       }
 
+      // get UE from EPOS file if needed
+      vector<int>* UEmaskSignal = nullptr;
+      if (par.useEPOSFile) {
+         i_EPOS++;
+         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+         UEmaskSignal = addUEParticles(MZSignal, MZUE);
+      }
+
       // Check if the event passes the selection criteria
       if (!eventSelection(MZSignal, par)) continue;
       //if (MZSignal->trackPt->size() < 1) continue;
@@ -236,14 +244,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       else corrector = corrector_40_500;
 
       float nHard = getMultiplicity(MZSignal, par, corrector);
-
-      // get UE from EPOS file if needed
-      vector<int>* UEmaskSignal = nullptr;
-      if (par.useEPOSFile) {
-         i_EPOS++;
-         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
-         UEmaskSignal = addUEParticles(MZSignal, MZUE);
-      }
 
       //==================================================//
       // calculate event weights
