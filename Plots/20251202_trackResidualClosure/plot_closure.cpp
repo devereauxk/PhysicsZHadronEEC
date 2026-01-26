@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
         hTrkPhi, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#phi_{ch}", -3.2, 3.2,
+        "#phi_{ch}", 0, 2*M_PI,
         "(1/N_{Z}) dN_{ch}/d #phi_{ch}", (collisionType == "pp" ? -1 : 6), (collisionType == "pp" ? -1 : 18),
         "Ratio to GEN", 0.9, 1.1,
         0,
