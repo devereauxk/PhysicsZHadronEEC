@@ -42,9 +42,9 @@ int main(int argc, char *argv[]) {
 
     vector<TH1*> hZPt;
     vector<TH1*> hZEta;
-    vector<TH1*> hZMult;
+    vector<TH1*> hZPhi;
     vector<TH1*> hDeltaEta;
-    vector<TH1*> hDeltaMult;
+    vector<TH1*> hDeltaPhi;
 
     // Loop over nosub files
     int i = 0;
@@ -58,24 +58,24 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // Z pt eta Mult
-        TH3D* this_hZPtEtaMult = (TH3D*)fin->Get(Form("hZPtEtaMult_%s", trkPtRange.c_str()));
-        TH1D* this_hZPt = this_hZPtEtaMult->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
-        TH1D* this_hZEta = this_hZPtEtaMult->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
-        TH1D* this_hZMult = this_hZPtEtaMult->ProjectionZ(Form("ZMult_%s", labels[i].c_str()));
+        // Z pt eta Phi
+        TH3D* this_hZPtEtaPhi = (TH3D*)fin->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
+        TH1D* this_hZPt = this_hZPtEtaPhi->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
+        TH1D* this_hZEta = this_hZPtEtaPhi->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
+        TH1D* this_hZPhi = this_hZPtEtaPhi->ProjectionZ(Form("ZPhi_%s", labels[i].c_str()));
 
         TH1D* hNZ = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
 
-        cout<<" "<<this_hZPtEtaMult->Integral()<<endl;
+        cout<<" "<<this_hZPtEtaPhi->Integral()<<endl;
         cout<<"hNZ bin content: "<<hNZ->Integral()<<endl;
 
         divideByWidth(this_hZPt);
         divideByWidth(this_hZEta);
-        divideByWidth(this_hZMult);
+        divideByWidth(this_hZPhi);
 
         hZPt.push_back(this_hZPt);
         hZEta.push_back(this_hZEta);
-        hZMult.push_back(this_hZMult);
+        hZPhi.push_back(this_hZPhi);
 
         i++;
     }
@@ -122,18 +122,18 @@ int main(int argc, char *argv[]) {
 
     TCanvas* cZ3 = new TCanvas("cZ3", "cZ3", 600, 600);
     TPad* pZ3 = (TPad*) plotCMSRatio(
-        hZMult, "", labels,
+        hZPhi, "", labels,
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "mult", 2, 500,
+        "#phi_{Z}", 0, 2*M_PI,
         "counts", -1, -1,
         "Ratio to GEN", 0.8, 1.2,
         0,
-        true, false, false
+        false, false, false
     );
 
     cZ3->Update();
-    cZ3->SaveAs(Form("%s-Mult.pdf", output.c_str()));
+    cZ3->SaveAs(Form("%s-phi.pdf", output.c_str()));
     
 
     return 0;

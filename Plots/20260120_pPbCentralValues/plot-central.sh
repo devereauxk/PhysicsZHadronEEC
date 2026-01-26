@@ -1,9 +1,9 @@
 make
 
-./ExecuteClosureTest --collisionType pPb --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix20
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix20
-./ExecuteClosureTest --collisionType pPb --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix20
-./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix20
+./ExecuteClosureTest --collisionType pPb --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
+./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
+./ExecuteClosureTest --collisionType pPb --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
+./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
 
 exit
 

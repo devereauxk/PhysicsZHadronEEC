@@ -1,5 +1,5 @@
-nMix=20
-TAG="_ZV3_trkV21_nmix20"
+nMix=10
+TAG="_ZV4_trkV22_nmix10"
 
 ./pPbMC_Gen-analysis.sh "nominal${TAG}" \
     --Input pPbSample/V0.2/PPbMC_Gen.root \
@@ -21,7 +21,7 @@ TAG="_ZV3_trkV21_nmix20"
     --MixFile pPbSample/V0.2/PPbMC_Reco.root \
     --UseEventWeight true --UseZWeight true \
     --UseTrackWeight true --UseResidualWeight false \
-    --ZWeightFile my_ZWeights/20260120_ZCorrection_V3_PPb_zPt0-500.root \
+    --ZWeightFile my_ZWeights/20260126_ZCorrection_V4_PPb_zPt0-500.root \
     --yBoost 0 --nMix $nMix
 
 ./pPbMC-analysis.sh "trkResidual${TAG}" \
@@ -30,8 +30,8 @@ TAG="_ZV3_trkV21_nmix20"
     --UseEventWeight true --UseZWeight true \
     --UseTrackWeight true --UseResidualWeight true \
     --yBoost 0 --nMix $nMix \
-    --ZWeightFile my_ZWeights/20260120_ZCorrection_V3_PPb_zPt0-500.root \
-    --ResidualWeightFile my_residualWeights/20260120_TrackResidualCorrection_V21_ZWeight_V3_PPb_zPt
+    --ZWeightFile my_ZWeights/20260126_ZCorrection_V4_PPb_zPt0-500.root \
+    --ResidualWeightFile my_residualWeights/20260126_TrackResidualCorrection_V22_ZWeight_V4_PPb_zPt
 
 
 # luna skim correction

@@ -46,11 +46,11 @@ void correction(const char* recoFileName = "output/DY-RECO.root",
     TH3D *hReco3D = (TH3D*)fReco->Get("h3D");
     TH3D *hGen3D = (TH3D*)fGen->Get("h3D");
 
-    // Project into 1D histograms for pt, eta, and Mult
+    // Project into 1D histograms for pt, eta, and Phi
 
     TH1D *hPtGen = hGen3D->ProjectionX("hPtGen");
     TH1D *hEtaGen = hGen3D->ProjectionY("hEtaGen");
-    TH1D *hMultGen = hGen3D->ProjectionZ("hMultGen");
+    TH1D *hPhiGen = hGen3D->ProjectionZ("hPhiGen");
 
     // Calculate the ratios GEN/RECO
     TH1D *hPtReco = hReco3D->ProjectionX("hPtReco");
@@ -63,15 +63,15 @@ void correction(const char* recoFileName = "output/DY-RECO.root",
     hEtaCorrTotal->Divide(hEtaReco);
 
     scaleTH3D(hReco3D, hEtaCorrTotal, 'y');
-    TH1D *hMultReco = hReco3D->ProjectionZ("hMultReco");
-    TH1D *hMultCorrTotal = (TH1D*)hMultGen->Clone("hMultCorrTotal");
-    hMultCorrTotal->Divide(hMultReco);
+    TH1D *hPhiReco = hReco3D->ProjectionZ("hPhiReco");
+    TH1D *hPhiCorrTotal = (TH1D*)hPhiGen->Clone("hPhiCorrTotal");
+    hPhiCorrTotal->Divide(hPhiReco);
 
     // Save the correction histograms into correction.root
     TFile *fCorr = new TFile("correction.root", "RECREATE");
     hPtCorrTotal->Write();
     hEtaCorrTotal->Write();
-    hMultCorrTotal->Write();
+    hPhiCorrTotal->Write();
     fCorr->Close();
 
     // Clean up

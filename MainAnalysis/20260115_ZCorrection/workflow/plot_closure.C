@@ -30,9 +30,9 @@ void plot_closure(const char* output = "plots/isPbP") {
 
     vector<TH1*> hZPt;
     vector<TH1*> hZEta;
-    vector<TH1*> hZMult;
+    vector<TH1*> hZPhi;
     vector<TH1*> hDeltaEta;
-    vector<TH1*> hDeltaMult;
+    vector<TH1*> hDeltaPhi;
 
     // Loop over all input files
     int i = 0;
@@ -43,28 +43,28 @@ void plot_closure(const char* output = "plots/isPbP") {
             continue;
         }
 
-        // track pt eta Mult
-        TH3D* this_hZPtEtaMult = (TH3D*)fin->Get("h3D");
-        TH1D* this_hZPt = this_hZPtEtaMult->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
-        TH1D* this_hZEta = this_hZPtEtaMult->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
-        TH1D* this_hZMult = this_hZPtEtaMult->ProjectionZ(Form("ZMult_%s", labels[i].c_str()));
+        // track pt eta Phi
+        TH3D* this_hZPtEtaPhi = (TH3D*)fin->Get("h3D");
+        TH1D* this_hZPt = this_hZPtEtaPhi->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
+        TH1D* this_hZEta = this_hZPtEtaPhi->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
+        TH1D* this_hZPhi = this_hZPtEtaPhi->ProjectionZ(Form("ZPhi_%s", labels[i].c_str()));
 
         TH1D* hNZ = (TH1D*)fin->Get("hNZ");
 
-        cout<<" "<<this_hZPtEtaMult->Integral()<<endl;
+        cout<<" "<<this_hZPtEtaPhi->Integral()<<endl;
         cout<<"hNZ bin content: "<<hNZ->Integral()<<endl;
 
         this_hZPt->Scale(1.0 / hNZ->GetBinContent(1));
         this_hZEta->Scale(1.0 / hNZ->GetBinContent(1));
-        this_hZMult->Scale(1.0 / hNZ->GetBinContent(1));
+        this_hZPhi->Scale(1.0 / hNZ->GetBinContent(1));
 
         divideByWidth(this_hZPt);
         divideByWidth(this_hZEta);
-        divideByWidth(this_hZMult);
+        divideByWidth(this_hZPhi);
 
         hZPt.push_back(this_hZPt);
         hZEta.push_back(this_hZEta);
-        hZMult.push_back(this_hZMult);
+        hZPhi.push_back(this_hZPhi);
 
         i++;
     }
@@ -111,17 +111,17 @@ void plot_closure(const char* output = "plots/isPbP") {
 
     TCanvas* cZ3 = new TCanvas("cZ3", "cZ3", 600, 600);
     TPad* pZ3 = (TPad*) plotCMSRatio(
-        hZMult, "", labels,
+        hZPhi, "", labels,
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "mult", 2, 500,
+        "mult", 0, 2*M_PI,
         "counts", -1, -1,
         "Ratio to Gen+EPOS", 0.8, 1.2,
         0,
-        true, false, false
+        false, false, false
     );
 
     cZ3->Update();
-    cZ3->SaveAs(Form("%s-Mult.pdf", output));
+    cZ3->SaveAs(Form("%s-Phi.pdf", output));
 
 }

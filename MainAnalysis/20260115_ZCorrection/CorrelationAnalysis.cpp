@@ -101,7 +101,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
    unsigned long mix_i = iStart;
    unsigned long mixstart_i = mix_i;
    int deltaI = (iEnd-iStart)/100+1;
-   ZResidualCorrector corrector(par.residualFile.c_str());              
+   TrackResidualCorrector corrector(par.residualFile.c_str());              
 
    int i_EPOS = iStart;
    for (unsigned long i = iStart; i < iEnd; i++) {
@@ -123,6 +123,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
 
       float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
+      if (zPhi < 0) zPhi += 2 * M_PI;
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       
       float mult = getMultiplicity(MZSignal, par);
@@ -137,10 +138,10 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
       //hEventWeight->Fill(mult / totalParts);
 
       float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight;
-      float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, mult);
+      float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, zPhi);
       this_eventWeight *= residualCorrection;
 
-      h->Fill(zPt, zY, mult, this_eventWeight);
+      h->Fill(zPt, zY, zPhi, this_eventWeight);
 
       nZ += this_eventWeight; //1;
 
@@ -188,15 +189,14 @@ public:
 
     for (int i = 0; i <= nbinsY; ++i) binEdgesY[i] = yMin + (yMax - yMin) * i / nbinsY;
 
-    const int nbinsZ = 30;
-    const double zMin = 1;
-    const double zMax = 150;
+    const int nbinsZ = 50;
+    const double zMin = 0;
+    const double zMax = 2 * M_PI;
     std::vector<double> binEdgesZ(nbinsZ + 1);
 
     for (int i = 0; i <= nbinsZ; ++i) binEdgesZ[i] = zMin + (zMax - zMin) * i / nbinsZ;
-    binEdgesZ[nbinsZ]=500;
 
-    h = new TH3D("h3D", "Histogram Title; p_{T} (GeV/c); #eta; mult",
+    h = new TH3D("h3D", "Histogram Title; p_{T} (GeV/c); #eta; #phi",
                      nbinsX, &binEdgesX[0],
                      nbinsY, &binEdgesY[0],
                      nbinsZ, &binEdgesZ[0]);

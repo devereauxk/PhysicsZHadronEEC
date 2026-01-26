@@ -101,17 +101,17 @@ void plot_closure(const char* output = "plots/isPbP") {
         "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, false
-        );
+    );
 
-        cTrk2->Update();
-        cTrk2->SaveAs(Form("%s-eta.pdf", output));
+    cTrk2->Update();
+    cTrk2->SaveAs(Form("%s-eta.pdf", output));
 
-        TCanvas* cTrk3 = new TCanvas("cTrk3", "cTrk3", 600, 600);
+    TCanvas* cTrk3 = new TCanvas("cTrk3", "cTrk3", 600, 600);
         TPad* pTrk3 = (TPad*) plotCMSRatio(
         hTrkPhi, "", labels,
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "#phi_{ch}", -3.2, 3.2,
+        "#phi_{ch}", 0, 2*M_PI,
         "(1/N_{Z}) dN_{ch}/d #phi_{ch}", (std::string(output) == "plots/ispp") ? 6 : -1, (std::string(output) == "plots/ispp") ? 18 : -1,
         "Ratio to GEN", 0.8, 1.2,
         0,
