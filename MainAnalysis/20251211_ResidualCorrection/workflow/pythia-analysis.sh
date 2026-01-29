@@ -2,7 +2,7 @@ minZpt=$1
 maxZpt=$2
 name=$3
 
-ZWeightFile_pp="my_ZWeights/20260123_ZCorrection_V3_pp_zPt0-500.root"
+ZWeightFile_pp="my_ZWeights/20260129_ZCorrection_V4_pp_zPt0-500.root"
 
 # pp
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input mergedSample/pythia-v11-Zpt0.root     --IsGen false --IsPP true --IsGenZ false --ZWeightFile $ZWeightFile_pp

@@ -759,6 +759,8 @@ TPad* plotCMSSimple2D(TCanvas* c, TH2* hist, const char* title,
     bool logz = false,
     bool binnums = false) {
 
+    gStyle->SetPalette(kRainbow);
+
     // Get the canvas pad to pass to other functions
     TPad* pad1 = (TPad*) c->GetPad(0);
     pad1->cd();
@@ -778,7 +780,15 @@ TPad* plotCMSSimple2D(TCanvas* c, TH2* hist, const char* title,
     hist->GetYaxis()->SetTitle(yTitle);
     hist->GetYaxis()->SetRangeUser(ymin, ymax);
     hist->GetZaxis()->SetTitle(zTitle);
-    hist->GetZaxis()->SetRangeUser(zmin, zmax);
+
+    if (zmin < zmax) {
+        hist->GetZaxis()->SetRangeUser(zmin, zmax);
+    } else {
+        // Auto-scale z axis
+        double zmin_auto = hist->GetMinimum();
+        double zmax_auto = hist->GetMaximum();
+        hist->GetZaxis()->SetRangeUser(zmin_auto-0.2*abs(zmin_auto), zmax_auto+0.2*abs(zmax_auto));
+    }
 
     if (binnums) {
         gStyle->SetPalette(kBird);

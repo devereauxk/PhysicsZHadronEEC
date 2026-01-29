@@ -1,5 +1,17 @@
 make
 
+./ExecuteClosureTest --collisionType pp --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
+./ExecuteClosureTest --collisionType pp --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
+
+exit
+
+./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix20
+#./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
+#./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 1_4 --tag ZV4_trkV22_nmix10
+#./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 4_500 --tag ZV4_trkV22_nmix10
+
+exit
+
 ./ExecuteClosureTest --collisionType pPb --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
 ./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
 ./ExecuteClosureTest --collisionType pPb --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10

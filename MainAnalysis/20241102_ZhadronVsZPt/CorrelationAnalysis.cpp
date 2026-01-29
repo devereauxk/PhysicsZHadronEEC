@@ -352,28 +352,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             if (par.useZWeight) eventWeightMixUE *= ZWeightMix;
          }
 
-         float totalEventWeight = 1;
-         if (par.mix) {
-            if (par.useEPOSFile) {
-               //float nHard = MMix->trackPt->size() - MZUE->trackPt->size();
-               float nUE = getMultiplicity(MZUE, par, corrector);
-               if (nHard + nUE == 0) continue;
-               totalEventWeight = (nHard * eventWeightMix + nUE * eventWeightMixUE) / (nHard + nUE);
-            } else {
-               totalEventWeight = eventWeightMix;
-            }
-         } else {
-            if (par.useEPOSFile) {
-               //float nHard = MZSignal->trackPt->size() - MZUE->trackPt->size();
-               float nUE = getMultiplicity(MZUE, par, corrector);
-               if (nHard + nUE == 0) continue;
-               totalEventWeight = (nHard * eventWeightSignal + nUE * eventWeightSignalUE) / (nHard + nUE);
-            } else {
-               totalEventWeight = eventWeightSignal;
-            }
-         }
-
-         nZ += totalEventWeight;
+         nZ += (par.mix) ? eventWeightMix : eventWeightSignal;
          
          //==================================================//
          // loop over tracks
