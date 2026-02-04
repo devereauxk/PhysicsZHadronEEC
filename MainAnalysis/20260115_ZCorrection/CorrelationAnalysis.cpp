@@ -112,12 +112,6 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
          Bar.Print();
       }
 
-      // get UE from EPOS file if needed
-      if (par.isAddUE) {
-         i_EPOS++;
-         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
-      }
-
       // Check if the event passes the selection criteria
       if (!eventSelection(MZSignal, par)) continue;
 
@@ -125,17 +119,9 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       if (zPhi < 0) zPhi += 2 * M_PI;
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
-      
-      float mult = getMultiplicity(MZSignal, par);
-      if (par.isAddUE) mult += getMultiplicity(MZUE, par);
 
       // fill with event weight
       hEventWeight->Fill(MZSignal->EventWeight * MZSignal->VZWeight);
-
-      // fill with average track weight
-      //float totalParts = MZSignal->trackPhi->size();
-      //if (par.isAddUE) totalParts += MZUE->trackPhi->size();
-      //hEventWeight->Fill(mult / totalParts);
 
       float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight;
       float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, zPhi);

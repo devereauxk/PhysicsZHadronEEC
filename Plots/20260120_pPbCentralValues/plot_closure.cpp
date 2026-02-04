@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(p1, "8 TeV", "pPb");
+    AddUPCHeader(p1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     p1->Update();
 
     c1->SaveAs(Form("%s-DeltaEta-all.pdf", output.c_str()));
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(p2, "8 TeV", "pPb");
+    AddUPCHeader(p1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     p2->Update();
 
     c2->SaveAs(Form("%s-DeltaPhi-all.pdf", output.c_str()));
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pMix1, "8 TeV", "pPb");
+    AddUPCHeader(pMix1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cMix1->Update();
     cMix1->SaveAs(Form("%s-DeltaEta-bkg.pdf", output.c_str()));
 
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pMix2, "8 TeV", "pPb");
+    AddUPCHeader(pMix2, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cMix2->Update();
     cMix2->SaveAs(Form("%s-DeltaPhi-bkg.pdf", output.c_str()));
 
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult1, "8 TeV", "pPb");
+    AddUPCHeader(pResult1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
@@ -280,9 +280,11 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult2, "8 TeV", "pPb");
+    AddUPCHeader(pResult2, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cResult2->Update();
     cResult2->SaveAs(Form("%s-DeltaPhi-result.pdf", output.c_str()));
+
+    return 0;
 
     // =================================== //    
     // eta phi maps
@@ -292,7 +294,7 @@ int main(int argc, char *argv[]) {
         c2D, hDelta2D_ratio, "Eta-Phi Map GEN vs RECO",
         "#Delta y_{ch,Z}", -4, 4,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "RECO / GEN", -2, 2,
+        "RECO / GEN", 0.5, 1.5,
         false, false, false
     );
 
@@ -325,7 +327,7 @@ int main(int argc, char *argv[]) {
         c2D_gen, hData_result[0], "Eta-Phi Map GEN",
         "#Delta y_{ch,Z}", -4, 4,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "GEN", -1, -1,
+        "GEN", -0.15, 0.35,
         false, false, false
     );
 
@@ -336,7 +338,7 @@ int main(int argc, char *argv[]) {
         c2D_reco, hData_result[3], "Eta-Phi Map RECO (corrected)",
         "#Delta y_{ch,Z}", -4, 4,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "RECO", -1, -1,
+        "RECO", -0.15, 0.35,
         false, false, false
     );
 
@@ -454,7 +456,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult1_my, "8 TeV", "pPb");
+    AddUPCHeader(pResult1_my, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cResult1_my->Update();
     cResult1_my->SaveAs(Form("%s-test-comparison.pdf", output.c_str()));
 

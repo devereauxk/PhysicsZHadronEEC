@@ -1,5 +1,5 @@
 nMix=10
-TAG="_V22_nmix10"
+TAG="_V23_nmix10"
 
 DOPP=$1
 DOPPB=$2
@@ -47,7 +47,7 @@ if [ "$DOPPB" == "1" ]; then
         --MixFile pPbSample/V0.2/PPbMC_Reco.root \
         --UseEventWeight true --UseZWeight true \
         --UseTrackWeight true --UseResidualWeight false \
-        --ZWeightFile my_ZWeights/20260126_ZCorrection_V4_PPb_zPt0-500.root \
+        --ZWeightFile my_ZWeights/20260202_ZCorrection_V5_PPb_zPt0-500.root \
         --yBoost 0 --nMix $nMix
 
     ./pPbMC-analysis.sh "residual${TAG}" \
@@ -56,8 +56,8 @@ if [ "$DOPPB" == "1" ]; then
         --UseEventWeight true --UseZWeight true \
         --UseTrackWeight true --UseResidualWeight true \
         --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260126_ZCorrection_V4_PPb_zPt0-500.root \
-        --ResidualWeightFile my_residualWeights/20260126_TrackResidualCorrection_V22_ZWeight_V4_PPb_zPt
+        --ZWeightFile my_ZWeights/20260202_ZCorrection_V5_PPb_zPt0-500.root \
+        --ResidualWeightFile my_residualWeights/20260202_TrackResidualCorrection_V23_ZWeight_V5_PPb_zPt
 fi
 
 # PbP

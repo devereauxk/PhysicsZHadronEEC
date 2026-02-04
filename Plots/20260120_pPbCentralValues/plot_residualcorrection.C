@@ -9,23 +9,37 @@
 #include <vector>
 #include <string>
 
-void plot_residualcorrection() {
+int main(int argc, char *argv[]) {
 
-    // The first input file is considered the baseline (Gen+EPOS)
-    // currently using a certain ZPT and track PT range
+    CommandLine CL(argc, argv);
 
-    // PbP or PPb
+    string collisionType = CL.Get("collisionType", "pPb");
+    string zPtRange = CL.Get("zPtRange", "40_500");
+    string trkPtRange = CL.Get("trkPtRange", "0.5_500");
+    string tag = CL.Get("tag", "V16_nmix5");
+
+    cout<<"Collision Type: "<<collisionType<<endl;
+    cout<<"Z Pt Range: "<<zPtRange<<endl;
+    cout<<"Tag: "<<tag<<endl;
+
+    // files to load
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_residual_V16_nmix5_ZPT40_500-result.root"
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        "MC Reco (residual)"
+        "MC DY-GEN",
+        "MC DY-RECO (corrected)"
     };
-    const char* output =  "plots/PbP_corr_ZPT40_500-0.5_500_nmix5";
+    string output = Form("plots/trackResiduals/%s_ZPT%s_trkPT%s_%s", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
-    vector<TH1*> hTrkPtCorr;
-    vector<TH1*> hTrkEtaCorr;
-    vector<TH1*> hTrkPhiCorr;
+    vector<TH1*> hTrkPtCorr_all;
+    vector<TH1*> hTrkEtaCorr_all;
+    vector<TH1*> hTrkPhiCorr_all;
+
+    vector<TH1*> hTrkPtCorr_bkg;
+    vector<TH1*> hTrkEtaCorr_bkg;
+    vector<TH1*> hTrkPhiCorr_bkg;
 
     // Loop over all input files
     int i = 0;
@@ -36,16 +50,25 @@ void plot_residualcorrection() {
             continue;
         }
 
-        // corrections
-        TH3D* hTrkResidualCorrectionPtEtaPhi = (TH3D*)fin->Get("hTrkResidualCorrectionPtEtaPhi_0.5_500");
-        TH1D* this_hTrkPtCorr = hTrkResidualCorrectionPtEtaPhi->ProjectionX(Form("trkPtCorr_%s", labels[i].c_str()));
-        TH1D* this_hTrkEtaCorr = hTrkResidualCorrectionPtEtaPhi->ProjectionY(Form("trkEtaCorr_%s", labels[i].c_str()));
-        TH1D* this_hTrkPhiCorr = hTrkResidualCorrectionPtEtaPhi->ProjectionZ(Form("trkPhiCorr_%s", labels[i].c_str()));
+        // corrections sig+bkg
+        TH3D* hTrkResidualCorrection = (TH3D*)fin->Get("hTrkResidualCorrection");
+        TH1D* this_hTrkPtCorr = hTrkResidualCorrection->ProjectionX(Form("trkPtCorr_%s", labels[i].c_str()));
+        TH1D* this_hTrkEtaCorr = hTrkResidualCorrection->ProjectionY(Form("trkEtaCorr_%s", labels[i].c_str()));
+        TH1D* this_hTrkPhiCorr = hTrkResidualCorrection->ProjectionZ(Form("trkPhiCorr_%s", labels[i].c_str()));
 
-        hTrkPtCorr.push_back(this_hTrkPtCorr);
-        hTrkEtaCorr.push_back(this_hTrkEtaCorr);
-        hTrkPhiCorr.push_back(this_hTrkPhiCorr);
+        hTrkPtCorr_all.push_back(this_hTrkPtCorr);
+        hTrkEtaCorr_all.push_back(this_hTrkEtaCorr);
+        hTrkPhiCorr_all.push_back(this_hTrkPhiCorr);
 
+        // correction bkg
+        TH3D* hTrkResidualCorrectionMix = (TH3D*)fin->Get("hTrkResidualCorrectionMix");
+        TH1D* this_hTrkPtCorrMix = hTrkResidualCorrectionMix->ProjectionX(Form("trkPtCorr_%s", labels[i].c_str()));
+        TH1D* this_hTrkEtaCorrMix = hTrkResidualCorrectionMix->ProjectionY(Form("trkEtaCorr_%s", labels[i].c_str()));
+        TH1D* this_hTrkPhiCorrMix = hTrkResidualCorrectionMix->ProjectionZ(Form("trkPhiCorr_%s", labels[i].c_str()));
+
+        hTrkPtCorr_bkg.push_back(this_hTrkPtCorrMix);
+        hTrkEtaCorr_bkg.push_back(this_hTrkEtaCorrMix);
+        hTrkPhiCorr_bkg.push_back(this_hTrkPhiCorrMix);
 
         i++;
     }
@@ -113,5 +136,7 @@ void plot_residualcorrection() {
     AddUPCHeader(pTrk3, "8 TeV", "pPb MC");
 
     cTrk3->SaveAs(Form("%s-phi.pdf", output));
+
+    return 0;
 
 }

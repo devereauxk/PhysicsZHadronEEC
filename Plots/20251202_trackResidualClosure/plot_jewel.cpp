@@ -18,27 +18,23 @@ int main(int argc, char *argv[]) {
 
     CommandLine CL(argc, argv);
 
-    string collisionType = CL.Get("collisionType", "pPb");
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
 
-    cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/jewelPPMC_ZPT%s", zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/jewelPPBMC_ZPT%s", zPtRange.c_str())
     };
     vector<string> labels = {
-        "MC DY-GEN",
-        "MC DY-RECO",
-        "MC DY-RECO (corrected)"
+        "JEWEL pp",
+        "JEWEL pPb (2D hydro)"
     };
-    string output = Form("plots/%s/%s_ZPT%s_%s-nosub-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), tag.c_str());
+    string output = Form("plots/jewel/%s_ZPT%s", tag.c_str(), zPtRange.c_str(), tag.c_str());
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
@@ -179,7 +175,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "y_{ch}", -4, 4,
-        "(1/N_{Z}) dN_{ch}/d y_{ch}", (collisionType == "pp" ? -1 : 8), (collisionType == "pp" ? -1 : 22),
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", -1, -1,
         "Ratio to GEN", 0.9, 1.1,
         0,
         false, false, false
@@ -194,7 +190,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#phi_{ch}", 0, 2*M_PI,
-        "(1/N_{Z}) dN_{ch}/d #phi_{ch}", (collisionType == "pp" ? -1 : 6), (collisionType == "pp" ? -1 : 18),
+        "(1/N_{Z}) dN_{ch}/d #phi_{ch}", -1, -1,
         "Ratio to GEN", 0.9, 1.1,
         0,
         false, false, false
@@ -213,7 +209,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "All #Delta y_{ch,Z}", -4, 4,
-        "d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
+        "d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, true

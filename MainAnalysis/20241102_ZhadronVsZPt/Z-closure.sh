@@ -53,7 +53,7 @@ if [ "$DOPPB" == "1" ]; then
         --UseEventWeight true --UseZWeight true \
         --UseTrackWeight true --UseResidualWeight false \
         --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260126_ZCorrection_V4_PPb_zPt0-500.root
+        --ZWeightFile my_ZWeights/20260202_ZCorrection_V5_PPb_zPt0-500.root
 fi
 
 # PbP

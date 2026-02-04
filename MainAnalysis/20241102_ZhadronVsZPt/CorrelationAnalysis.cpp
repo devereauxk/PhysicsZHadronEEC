@@ -166,7 +166,7 @@ double* getLinBins(float min, float max, int nBins) {
 // Z hadron dphi calculation
 //============================================================//
 float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
-               ZHadronMessenger *MMixEvt, ZHadronMessenger *MZUE,    
+               ZHadronMessenger *MZUE,
                TH2D *h, TH2D *hSub0, TH3D *hTrkPtEtaPhi, TH3D* hZPtEtaPhi,
                TH1D* hVZ, TH1D* hZmass, TH3D* hTrkResidualCorrectionPtEtaPhi,
                const Parameters& par, TNtuple *nt = 0) {
@@ -212,7 +212,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    //==================================================//
    // loop over events
    //==================================================//
-   int i_EPOS = iStart;
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
 
@@ -224,8 +223,7 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       // get UE from EPOS file if needed
       vector<int>* UEmaskSignal = nullptr;
       if (par.useEPOSFile) {
-         i_EPOS++;
-         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+         MZUE->GetEntry(i);
          UEmaskSignal = addUEParticles(MZSignal, MZUE);
       }
 
@@ -244,19 +242,18 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       else if (zPt >= 20 && zPt < 40) corrector = corrector_20_40;
       else corrector = corrector_40_500;
 
-      float nHard = getMultiplicity(MZSignal, par, corrector);
 
       //==================================================//
       // calculate event weights
       //==================================================//
-      float eventWeightSignal = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
-
-      float multSignal = getMultiplicity(MZSignal, par, corrector);
       float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
+
+      float eventWeightSignal = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
       if (par.useZWeight) eventWeightSignal *= ZWeight;
 
-      float eventWeightSignalUE = eventWeightSignal;
-      if (par.useEPOSFile) eventWeightSignalUE *= MZUE->VZWeight * MZUE->EventWeight;
+      float eventWeightSignalUE = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
+      if (par.useEPOSFile) eventWeightSignalUE *= 1; //MZUE->VZWeight; // * MZUE->EventWeight;
+      if (par.useZWeight) eventWeightSignalUE *= ZWeight;
 
       if (hZPtEtaPhi != 0) hZPtEtaPhi->Fill(zPt, zY, zPhi, eventWeightSignal);
       if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeightSignal);
@@ -298,21 +295,28 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          // get mix event
          foundMix = false;
          mixstart_i = mix_i;
+         vector<int>* UEmaskMix = nullptr;
          if (par.mix) {
             while (!foundMix) {
                mix_i = (mix_i + 1);
-               if (mix_i >= MMixEvt->GetEntries()) mix_i = 0;
+               if (mix_i >= MMix->GetEntries()) mix_i = 0;
                if (mixstart_i == mix_i) break;
-               MMixEvt->GetEntry(mix_i);
+               MMix->GetEntry(mix_i);
+
+               // add epos particles if needed
+               if (par.useEPOSFile) {
+                  MZUE->GetEntry(mix_i);
+                  UEmaskMix = addUEParticles(MMix, MZUE);
+               }
 
                // event selection
-               if (!eventSelection(MMixEvt, par)) continue;
+               if (!eventSelection(MMix, par)) continue;
 
                // only mix PPb with PPb and PbP with PbP
-               if (!par.isPP && par.isData && isPPbEvent(MZSignal) != isPPbEvent(MMixEvt)) continue;
+               if (!par.isPP && par.isData && isPPbEvent(MZSignal) != isPPbEvent(MMix)) continue;
 
                // only mix with Z events of similar Z pT
-               float mix_zPt = (par.isGenZ ? (*MMixEvt->genZPt)[0] : (*MMixEvt->zPt)[0]); 
+               float mix_zPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]); 
                if (!isSameZpTBin(zPt, mix_zPt)) continue;
 
                if (i != mix_i) foundMix = true;
@@ -321,17 +325,11 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          
          MMix->GetEntry(mix_i);
 
-         if (foundMix) nHard = getMultiplicity(MMix, par, corrector);
-
-         // add UE event
-         // if par.mix==False, do not call new UE EPOS event for signal event
-         vector<int>* UEmaskMix = nullptr;
          if (par.mix && par.useEPOSFile) {
-            i_EPOS++;
-            MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+            MZUE->GetEntry(mix_i);
             UEmaskMix = addUEParticles(MMix, MZUE);
          }
-
+         
          //==================================================//
          // calculate mix event weight
          //==================================================//
@@ -342,7 +340,6 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             float zYMix = (par.isGenZ ? (*MMix->genZY)[0] : (*MMix->zY)[0]);
             float zPhiMix = (par.isGenZ ? (*MMix->genZPhi)[0] : (*MMix->zPhi)[0]);
             if (zPhiMix < 0) zPhiMix += 2 * M_PI;
-            float multMix = getMultiplicity(MMix, par, corrector);
             float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, zPhiMix) : 1;
             
             if (par.useEventWeight) eventWeightMix *= MMix->EventWeight * MMix->VZWeight;
@@ -453,7 +450,7 @@ public:
    TH3D *hZPtEtaPhi;
    TH1D *hZmass;
    TH2D *h = 0, *hSub0 = 0, *hMix = 0;
-   ZHadronMessenger *MZHadron, *MMix, *MMixEvt, *MZHadronUE;
+   ZHadronMessenger *MZHadron, *MMix, *MZHadronUE;
    string title;
    TH3D* hTrkResidualCorrectionPtEtaPhi;
 
@@ -463,7 +460,6 @@ public:
       mixFile(new TFile(mixFilename)),
       mixFileClone(new TFile(mixFilename)),
       MMix(new ZHadronMessenger(*mixFile, string("Tree"))),
-      MMixEvt(new ZHadronMessenger(*mixFileClone, string("Tree"), true)),
       title(mytitle),
       outf(new TFile(outFilename, "recreate")) {
       if (useEPOSFile) {
@@ -481,7 +477,6 @@ public:
       outf->Close(); 
       delete MZHadron;
       delete MMix;
-      delete MMixEvt;
    }
 
    void analyze(Parameters& par) {
@@ -489,7 +484,6 @@ public:
       //==================================================//
       // First histogram with mix=false
       //==================================================//
-
       outf->cd();
       par.mix = false;
 
@@ -560,7 +554,7 @@ public:
       h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hSub0 = new TH2D(Form("hSub0%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
-      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, MZHadronUE, h, hSub0, hTrkPtEtaPhi, hZPtEtaPhi, hVZ, hZmass, hTrkResidualCorrectionPtEtaPhi, par)); // Dphi analysis
+      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, h, hSub0, hTrkPtEtaPhi, hZPtEtaPhi, hVZ, hZmass, hTrkResidualCorrectionPtEtaPhi, par)); // Dphi analysis
       
       //==================================================//
       // Second histogram with mix=true
@@ -569,7 +563,7 @@ public:
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
-      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MMixEvt, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
+      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {

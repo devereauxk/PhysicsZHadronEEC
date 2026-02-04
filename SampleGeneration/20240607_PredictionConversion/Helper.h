@@ -155,6 +155,7 @@ void SetCharge(ZHadronMessenger &M)
       Charge[311] = 0;
       Charge[321] = 1;
       Charge[323] = 1;
+      Charge[1114] = -1;
       Charge[2212] = 1;
       Charge[2112] = 0;
       Charge[2114] = 0;
@@ -162,6 +163,7 @@ void SetCharge(ZHadronMessenger &M)
       Charge[2224] = 2;
       Charge[3214] = 0;
       Charge[3112] = -1;
+      Charge[3114] = -1;
       Charge[3222] = 1;
       Charge[3212] = 0;
       Charge[3122] = 0;
@@ -185,7 +187,7 @@ void SetCharge(ZHadronMessenger &M)
          (*M.trackCharge)[i] = Charge[ID];
       else if(Charge.find(-ID) != Charge.end())
          (*M.trackCharge)[i] = -Charge[-ID];
-      else
+      else if (ID != 0)
          cout << "Please add this ID to the list for charge " << ID << endl;
    }
 }

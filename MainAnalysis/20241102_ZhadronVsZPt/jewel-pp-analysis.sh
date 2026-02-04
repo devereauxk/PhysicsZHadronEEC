@@ -1,8 +1,14 @@
 #!/bin/bash
 
 # Define common arguments
+source clean.sh
 source config.sh
-COMMON_ARGS="--UseLeadingTrk $UseLeadingTrk --Input mergedSample/jewel_pp-v9.root --MixFile mergedSample/jewel_pp-v9.root --IsPP false --IsJewel true --IsGenZ true --nMix 1 --MinHiBin 0 --MaxHiBin 600000"
+COMMON_ARGS="--IsPP true --IsGenZ true --IsData false --IsJewel true\
+ --Input /home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20240607_PredictionConversion/output/pp.root \
+ --MixFile /home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20240607_PredictionConversion/output/pp.root \
+ --UseEventWeight true -UseZWeight false \
+ --UseTrackWeight true --UseResidualWeight false \
+ --yBoost 0 --nMix 10"
 
 for zpt_range in "${ZPT_RANGES[@]}"; do
    min_zpt=${zpt_range/_*/}
@@ -12,22 +18,18 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
       min_pt=${pt_range/_*/}
       max_pt=${pt_range/*_/}
 
-      echo ./finalAnalysis.sh "output/$1jewelPP_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" \
+      echo ./finalAnalysis.sh "output/jewelPPMC_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" "${15}" "${16}" "${17}" "${18}" "${19}" "${20}" "${21}" "${22}" "${23}" "${24}" "${25}" "${26}" "${27}" "${28}" "${29}" "${30}"\
          $COMMON_ARGS --MinTrackPT "$min_pt" --MaxTrackPT "$max_pt" \
-         --MinZPT "$min_zpt" --MaxZPT "$max_zpt"|bash
+         --MinZPT "$min_zpt" --MaxZPT "$max_zpt" | bash
    done
 
    # Combine results for the current HiBin and ZPT range
-   hadd -f "plots/$1jewelPP_ZPT${min_zpt}_${max_zpt}-result.root" \
+   hadd -f "plots/jewelPPMC_ZPT${min_zpt}_${max_zpt}-result.root" \
        $(for pt_range in "${PT_RANGES[@]}"; do
-            echo "output/$1jewelPP_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
+            echo "output/jewelPPMC_ZPT${min_zpt}_${max_zpt}-${pt_range}-result.root"
          done)
-   hadd -f "plots/$1jewelPP_ZPT${min_zpt}_${max_zpt}-nosub.root" \
+   hadd -f "plots/jewelPPMC_ZPT${min_zpt}_${max_zpt}-nosub.root" \
        $(for pt_range in "${PT_RANGES[@]}"; do
-            echo "output/$1jewelPP_ZPT${min_zpt}_${max_zpt}-${pt_range}-nosub.root"
+            echo "output/jewelPPMC_ZPT${min_zpt}_${max_zpt}-${pt_range}-nosub.root"
          done)
 done
-
-
-#./finalAnalysis.sh output/$1jewelPP 4_20  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11}   --IsJewel true --MinZPT 20 --MaxZPT 60 --MinTrackPT 1 --MaxTrackPT 40 --Input mergedSample/jewel_pp-v9.root --IsSelfMixing false  --IsPP true --IsGenZ true --MinHiBin 0 --MaxHiBin 600000  
-#root -l -q -b "plotBasic.C(\"output/$1jewelPP-4_20.root\",\"plots/$1jewelPP\")"

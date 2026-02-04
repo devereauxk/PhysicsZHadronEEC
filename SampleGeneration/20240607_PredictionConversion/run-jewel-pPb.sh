@@ -1,6 +1,7 @@
 #!/bin/bash
 
-INPUT=/home/kdeverea/Jewel/jewel-2.4.0/eventfiles/pPb/
+INPUT=/home/kdeverea/Jewel/jewel-2.4.0/eventfiles/pPb
+OUTPUTBASE=output/pPb
 NFILES=$1
 
 if [ -z "$NFILES" ]; then
@@ -16,10 +17,10 @@ do
 
    BASENAME=$(basename "$FILE" .hepmc)
 
-   OUTPUTNAME=output/$BASENAME.root
+   OUTPUTNAME=$OUTPUTBASE/$BASENAME.root
    echo "converting $FILE to $OUTPUTNAME"
 
-   ./ExecuteHepMC --Input $FILE --Output $OUTPUTNAME --NegativeID 3
+   ./ExecuteHepMC --Input $FILE --Output $OUTPUTNAME 
 
    i=$((i+1))
 done
