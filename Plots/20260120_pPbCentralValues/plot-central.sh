@@ -1,58 +1,17 @@
 make
 
 
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag test
-./ExecuteClosureTest --collisionType pPb --zPtRange 0_10 --trkPtRange 0.5_500 --tag test_noVZ
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag test_noVZ
-./ExecuteClosureTest --collisionType pPb --zPtRange 20_40 --trkPtRange 0.5_500 --tag test_noVZ
-./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag test_noVZ
-
+./ExecuteClosureTest --collisionType pPb --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
+./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
+./ExecuteClosureTest --collisionType pPb --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
+./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
 
 exit
 
-
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag test
-./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag test
-
-exit
-
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_1 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 1_2 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 2_10 --tag ZV4_trkV22_nmix10
+./ExecuteClosureTest --collisionType PbP --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
+./ExecuteClosureTest --collisionType PbP --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
+./ExecuteClosureTest --collisionType PbP --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
+./ExecuteClosureTest --collisionType PbP --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
 
 exit
 
-
-./ExecuteClosureTest --collisionType pp --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pp --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pp --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pp --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-
-
-exit
-
-
-#./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-#./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 1_4 --tag ZV4_trkV22_nmix10
-#./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 4_500 --tag ZV4_trkV22_nmix10
-
-exit
-
-./ExecuteClosureTest --collisionType pPb --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-
-exit
-
-./ExecuteClosureTest --collisionType pPb --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix10
-
-exit
-
-./ExecuteClosureTest --collisionType PbP --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix10
-./ExecuteClosureTest --collisionType PbP --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix10
-./ExecuteClosureTest --collisionType PbP --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix10
-./ExecuteClosureTest --collisionType PbP --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV3_trkV21_nmix10

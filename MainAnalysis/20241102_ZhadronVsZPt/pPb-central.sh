@@ -1,5 +1,5 @@
 nMix=10
-TAG="_test_noVZ"
+TAG="_ZV5_trkV23_nmix10"
 
 ./pPbMC_Gen-analysis.sh "nominal${TAG}" \
     --Input pPbSample/V0.2/PPbMC_Gen.root \
