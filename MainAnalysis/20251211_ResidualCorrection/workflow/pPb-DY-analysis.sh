@@ -2,8 +2,8 @@ minZpt=$1
 maxZpt=$2
 name=$3
 
-ZWeightFile_pPb="my_ZWeights/20260120_ZCorrection_V3_PPb_zPt0-500.root"
-ZWeightFile_PbP="my_ZWeights/20260120_ZCorrection_V3_PbP_zPt0-500.root"
+ZWeightFile_pPb="my_ZWeights/20260202_ZCorrection_V5_PPb_zPt0-500.root"
+ZWeightFile_PbP="my_ZWeights/20260202_ZCorrection_V5_PbP_zPt0-500.root"
 
 # pPb
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --IsGen false --IsPP false --IsGenZ false --ZWeightFile $ZWeightFile_pPb

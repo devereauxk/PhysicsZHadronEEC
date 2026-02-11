@@ -15,14 +15,14 @@ void merge_corrections(const char* file1, const char* file2, const char* outputF
     // Retrieve the correction histograms
     TH1D *hPtCorr1 = (TH1D*)fCorr1->Get("hPtCorrTotal");
     TH1D *hEtaCorr1 = (TH1D*)fCorr1->Get("hEtaCorrTotal");
-    TH1D *hMultCorr1 = (TH1D*)fCorr1->Get("hMultCorrTotal");
+    TH1D *hPhiCorr1 = (TH1D*)fCorr1->Get("hPhiCorrTotal");
 
     TH1D *hPtCorr2 = (TH1D*)fCorr2->Get("hPtCorrTotal");
     TH1D *hEtaCorr2 = (TH1D*)fCorr2->Get("hEtaCorrTotal");
-    TH1D *hMultCorr2 = (TH1D*)fCorr2->Get("hMultCorrTotal");
+    TH1D *hPhiCorr2 = (TH1D*)fCorr2->Get("hPhiCorrTotal");
 
     // Check if histograms are retrieved successfully
-    if (!hPtCorr1 || !hEtaCorr1 || !hMultCorr1 || !hPtCorr2 || !hEtaCorr2 || !hMultCorr2) {
+    if (!hPtCorr1 || !hEtaCorr1 || !hPhiCorr1 || !hPtCorr2 || !hEtaCorr2 || !hPhiCorr2) {
         printf("Error retrieving histograms.\n");
         return;
     }
@@ -30,13 +30,13 @@ void merge_corrections(const char* file1, const char* file2, const char* outputF
     // Multiply the histograms
     hPtCorr1->Multiply(hPtCorr2);
     hEtaCorr1->Multiply(hEtaCorr2);
-    hMultCorr1->Multiply(hMultCorr2);
+    hPhiCorr1->Multiply(hPhiCorr2);
 
     // Save the merged correction histograms into a new file
     TFile *fCorrMerged = new TFile(outputFile, "RECREATE");
     hPtCorr1->Write("hPtCorrTotal");
     hEtaCorr1->Write("hEtaCorrTotal");
-    hMultCorr1->Write("hMultCorrTotal");
+    hPhiCorr1->Write("hPhiCorrTotal");
     fCorrMerged->Close();
 
     // Clean up

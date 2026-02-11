@@ -14,6 +14,15 @@ using namespace std;
 #include <vector>
 #include <string>
 
+
+void cutY(TH2D* h, int ybinmin, int ybinmax) {
+    for (int ix = 1; ix <= h->GetNbinsX(); ix++) {
+        for (int iy = 1; iy <= h->GetNbinsY(); iy++) {
+            if (iy > ybinmax || iy < ybinmin) h->SetBinContent(ix, iy, 0);
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
 
     CommandLine CL(argc, argv);
@@ -40,17 +49,15 @@ int main(int argc, char *argv[]) {
         "  & Z correction",
         "  & Z + track correction"
     };
-    string output = Form("plots/%s/%s_ZPT%s_%s-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), tag.c_str());
+    string output = Form("plots/%s/%s_ZPT%s_trkPT%s_%s-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     vector<TH1*> hDeltaEta_all;
     vector<TH1*> hDeltaPhi_all;
 
-    vector<TH1*> hMixData;
+    vector<TH2*> hMixData;
+    vector<TH2*> hData;
     vector<TH1*> hDeltaEta_mix;
     vector<TH1*> hDeltaPhi_mix;
-
-    vector<TH1*> hDeltaEta_my;
-    vector<TH1*> hDeltaPhi_my;
 
     // Loop over nosub files
     int i = 0;
@@ -70,6 +77,7 @@ int main(int argc, char *argv[]) {
         TH1D* this_hDeltaPhi_all = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
         this_hDeltaPhi_all->SetName(Form("DeltaPhi_all_%d", i));
 
+        hData.push_back((TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str())));
         hDeltaEta_all.push_back(this_hDeltaEta_all); 
         hDeltaPhi_all.push_back(this_hDeltaPhi_all);
 
@@ -88,26 +96,13 @@ int main(int argc, char *argv[]) {
         hDeltaEta_mix.push_back(this_hDeltaEta_mix);
         hDeltaPhi_mix.push_back(this_hDeltaPhi_mix);
 
-        // my calculation
-        TH2D* this_hData2D = (TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str()));
-        TH2D* this_myResult2D = (TH2D*)this_hData2D->Clone(Form("myResult2D_%d", i));
-        this_myResult2D->Add(this_hMixData2D, -1);
-
-        TH1D* this_hDeltaPhi_my = this_myResult2D->ProjectionY(Form("DeltaPhi_my_%d", i), 0, 10);
-        TH1D* this_hDeltaEta_my = this_myResult2D->ProjectionX(Form("DeltaEta_my_%d", i), 6, 10);
-
-        divideByWidth(this_hDeltaPhi_my);
-        divideByWidth(this_hDeltaEta_my);
-
-        hDeltaEta_my.push_back(this_hDeltaEta_my);
-        hDeltaPhi_my.push_back(this_hDeltaPhi_my);
-
         i++;
     }
 
     // read results file
     vector<TH1*> hDeltaEta;
     vector<TH1*> hDeltaPhi;
+    vector<TH2*> hData_result;
 
     for (const auto& input_ZPT : input_ZPT_files) {
 
@@ -123,12 +118,28 @@ int main(int argc, char *argv[]) {
         TH1D* this_hDeltaPhi = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
         this_hDeltaPhi->SetName(Form("DeltaPhi_%d", i));
 
+        TH2D* this_hData2D = (TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str()));
+
         hDeltaEta.push_back(this_hDeltaEta);
         hDeltaPhi.push_back(this_hDeltaPhi);
+        hData_result.push_back(this_hData2D);
 
         i++;
         
     }
+
+    // 2D eta-phi maps (corrected reco) / (gen)
+    TH2D* hDelta2D_ratio_all = (TH2D*)hData[3]->Clone("hDelta2D_ratio_all");
+    hDelta2D_ratio_all->Divide(hData[0]);
+
+    TH2D* hDelta2D_ratio_mix = (TH2D*)hMixData[3]->Clone("hDelta2D_ratio_mix");
+    hDelta2D_ratio_mix->Divide(hMixData[0]);
+    
+    TH2D* hDelta2D_ratio = (TH2D*)hData_result[3]->Clone("hDelta2D_ratio_result");
+    hDelta2D_ratio->Divide(hData_result[0]);
+    hDelta2D_ratio->Print("all");
+
+
 
 
     vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsYellow, cmsGray};
@@ -144,7 +155,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "All #Delta y_{ch,Z}", -4, 4,
-        "d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
+        "d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
@@ -156,7 +167,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(p1, "8 TeV", "pPb");
+    AddUPCHeader(p1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     p1->Update();
 
     c1->SaveAs(Form("%s-DeltaEta-all.pdf", output.c_str()));
@@ -182,7 +193,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(p2, "8 TeV", "pPb");
+    AddUPCHeader(p1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     p2->Update();
 
     c2->SaveAs(Form("%s-DeltaPhi-all.pdf", output.c_str()));
@@ -194,7 +205,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
-        "Mixed d#DeltaN_{ch}/d#Delta y_{ch,Z}", 0, 18,
+        "Mixed d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
@@ -205,7 +216,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pMix1, "8 TeV", "pPb");
+    AddUPCHeader(pMix1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cMix1->Update();
     cMix1->SaveAs(Form("%s-DeltaEta-bkg.pdf", output.c_str()));
 
@@ -226,7 +237,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pMix2, "8 TeV", "pPb");
+    AddUPCHeader(pMix2, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cMix2->Update();
     cMix2->SaveAs(Form("%s-DeltaPhi-bkg.pdf", output.c_str()));
 
@@ -248,7 +259,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult1, "8 TeV", "pPb");
+    AddUPCHeader(pResult1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
@@ -269,15 +280,168 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult2, "8 TeV", "pPb");
+    AddUPCHeader(pResult2, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cResult2->Update();
     cResult2->SaveAs(Form("%s-DeltaPhi-result.pdf", output.c_str()));
 
     return 0;
 
+    // =================================== //    
+    // eta phi maps
+    // =================================== //
+    TCanvas* c2D = new TCanvas("c2D", "c2D", 600, 600);
+    TPad* p2D = (TPad*) plotCMSSimple2D(
+        c2D, hDelta2D_ratio, "Eta-Phi Map GEN vs RECO",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "RECO / GEN", 0.5, 1.5,
+        false, false, false
+    );
+
+    c2D->SaveAs(Form("%s-Delta2D-ratio-result.pdf", output.c_str()));
+
+    TCanvas* c2D_all = new TCanvas("c2D_all", "c2D_all", 600, 600);
+    TPad* p2D_all = (TPad*) plotCMSSimple2D(
+        c2D_all, hDelta2D_ratio_all, "Eta-Phi Map GEN vs RECO (all)",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "RECO / GEN", 0.97, 1.03,
+        false, false, false
+    );
+
+    c2D_all->SaveAs(Form("%s-Delta2D-ratio-all.pdf", output.c_str()));
+
+    TCanvas* c2D_mix = new TCanvas("c2D_mix", "c2D_mix", 600, 600);
+    TPad* p2D_mix = (TPad*) plotCMSSimple2D(
+        c2D_mix, hDelta2D_ratio_mix, "Eta-Phi Map GEN vs RECO (mixed)",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "RECO / GEN", 0.97, 1.03,
+        false, false, false
+    );
+
+    c2D_mix->SaveAs(Form("%s-Delta2D-ratio-mix.pdf", output.c_str()));
+
+    TCanvas* c2D_gen = new TCanvas("c2D_gen", "c2D_gen", 600, 600); 
+    TPad* p2D_gen = (TPad*) plotCMSSimple2D(
+        c2D_gen, hData_result[0], "Eta-Phi Map GEN",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "GEN", -0.15, 0.35,
+        false, false, false
+    );
+
+    c2D_gen->SaveAs(Form("%s-Delta2D-result-gen.pdf", output.c_str()));
+
+    TCanvas* c2D_reco = new TCanvas("c2D_reco", "c2D_reco", 600, 600);
+    TPad* p2D_reco = (TPad*) plotCMSSimple2D(
+        c2D_reco, hData_result[3], "Eta-Phi Map RECO (corrected)",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "RECO", -0.15, 0.35,
+        false, false, false
+    );
+
+    c2D_reco->SaveAs(Form("%s-Delta2D-result-reco.pdf", output.c_str()));
+
+    TCanvas* c2D_gen_all = new TCanvas("c2D_gen_all", "c2D_gen_all", 600, 600);
+    TPad* p2D_gen_all = (TPad*) plotCMSSimple2D(
+        c2D_gen_all, hData[0], "Eta-Phi Map GEN (all)",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "GEN", -1, -1,
+        false, false, false
+    );
+
+    c2D_gen_all->SaveAs(Form("%s-Delta2D-all-gen.pdf", output.c_str()));
+
+    TCanvas* c2D_reco_all = new TCanvas("c2D_reco_all", "c2D_reco_all", 600, 600);
+    TPad* p2D_reco_all = (TPad*) plotCMSSimple2D(
+        c2D_reco_all, hData[3], "Eta-Phi Map RECO (all)",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "RECO", -1, -1,
+        false, false, false
+    );
+
+    c2D_reco_all->SaveAs(Form("%s-Delta2D-all-reco.pdf", output.c_str()));
+
+    TCanvas* c2D_mix_all = new TCanvas("c2D_mix_all", "c2D_mix_all", 600, 600);
+    TPad* p2D_mix_all = (TPad*) plotCMSSimple2D(
+        c2D_mix_all, hMixData[0], "Eta-Phi Map GEN (mixed)",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "GEN", -1, -1,
+        false, false, false
+    );
+
+    c2D_mix_all->SaveAs(Form("%s-Delta2D-mix-gen.pdf", output.c_str()));
+
+    TCanvas* c2D_mix_reco = new TCanvas("c2D_mix_reco", "c2D_mix_reco", 600, 600);
+    TPad* p2D_mix_reco = (TPad*) plotCMSSimple2D(
+        c2D_mix_reco, hMixData[3], "Eta-Phi Map RECO (mixed)",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "RECO", -1, -1,
+        false, false, false
+    );
+
+    c2D_mix_reco->SaveAs(Form("%s-Delta2D-mix-reco.pdf", output.c_str()));
+
+
+    // =================================== //
+    // my result
+    // =================================== //
+
+    // gen
+    TH2D* hDelta2D_gen_all_cut = (TH2D*) hData[0]->Clone("hDelta2D_gen_all_cut");
+    cutY(hDelta2D_gen_all_cut, 0, 10);
+
+    TH2D* hDelta2D_gen_bkg_cut = (TH2D*) hMixData[0]->Clone("hDelta2D_gen_bkg_cut");
+    cutY(hDelta2D_gen_bkg_cut, 0, 10);
+
+    TH2D* hDelta2D_gen_cut = (TH2D*) hDelta2D_gen_all_cut->Clone("hDelta2D_gen_cut");
+    hDelta2D_gen_cut->Add(hDelta2D_gen_bkg_cut, -1);
+
+    TCanvas* testResult = new TCanvas("testResult", "testResult", 600, 600);
+    TPad* ptestResult = (TPad*) plotCMSSimple2D(
+        testResult, hDelta2D_gen_cut, "Eta-Phi Map GEN (all - bkg) with cut",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "GEN", -1, -1,
+        false, false, false
+    );
+    testResult->SaveAs(Form("%s-test-result-gen.pdf", output.c_str()));
+
+    TH1D* hDeltaEta_gen_my = (TH1D*) hDelta2D_gen_cut->ProjectionX("hDeltaEta_my");
+    
+
+    // corrected reco
+    TH2D* hDelta2D_reco_all_cut = (TH2D*) hData[3]->Clone("hDelta2D_reco_all_cut");
+    cutY(hDelta2D_reco_all_cut, 0, 10);
+
+    TH2D* hDelta2D_reco_bkg_cut = (TH2D*) hMixData[3]->Clone("hDelta2D_reco_bkg_cut");
+    cutY(hDelta2D_reco_bkg_cut, 0, 10);
+
+    TH2D* hDelta2D_reco_cut = (TH2D*) hDelta2D_reco_all_cut->Clone("hDelta2D_reco_cut");
+    hDelta2D_reco_cut->Add(hDelta2D_reco_bkg_cut, -1);
+
+    TH1D* hDeltaEta_reco_my = (TH1D*) hDelta2D_reco_cut->ProjectionX("hDeltaEta_reco_my");
+    
+    TCanvas* testResult_reco = new TCanvas("testResult_reco", "testResult_reco", 600, 600);
+    TPad* ptestResult_reco = (TPad*) plotCMSSimple2D(
+        testResult_reco, hDelta2D_reco_cut, "Eta-Phi Map RECO (all - bkg) with cut",
+        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "RECO", -1, -1,
+        false, false, false
+    );
+    testResult_reco->SaveAs(Form("%s-test-result-reco.pdf", output.c_str()));
+
+
     TCanvas* cResult1_my = new TCanvas("cResult1_my", "cResult1_my", 600, 600);
     TPad* pResult1_my = (TPad*) plotCMSRatio(
-        hDeltaEta_my, "", labels,
+        {hDeltaEta_gen_my, hDeltaEta_reco_my}, "", {"GEN" , "RECO"},
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
@@ -292,10 +456,10 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult1_my, "8 TeV", "pPb");
+    AddUPCHeader(pResult1_my, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
     cResult1_my->Update();
+    cResult1_my->SaveAs(Form("%s-test-comparison.pdf", output.c_str()));
 
-    cResult1_my->SaveAs(Form("%s-DeltaEta-myresult.pdf", output.c_str()));
 
 
     return 0;

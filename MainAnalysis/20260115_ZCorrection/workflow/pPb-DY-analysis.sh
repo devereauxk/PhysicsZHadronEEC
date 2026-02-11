@@ -6,7 +6,7 @@ sleep 1
 
 minZpt=0
 maxZpt=500
-name="20260120_ZCorrection_V3"
+name="20260202_ZCorrection_V5"
 
 # pPb
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --IsGen false --IsPP false --IsGenZ false

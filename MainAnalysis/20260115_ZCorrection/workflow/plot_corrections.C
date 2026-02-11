@@ -26,25 +26,25 @@ void plot_corrections() {
     hPtCorr1->SetName("hPtCorr1");
     TH1D *hEtaCorr1 = (TH1D*)fCorr1->Get("hEtaCorrTotal");
     hEtaCorr1->SetName("hEtaCorr1");
-    TH1D *hMultCorr1 = (TH1D*)fCorr1->Get("hMultCorrTotal");
-    hMultCorr1->SetName("hMultCorr1");
+    TH1D *hPhiCorr1 = (TH1D*)fCorr1->Get("hPhiCorrTotal");
+    hPhiCorr1->SetName("hPhiCorr1");
 
     TH1D *hPtCorr2 = (TH1D*)fCorr2->Get("hPtCorrTotal");
     hPtCorr2->SetName("hPtCorr2");
     TH1D *hEtaCorr2 = (TH1D*)fCorr2->Get("hEtaCorrTotal");
     hEtaCorr2->SetName("hEtaCorr2");
-    TH1D *hMultCorr2 = (TH1D*)fCorr2->Get("hMultCorrTotal");
-    hMultCorr2->SetName("hMultCorr2");
+    TH1D *hPhiCorr2 = (TH1D*)fCorr2->Get("hPhiCorrTotal");
+    hPhiCorr2->SetName("hPhiCorr2");
 
     TH1D *hPtCorr3 = (TH1D*)fCorr3->Get("hPtCorrTotal");
     hPtCorr3->SetName("hPtCorr3");
     TH1D *hEtaCorr3 = (TH1D*)fCorr3->Get("hEtaCorrTotal");
     hEtaCorr3->SetName("hEtaCorr3");
-    TH1D *hMultCorr3 = (TH1D*)fCorr3->Get("hMultCorrTotal");
-    hMultCorr3->SetName("hMultCorr3");
+    TH1D *hPhiCorr3 = (TH1D*)fCorr3->Get("hPhiCorrTotal");
+    hPhiCorr3->SetName("hPhiCorr3");
 
     // Check if histograms are retrieved successfully
-    if (!hPtCorr1 || !hEtaCorr1 || !hMultCorr1 || !hPtCorr2 || !hEtaCorr2 || !hMultCorr2 || !hPtCorr3 || !hEtaCorr3 || !hMultCorr3) {
+    if (!hPtCorr1 || !hEtaCorr1 || !hPhiCorr1 || !hPtCorr2 || !hEtaCorr2 || !hPhiCorr2 || !hPtCorr3 || !hEtaCorr3 || !hPhiCorr3) {
         std::cerr << "Error retrieving histograms." << std::endl;
         return;
     }
@@ -90,25 +90,24 @@ void plot_corrections() {
     hEtaCorr3->SetLineColor(kGreen + 2);
     hEtaCorr3->Draw("HIST SAME");
 
-    // Plot hMultCorrTotal
-    c->cd(3)->SetLogx();
-    hMultCorr1->SetLineColor(kRed);
-    hMultCorr1->SetTitle("Z Mult Dependent Correction");
-    hMultCorr1->GetYaxis()->SetRangeUser(0.8,1.2);
-    hMultCorr1->GetXaxis()->CenterTitle();
-    hMultCorr1->GetXaxis()->SetTitle("Mult");
-    hMultCorr1->SetTitleOffset(1.1,"X");
-    hMultCorr1->SetTitleOffset(1.1,"X");
-    hMultCorr1->SetTitleSize(0.055,"X");
-    hMultCorr1->SetYTitle("Correction");
-    hMultCorr1->GetYaxis()->CenterTitle();
-    hMultCorr1->Draw("HIST");
+    // Plot hPhiCorrTotal
+    c->cd(3);
+    hPhiCorr1->SetLineColor(kRed);
+    hPhiCorr1->SetTitle("Z #phi Dependent Correction");
+    hPhiCorr1->GetYaxis()->SetRangeUser(0.8,1.2);
+    hPhiCorr1->GetXaxis()->CenterTitle();
+    hPhiCorr1->SetTitleOffset(1.1,"X");
+    hPhiCorr1->SetTitleOffset(1.1,"X");
+    hPhiCorr1->SetTitleSize(0.055,"X");
+    hPhiCorr1->SetYTitle("Correction");
+    hPhiCorr1->GetYaxis()->CenterTitle();
+    hPhiCorr1->Draw("HIST");
 
-    hMultCorr2->SetLineColor(kBlue);
-    hMultCorr2->Draw("HIST SAME");
+    hPhiCorr2->SetLineColor(kBlue);
+    hPhiCorr2->Draw("HIST SAME");
 
-    hMultCorr3->SetLineColor(kGreen + 2);
-    hMultCorr3->Draw("HIST SAME");
+    hPhiCorr3->SetLineColor(kGreen + 2);
+    hPhiCorr3->Draw("HIST SAME");
 
     // Add the legend in the fourth subcanvas
     c->cd(4);

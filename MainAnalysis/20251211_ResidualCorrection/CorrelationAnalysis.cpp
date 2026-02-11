@@ -104,12 +104,11 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
    TrackResidualCorrector corrector(par.residualFile.c_str());
    
    // open Z correction if needed
-   ZResidualCorrector *Zcorrector;
+   TrackResidualCorrector *Zcorrector;
    if (par.ZWeightFile != "") {
-      Zcorrector = new ZResidualCorrector(par.ZWeightFile.c_str());
+      Zcorrector = new TrackResidualCorrector(par.ZWeightFile.c_str());
    }
 
-   int i_EPOS = iStart;
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
       
@@ -120,8 +119,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
 
       // get UE from EPOS file if needed
       if (par.isAddUE) {
-         i_EPOS++;
-         MZUE->GetEntry(i_EPOS % MZUE->GetEntries());
+         MZUE->GetEntry(i);
       }
 
       // Check if the event passes the selection criteria
@@ -136,11 +134,11 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
 
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       float zY  = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
-      float mult = getMultiplicity(MZSignal, par);
-      if (par.isAddUE) mult += getMultiplicity(MZUE, par);
-      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, mult) : 1;
+      float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
+      if (zPhi < 0) zPhi += 2 * M_PI;
+      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
 
-      float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight * ZWeight;
+      float this_eventWeight = MZSignal->EventWeight * ZWeight * MZSignal->VZWeight;
 
       for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
          if (!trackSelection(MZSignal, par, j)) continue;
@@ -163,7 +161,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
             float trackEta  = (*MZUE->trackEta)[j];
             float trackPt   = (*MZUE->trackPt)[j];
             float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(trackPt, trackEta, trackPhi);
-            float weight = this_eventWeight * MZUE->VZWeight * MZUE->EventWeight;
+            float weight = this_eventWeight; // / MZSignal->VZWeight; // scale by UE VZ weight
             //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
             weight*= (*MZUE->trackWeight)[j];
             weight*= residualCorrection;    
