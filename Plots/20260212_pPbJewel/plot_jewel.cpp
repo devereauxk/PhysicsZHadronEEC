@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
 
     CommandLine CL(argc, argv);
 
+    string collisionType = CL.Get("collisionType", "PPB");
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
@@ -27,14 +28,12 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/jewelPPMC_ZPT%s", zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/jewelPPBMC_ZPT%s", zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/jewel%sMC_ZPT%s", collisionType.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        "JEWEL pp",
-        "JEWEL pPb (2D hydro)"
+        Form("JEWEL %s", collisionType.c_str())
     };
-    string output = Form("plots/jewel/%s_ZPT%s", tag.c_str(), zPtRange.c_str(), tag.c_str());
+    string output = Form("plots/%s/%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str(), tag.c_str());
 
     vector<TH1*> hZPt;
     vector<TH1*> hZEta;
@@ -81,7 +80,7 @@ int main(int argc, char *argv[]) {
         hZPt, "", labels,
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {1, 1, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "p_{T}^{Z}", 0, 500,
+        "p_{T}^{Z}", 15, 500,
         "(1/N_{Z}) dN_{Z}/dp_{T}^{Z}", -1, -1,
         "Ratio to PP", 0.9, 1.1,
         0,
