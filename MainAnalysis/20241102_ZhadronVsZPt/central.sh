@@ -3,10 +3,18 @@ DOPP=$1
 DOPPB=$2
 DOPBP=$3
 
+# ZPT_RANGES=("0_10" "10_500")
+# PT_RANGES=("0.5_2" "2_500")
+
 cat > config.sh <<EOF
-ZPT_RANGES=("0_10" "10_500")
-PT_RANGES=("0.5_2" "2_500")
+ZPT_RANGES=("0_30" "30_500")
+PT_RANGES=("0.5_4" "4_500")
 EOF
+
+# ========================================
+# pp data was ran, no plots made
+# ========================================
+
 
 # pp
 if [ "$DOPP" == "1" ]; then
