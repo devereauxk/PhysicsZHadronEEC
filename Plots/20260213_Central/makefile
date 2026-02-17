@@ -1,4 +1,4 @@
-default: clean ExecuteClosureTest ExecuteCentralPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison
+default: clean ExecuteClosureTest ExecuteCentralPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot
 
 ExecuteClosureTest: plot_closure.cpp
 	g++ plot_closure.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
@@ -25,10 +25,16 @@ ExecuteDataMCComparison: plot_dataMCComparison.cpp
 		-o ExecuteDataMCComparison `root-config --cflags --glibs` \
 		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
 
+ExecuteCentralCombinedPlot: plot_central_combined.cpp
+	g++ plot_central_combined.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecuteCentralCombinedPlot `root-config --cflags --glibs` \
+		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
+
 clean:
 	rm -f ExecuteClosureTest
 	rm -f ExecuteCentralPlot
 	rm -f ExecuteZMassPlot
 	rm -f ExecuteZSpectrumPlot
 	rm -f ExecuteDataMCComparison
+	rm -f ExecuteCentralCombinedPlot
 	

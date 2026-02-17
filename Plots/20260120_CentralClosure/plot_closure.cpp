@@ -154,8 +154,8 @@ int main(int argc, char *argv[]) {
         hDeltaEta_all, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "All #Delta y_{ch,Z}", -4, 4,
-        "d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
+        "#Delta y_{ch,Z}", -4, 4,
+        "Signal d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(p1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
+    AddUPCHeader(p1, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     p1->Update();
 
     c1->SaveAs(Form("%s-DeltaEta-all.pdf", output.c_str()));
@@ -180,8 +180,8 @@ int main(int argc, char *argv[]) {
         hDeltaPhi_all, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "All #Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", 15, 50,
+        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
+        "Signal d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", (collisionType == "pp") ? 0 : 15, (collisionType == "pp") ? 35 : 50,
         "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(p1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
+    AddUPCHeader(p1, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     p2->Update();
 
     c2->SaveAs(Form("%s-DeltaPhi-all.pdf", output.c_str()));
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pMix1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
+    AddUPCHeader(pMix1, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     cMix1->Update();
     cMix1->SaveAs(Form("%s-DeltaEta-bkg.pdf", output.c_str()));
 
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", 15, 50,
+        "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", (collisionType == "pp") ? 0 : 15, (collisionType == "pp") ? 35 : 50,
         "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pMix2, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
+    AddUPCHeader(pMix2, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     cMix2->Update();
     cMix2->SaveAs(Form("%s-DeltaPhi-bkg.pdf", output.c_str()));
 
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult1, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
+    AddUPCHeader(pResult1, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult2, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
+    AddUPCHeader(pResult2, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     cResult2->Update();
     cResult2->SaveAs(Form("%s-DeltaPhi-result.pdf", output.c_str()));
 
@@ -456,7 +456,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult1_my, (collisionType == "pp") ? "5 TeV" : "8 TeV", collisionType);
+    AddUPCHeader(pResult1_my, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     cResult1_my->Update();
     cResult1_my->SaveAs(Form("%s-test-comparison.pdf", output.c_str()));
 
