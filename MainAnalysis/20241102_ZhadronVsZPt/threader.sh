@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Number of threads per instance
-nThread=35 # NOT MORE THAT 50 (week spent), even 40 segfaults sometimes
+nThread=40 # NOT MORE THAT 50 (week spent), even 40 segfaults sometimes
 
 # Array to hold the names of the output files
 declare -a outputFileNames

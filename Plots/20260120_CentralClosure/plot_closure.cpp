@@ -36,12 +36,14 @@ int main(int argc, char *argv[]) {
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
+    string mctag = (collisionType == "pp" ? "pythia" : collisionType);
+
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "MC DY-GEN",
@@ -137,7 +139,7 @@ int main(int argc, char *argv[]) {
     
     TH2D* hDelta2D_ratio = (TH2D*)hData_result[3]->Clone("hDelta2D_ratio_result");
     hDelta2D_ratio->Divide(hData_result[0]);
-    hDelta2D_ratio->Print("all");
+    //hDelta2D_ratio->Print("all");
 
 
 

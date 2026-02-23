@@ -19,11 +19,13 @@ int main(int argc, char *argv[]) {
 
     CommandLine CL(argc, argv);
 
+    string collisionType = CL.Get("collisionType", "pPb");
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("pPbtag", "V16_nmix5");
     string tag_pp = CL.Get("pptag", "V16_nmix5");
 
+    cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Track Pt Range: "<<trkPtRange<<endl;
     cout<<"pPb Tag: "<<tag<<endl;
@@ -32,9 +34,9 @@ int main(int argc, char *argv[]) {
     // files to load
     vector<string> input_ZPT_files = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_ZResidual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_trkResidual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "pp 5TeV, corrected",
@@ -42,7 +44,7 @@ int main(int argc, char *argv[]) {
         "  & Z correction",
         "  & Z + track correction"
     };
-    string output = Form("plots/central/pppPb_ZPT%s_trkPT%s_%s", zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
+    string output = Form("plots/central/pp%s_ZPT%s_trkPT%s_%s", collisionType.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     // read results file
     vector<TH1*> hDeltaEta;

@@ -1,20 +1,19 @@
 make
 
+ZPT_RANGES=("0_30" "30_500" "0_500")
+PT_RANGES=("0.5_500")
 
-./ExecuteClosureTest --collisionType pPb --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-./ExecuteClosureTest --collisionType pPb --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
+for zPtRange in "${ZPT_RANGES[@]}"
+do
+    for trkPtRange in "${PT_RANGES[@]}"
+    do
+        echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
 
-./ExecuteClosureTest --collisionType PbP --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-./ExecuteClosureTest --collisionType PbP --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-./ExecuteClosureTest --collisionType PbP --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-./ExecuteClosureTest --collisionType PbP --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-
-./ExecuteClosureTest --collisionType pp --zPtRange 0_10 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pp --zPtRange 10_20 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pp --zPtRange 20_40 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-./ExecuteClosureTest --collisionType pp --zPtRange 40_500 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
-
+        #./ExecuteClosureTest --collisionType pp --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV4_trkV22_nmix10
+        #./ExecuteClosureTest --collisionType pPb --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV5_trkV23_nmix10
+        ./ExecuteClosureTest --collisionType PbP --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV5_trkV23_nmix10
+    
+    done
+done
 
 exit

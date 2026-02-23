@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
     string tag = CL.Get("pPbtag", "V16_nmix5");
     string tag_pp = CL.Get("pptag", "V16_nmix5");
     bool doCombine = CL.GetBool("doCombine", false);
+    string collisionType = CL.Get("collisionType", "pPb");
 
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Track Pt Range: "<<trkPtRange<<endl;
@@ -35,20 +36,24 @@ int main(int argc, char *argv[]) {
     vector<string> input_ZPT_files = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     vector<string> input_ZPT_files_pbp = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "pp 5TeV, corrected",
-        "pPb 8TeV",
+        Form("%s 8TeV", collisionType.c_str()),
         "  & Z correction",
-        "  & Z + track correction"
+        "  & Z + track correction",
+        Form("%s 8TeV, GEN-DY+EPOS", collisionType.c_str())
     };
-    string output = Form("plots/central_combined/all_ZPT%s_trkPT%s_%s", zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
+    string file_tag = (doCombine) ? "all" : collisionType;
+    string output = Form("plots/central_combined/%s_ZPT%s_trkPT%s_%s", file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     // plotted histograms
     vector<TH1*> hDeltaEta_combined;
@@ -149,8 +154,17 @@ int main(int argc, char *argv[]) {
         hNZMixData_pbp.push_back(this_hNZMixData);
     }
 
+    // mix it up if only one of pPb or PbP
+    if (!doCombine && collisionType == "PbP") {
+        hData_ppb = hData_pbp;
+        hMixData_ppb = hMixData_pbp;
+        hNZData_ppb = hNZData_pbp;
+        hNZMixData_ppb = hNZMixData_pbp;
+    }
+
+
     // combined results
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < input_ZPT_files.size(); i++) {
 
         cout<<"Combining ppb and pbp for index "<<i<<endl;
         
@@ -195,10 +209,10 @@ int main(int argc, char *argv[]) {
     cout<<"pp DeltaEta integral: "<<hDeltaEta_pp->Integral()<<endl;
 
 
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsYellow, cmsGray};
+    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsYellow, cmsGray};
     vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {0, 2, 1, 0, 1};
+    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
+    vector<int> lineStyles = {0, 2, 2, 0, 1};
 
     // ===========================================
     // results
@@ -210,9 +224,10 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "pPb - pp", -1, 1,
+        "pPb - pp", -0.7, 0.7,
         0,
-        false, false, true
+        false, false, true,
+        0.2
     );
 
     AddCMSHeader(
@@ -220,7 +235,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult1, "8 TeV", "pPb");
+    AddUPCHeader(pResult1, "8 TeV", collisionType.c_str());
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
@@ -231,9 +246,10 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "pPb - pp", -1, 1,
+        "pPb - pp", -0.7, 0.7,
         0,
-        false, false, true
+        false, false, true,
+        0.2
     );
 
     AddCMSHeader(
@@ -241,7 +257,7 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult2, "8 TeV", "pPb");
+    AddUPCHeader(pResult2, "8 TeV", collisionType.c_str());
     cResult2->Update();
     cResult2->SaveAs(Form("%s-DeltaPhi-result.pdf", output.c_str()));
 
