@@ -6,9 +6,12 @@ make ExecuteCentralCombinedPlot
 #ZPT_RANGES=("0_5" "5_10" "10_20" "20_30" "0_30" "30_500")
 #PT_RANGES=("0.5_4" "4_500")
 
-ZPT_RANGES=("5_500" "5_30" "30_500")
-PT_RANGES=("0.5_4" "4_500" "0.5_500")
-
+#ZPT_RANGES=("5_30" "30_500")
+#PT_RANGES=("0.5_4" "4_500")
+ZPT_RANGES=("5_500")
+PT_RANGES=("0.5_500")
+PP_TAG="EEV2_ZV4_trkV22_nmix10"
+PPB_TAG="ZV5_trkV23_nmix10"
 
 for zPtRange in "${ZPT_RANGES[@]}"
 do
@@ -16,10 +19,10 @@ do
     do
         echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
 
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag ZV5_trkV23_nmix10 --pptag ZV4_trkV22_nmix10 --doCombine true
+        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine true
 
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag ZV5_trkV23_nmix10 --pptag ZV4_trkV22_nmix10 --doCombine false --collisionType pPb
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag ZV5_trkV23_nmix10 --pptag ZV4_trkV22_nmix10 --doCombine false --collisionType PbP
+        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine false --collisionType pPb
+        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine false --collisionType PbP
     done
 done
 

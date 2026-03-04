@@ -26,13 +26,14 @@ int main(int argc, char *argv[]) {
     bool doCombine = CL.GetBool("doCombine", false);
     string collisionType = CL.Get("collisionType", "pPb");
 
+    cout<<"=================================================="<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Track Pt Range: "<<trkPtRange<<endl;
     cout<<"pPb Tag: "<<tag<<endl;
     cout<<"pp Tag: "<<tag_pp<<endl;
 
     // files to load
-    string input_ZPT_files_pp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str());
+    string input_ZPT_files_pp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EExtrapolation_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str());
     vector<string> input_ZPT_files = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
@@ -53,7 +54,7 @@ int main(int argc, char *argv[]) {
         Form("%s 8TeV, GEN-DY+EPOS", collisionType.c_str())
     };
     string file_tag = (doCombine) ? "all" : collisionType;
-    string output = Form("plots/central_combined/%s_ZPT%s_trkPT%s_%s", file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
+    string output = Form("plots/central_combined/%s/%s_ZPT%s_trkPT%s_%s", tag_pp.c_str(), file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     // plotted histograms
     vector<TH1*> hDeltaEta_combined;
@@ -65,18 +66,35 @@ int main(int argc, char *argv[]) {
     TH1D* hDeltaEta_pp;
     TH1D* hDeltaPhi_pp;
 
-    TFile* fin_pp = TFile::Open(Form("%s-result.root", input_ZPT_files_pp.c_str()), "READ");
+    TFile* fin_pp = TFile::Open(Form("%s-nosub.root", input_ZPT_files_pp.c_str()), "READ");
     if (!fin_pp || fin_pp->IsZombie()) {
         std::cerr << "Error: Unable to open file " << input_ZPT_files_pp << std::endl;
         return 1;
     }
-    hDeltaEta_pp = (TH1D*)fin_pp->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
-    hDeltaPhi_pp = (TH1D*)fin_pp->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
-    TH1D* hNZ_pp = (TH1D*)fin_pp->Get(Form("hNZData_%s", trkPtRange.c_str()));
-    cout<<"pp hNZ integral: "<<hNZ_pp->Integral()<<endl;
+    TH2D* hData_pp = (TH2D*)fin_pp->Get(Form("hData_%s", trkPtRange.c_str()));
+    TH2D* hMixData_pp = (TH2D*)fin_pp->Get(Form("hMixData_%s", trkPtRange.c_str()));
+    TH1D* hNZData_pp = (TH1D*)fin_pp->Get(Form("hNZData_%s", trkPtRange.c_str()));
+    TH1D* hNZMixData_pp = (TH1D*)fin_pp->Get(Form("hNZMixData_%s", trkPtRange.c_str()));
+    
+    hData_pp->Add(hMixData_pp, -1);
+    cout<<"pp hNZ integral: "<<hNZData_pp->Integral()<<endl;
+    cout<<"pp S-B integral: "<<hData_pp->Integral()<<endl;
 
-    hDeltaEta_combined.push_back(hDeltaEta_pp);
+    cout<<"SUBTRACTION EFFICIENCY: "<<hData_pp->Integral() / hMixData_pp->Integral()<<endl;
+
+    hDeltaPhi_pp = (TH1D*) hData_pp->ProjectionY("hDeltaPhi_pp",0,10);
+    divideByWidth(hDeltaPhi_pp);
+    hDeltaPhi_pp->Scale(1./2);
+    cout<<"pp DeltaPhi integral: "<<hDeltaPhi_pp->Integral()<<endl;
+
+    hDeltaEta_pp = (TH1D*) hData_pp->ProjectionX("hDeltaEta_pp",6,10);
+    divideByWidth(hDeltaEta_pp);
+    hDeltaEta_pp->Scale(1./2);
+    cout<<"pp DeltaEta integral: "<<hDeltaEta_pp->Integral()<<endl;
+
     hDeltaPhi_combined.push_back(hDeltaPhi_pp);
+    hDeltaEta_combined.push_back(hDeltaEta_pp);
+
 
     // ============================
     // pPb and PbP
@@ -191,28 +209,30 @@ int main(int argc, char *argv[]) {
         // bkg subtraction
         S_combined->Add(B_combined, -1);
         cout<<"combined S-B integral: "<<S_combined->Integral()<<endl;
+        cout<<"SUBTRACTION EFFICIENCY: "<<S_combined->Integral() / B_combined->Integral()<<endl;
 
         // projections
         TH1D* hProjY = (TH1D*) S_combined->ProjectionY(Form("DeltaPhi_Result%i",i),0,10);
         divideByWidth(hProjY);
+        hProjY->Scale(1./2);
         hDeltaPhi_combined.push_back(hProjY);
         cout<<"DeltaPhi combined integral: "<<hProjY->Integral()<<endl;
 
         TH1D* hProjX = (TH1D*) S_combined->ProjectionX(Form("DeltaEta_Result%i",i),6,10);
         divideByWidth(hProjX);
+        hProjX->Scale(1./2);
         hDeltaEta_combined.push_back(hProjX);
         cout<<"DeltaEta combined integral: "<<hProjX->Integral()<<endl;
 
     }
 
-    cout<<"pp DeltaPhi integral: "<<hDeltaPhi_pp->Integral()<<endl;
-    cout<<"pp DeltaEta integral: "<<hDeltaEta_pp->Integral()<<endl;
-
-
     vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsYellow, cmsGray};
     vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
     vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
     vector<int> lineStyles = {0, 2, 2, 0, 1};
+
+    float diffMin = (trkPtRange == "4_500") ? -0.1 : -0.35;
+    float diffMax = (trkPtRange == "4_500") ? 0.1 : 0.35;
 
     // ===========================================
     // results
@@ -224,7 +244,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "pPb - pp", -0.7, 0.7,
+        "pPb - pp", diffMin, diffMax,
         0,
         false, false, true,
         0.2
@@ -246,7 +266,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "pPb - pp", -0.7, 0.7,
+        "pPb - pp", diffMin, diffMax,
         0,
         false, false, true,
         0.2

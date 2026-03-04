@@ -189,6 +189,12 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    int deltaI = (iEnd - iStart) / 100 + 1;
    float dPhi_threshold = M_PI / 2;
 
+   // open pp energy extrapolation file if needed
+   TrackResidualCorrector *EnergyCorrector;
+   if (par.EnergyExtraFile != "") {
+      EnergyCorrector = new TrackResidualCorrector(par.EnergyExtraFile.c_str());
+   }
+
    // open Z correction if needed
    TrackResidualCorrector *Zcorrector;
    if (par.useZWeight && par.ZWeightFile != "") {
@@ -254,6 +260,14 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       float eventWeightSignalUE = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
       if (par.useEPOSFile) eventWeightSignalUE *= 1; //MZUE->VZWeight; // * MZUE->EventWeight;
       if (par.useZWeight) eventWeightSignalUE *= ZWeight;
+
+      // energy extrapolation
+      //eta, phi dummy variables since the correction is only a function of Z pT
+      if (par.EnergyExtraFile != "" && par.isPP) {
+         float energyExtrapolationWeight = EnergyCorrector->GetCorrectionFactor(zPt, 1, 1);
+         eventWeightSignal *= energyExtrapolationWeight;
+         eventWeightSignalUE *= energyExtrapolationWeight;
+      }
 
       if (hZPtEtaPhi != 0) hZPtEtaPhi->Fill(zPt, zY, zPhi, eventWeightSignal);
       if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeightSignal);
@@ -347,6 +361,13 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
             if (par.useEventWeight) eventWeightMixUE *= MMix->EventWeight * MMix->VZWeight;
             if (par.useZWeight) eventWeightMixUE *= ZWeightMix;
+
+            // energy extrapolation
+            if (par.EnergyExtraFile != "" && par.isPP) {
+               float energyExtrapolationWeightMix = EnergyCorrector->GetCorrectionFactor(zPtMix, 1, 1);
+               //eventWeightMix *= energyExtrapolationWeightMix;
+               //eventWeightMixUE *= energyExtrapolationWeightMix;
+            }
          }
 
          nZ += (par.mix) ? eventWeightMix : eventWeightSignal;
@@ -619,6 +640,7 @@ int main(int argc, char *argv[])
    par.ZWeightFile     = CL.Get      ("ZWeightFile", "");           // Z weight file
    par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
+   par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.

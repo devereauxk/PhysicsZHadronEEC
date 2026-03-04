@@ -66,6 +66,9 @@ int main(int argc, char *argv[]) {
         TH1D* this_hDeltaPhi = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
         this_hDeltaPhi->SetName(Form("DeltaPhi_%d", i));
 
+        this_hDeltaEta->Scale(1./2);
+        this_hDeltaPhi->Scale(1./2);
+
         // Z pt eta Phi
         TH3D* this_hZPtEtaPhi = (TH3D*)fin->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
         TH1D* this_hZPt = this_hZPtEtaPhi->ProjectionX(Form("ZPt_%s", labels[i].c_str()));

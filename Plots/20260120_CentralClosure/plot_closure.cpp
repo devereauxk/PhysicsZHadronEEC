@@ -40,16 +40,16 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        "MC DY-GEN",
         "MC DY-RECO",
         "  & Z correction",
-        "  & Z + track correction"
+        "  & Z + track correction",
+        "MC DY-GEN"
     };
     string output = Form("plots/%s/%s_ZPT%s_trkPT%s_%s-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
@@ -74,12 +74,16 @@ int main(int argc, char *argv[]) {
         }
 
         // delta phi, delta eta
+        TH2D* this_hData2D = (TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str()));
         TH1D* this_hDeltaEta_all = (TH1D*)fin->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
         this_hDeltaEta_all->SetName(Form("DeltaEta_all_%d", i));
         TH1D* this_hDeltaPhi_all = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
         this_hDeltaPhi_all->SetName(Form("DeltaPhi_all_%d", i));
 
-        hData.push_back((TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str())));
+        this_hData2D->Scale(1./2);
+        this_hDeltaEta_all->Scale(1./2);
+        this_hDeltaPhi_all->Scale(1./2);
+        
         hDeltaEta_all.push_back(this_hDeltaEta_all); 
         hDeltaPhi_all.push_back(this_hDeltaPhi_all);
 
@@ -93,6 +97,10 @@ int main(int argc, char *argv[]) {
 
         divideByWidth(this_hDeltaPhi_mix);
         divideByWidth(this_hDeltaEta_mix);
+
+        this_hMixData2D->Scale(1./2);
+        this_hDeltaPhi_mix->Scale(1./2);
+        this_hDeltaEta_mix->Scale(1./2);
 
         hMixData.push_back(this_hMixData2D);
         hDeltaEta_mix.push_back(this_hDeltaEta_mix);
@@ -122,6 +130,10 @@ int main(int argc, char *argv[]) {
 
         TH2D* this_hData2D = (TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str()));
 
+        this_hData2D->Scale(1./2);
+        this_hDeltaEta->Scale(1./2);
+        this_hDeltaPhi->Scale(1./2);
+
         hDeltaEta.push_back(this_hDeltaEta);
         hDeltaPhi.push_back(this_hDeltaPhi);
         hData_result.push_back(this_hData2D);
@@ -130,24 +142,11 @@ int main(int argc, char *argv[]) {
         
     }
 
-    // 2D eta-phi maps (corrected reco) / (gen)
-    TH2D* hDelta2D_ratio_all = (TH2D*)hData[3]->Clone("hDelta2D_ratio_all");
-    hDelta2D_ratio_all->Divide(hData[0]);
 
-    TH2D* hDelta2D_ratio_mix = (TH2D*)hMixData[3]->Clone("hDelta2D_ratio_mix");
-    hDelta2D_ratio_mix->Divide(hMixData[0]);
-    
-    TH2D* hDelta2D_ratio = (TH2D*)hData_result[3]->Clone("hDelta2D_ratio_result");
-    hDelta2D_ratio->Divide(hData_result[0]);
-    //hDelta2D_ratio->Print("all");
-
-
-
-
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsYellow, cmsGray};
+    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kMagenta-3, cmsYellow, cmsGray};
     vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {0, 2, 1, 0, 1};
+    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
+    vector<int> lineStyles = {0, 2, 2, 1, 1};
 
     // make canvas
     TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);
@@ -195,7 +194,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(p1, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
+    AddUPCHeader(p2, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     p2->Update();
 
     c2->SaveAs(Form("%s-DeltaPhi-all.pdf", output.c_str()));
@@ -291,6 +290,19 @@ int main(int argc, char *argv[]) {
     // =================================== //    
     // eta phi maps
     // =================================== //
+
+    // 2D eta-phi maps (corrected reco) / (gen)
+    TH2D* hDelta2D_ratio_all = (TH2D*)hData[3]->Clone("hDelta2D_ratio_all");
+    hDelta2D_ratio_all->Divide(hData[0]);
+
+    TH2D* hDelta2D_ratio_mix = (TH2D*)hMixData[3]->Clone("hDelta2D_ratio_mix");
+    hDelta2D_ratio_mix->Divide(hMixData[0]);
+    
+    TH2D* hDelta2D_ratio = (TH2D*)hData_result[3]->Clone("hDelta2D_ratio_result");
+    hDelta2D_ratio->Divide(hData_result[0]);
+    //hDelta2D_ratio->Print("all");
+
+
     TCanvas* c2D = new TCanvas("c2D", "c2D", 600, 600);
     TPad* p2D = (TPad*) plotCMSSimple2D(
         c2D, hDelta2D_ratio, "Eta-Phi Map GEN vs RECO",
@@ -394,6 +406,8 @@ int main(int argc, char *argv[]) {
     // =================================== //
     // my result
     // =================================== //
+
+    /////////////////////////////////// DEPRECATED ///////////////////////////////////
 
     // gen
     TH2D* hDelta2D_gen_all_cut = (TH2D*) hData[0]->Clone("hDelta2D_gen_all_cut");

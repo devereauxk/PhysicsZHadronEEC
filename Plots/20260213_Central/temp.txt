@@ -1,0 +1,164 @@
+make: 'ExecuteCentralCombinedPlot' is up to date.
+Processing zPtRange: 5_500, trkPtRange: 0.5_500
+==================================================
+Z Pt Range: 5_500
+Track Pt Range: 0.5_500
+pPb Tag: ZV5_trkV23_nmix10
+pp Tag: EEV2_ZV4_trkV22_nmix10
+pp hNZ integral: 8561.36
+pp S-B integral: -0.0950825
+SUBTRACTION EFFICIENCY: -0.000976811
+pp DeltaPhi integral: -0.120459
+pp DeltaEta integral: -5.73301
+pPb hNZ integral: 5301
+pPb hNZ integral: 4483.25
+pPb hNZ integral: 4483.25
+pPb hNZ integral: 243068
+PbP hNZ integral: 9396
+PbP hNZ integral: 7947.23
+PbP hNZ integral: 7947.23
+PbP hNZ integral: 242414
+Combining ppb and pbp for index 0
+combined S integral: 4.9687e+06
+combined S NZ: 14697
+combined B integral: 4.9669e+07
+combined B NZ: 146970
+combined S-B integral: 0.122265
+SUBTRACTION EFFICIENCY: 0.00036178
+DeltaPhi combined integral: 0.00246731
+DeltaEta combined integral: -5.62107
+Combining ppb and pbp for index 1
+combined S integral: 4.20392e+06
+combined S NZ: 12430.5
+combined B integral: 3.55527e+07
+combined B NZ: 105137
+combined S-B integral: 0.0370551
+SUBTRACTION EFFICIENCY: 0.00010958
+DeltaPhi combined integral: -0.0657826
+DeltaEta combined integral: -5.66894
+Combining ppb and pbp for index 2
+combined S integral: 4.14285e+06
+combined S NZ: 12430.5
+combined B integral: 3.50363e+07
+combined B NZ: 105137
+combined S-B integral: 0.0363684
+SUBTRACTION EFFICIENCY: 0.000109134
+DeltaPhi combined integral: -0.0603922
+DeltaEta combined integral: -5.65983
+Combining ppb and pbp for index 3
+combined S integral: 1.36117e+08
+combined S NZ: 485482
+combined B integral: 1.35164e+09
+combined B NZ: 4.82472e+06
+combined S-B integral: 0.227038
+SUBTRACTION EFFICIENCY: 0.000810419
+DeltaPhi combined integral: 0.114688
+DeltaEta combined integral: -6.22112
+==================================================
+Z Pt Range: 5_500
+Track Pt Range: 0.5_500
+pPb Tag: ZV5_trkV23_nmix10
+pp Tag: EEV2_ZV4_trkV22_nmix10
+pp hNZ integral: 8561.36
+pp S-B integral: -0.0950825
+SUBTRACTION EFFICIENCY: -0.000976811
+pp DeltaPhi integral: -0.120459
+pp DeltaEta integral: -5.73301
+pPb hNZ integral: 5301
+pPb hNZ integral: 4483.25
+pPb hNZ integral: 4483.25
+pPb hNZ integral: 243068
+PbP hNZ integral: 9396
+PbP hNZ integral: 7947.23
+PbP hNZ integral: 7947.23
+PbP hNZ integral: 242414
+Combining ppb and pbp for index 0
+combined S integral: 1.79588e+06
+combined S NZ: 5301
+combined B integral: 1.79233e+07
+combined B NZ: 53010
+combined S-B integral: 0.670788
+SUBTRACTION EFFICIENCY: 0.00198393
+DeltaPhi combined integral: 0.466735
+DeltaEta combined integral: -5.37873
+Combining ppb and pbp for index 1
+combined S integral: 1.51926e+06
+combined S NZ: 4483.25
+combined B integral: 1.28257e+07
+combined B NZ: 37913.2
+combined S-B integral: 0.58399
+SUBTRACTION EFFICIENCY: 0.0017263
+DeltaPhi combined integral: 0.396401
+DeltaEta combined integral: -5.42552
+Combining ppb and pbp for index 2
+combined S integral: 1.50173e+06
+combined S NZ: 4483.25
+combined B integral: 1.2678e+07
+combined B NZ: 37913.2
+combined S-B integral: 0.570297
+SUBTRACTION EFFICIENCY: 0.00170546
+DeltaPhi combined integral: 0.396696
+DeltaEta combined integral: -5.43384
+Combining ppb and pbp for index 3
+combined S integral: 6.82542e+07
+combined S NZ: 243068
+combined B integral: 6.78028e+08
+combined B NZ: 2.4157e+06
+combined S-B integral: 0.128312
+SUBTRACTION EFFICIENCY: 0.000457155
+DeltaPhi combined integral: 0.0420026
+DeltaEta combined integral: -6.25777
+==================================================
+Z Pt Range: 5_500
+Track Pt Range: 0.5_500
+pPb Tag: ZV5_trkV23_nmix10
+pp Tag: EEV2_ZV4_trkV22_nmix10
+pp hNZ integral: 8561.36
+pp S-B integral: -0.0950825
+SUBTRACTION EFFICIENCY: -0.000976811
+pp DeltaPhi integral: -0.120459
+pp DeltaEta integral: -5.73301
+pPb hNZ integral: 5301
+pPb hNZ integral: 4483.25
+pPb hNZ integral: 4483.25
+pPb hNZ integral: 243068
+PbP hNZ integral: 9396
+PbP hNZ integral: 7947.23
+PbP hNZ integral: 7947.23
+PbP hNZ integral: 242414
+Combining ppb and pbp for index 0
+combined S integral: 3.17281e+06
+combined S NZ: 9396
+combined B integral: 3.17457e+07
+combined B NZ: 93960
+combined S-B integral: -0.187199
+SUBTRACTION EFFICIENCY: -0.000554066
+DeltaPhi combined integral: -0.259462
+DeltaEta combined integral: -5.7578
+Combining ppb and pbp for index 1
+combined S integral: 2.68466e+06
+combined S NZ: 7947.23
+combined B integral: 2.2727e+07
+combined B NZ: 67223.4
+combined S-B integral: -0.271464
+SUBTRACTION EFFICIENCY: -0.000802954
+DeltaPhi combined integral: -0.326501
+DeltaEta combined integral: -5.80627
+Combining ppb and pbp for index 2
+combined S integral: 2.64112e+06
+combined S NZ: 7947.23
+combined B integral: 2.23583e+07
+combined B NZ: 67223.4
+combined S-B integral: -0.264956
+SUBTRACTION EFFICIENCY: -0.000796626
+DeltaPhi combined integral: -0.31835
+DeltaEta combined integral: -5.78736
+Combining ppb and pbp for index 3
+combined S integral: 6.78631e+07
+combined S NZ: 242414
+combined B integral: 6.73612e+08
+combined B NZ: 2.40902e+06
+combined S-B integral: 0.326101
+SUBTRACTION EFFICIENCY: 0.00116622
+DeltaPhi combined integral: 0.187627
+DeltaEta combined integral: -6.18434

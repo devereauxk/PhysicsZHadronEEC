@@ -23,6 +23,7 @@ int main(int argc, char *argv[]) {
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("pPbtag", "V16_nmix5");
     string tag_pp = CL.Get("pptag", "V16_nmix5");
+    bool doCombine = CL.GetBool("doCombine", false);
 
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Track Pt Range: "<<trkPtRange<<endl;
@@ -31,16 +32,18 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_ZResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EE_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str())
     };
+    string input_ZPT_file_pbp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str());
     vector<string> labels = {
-        "pp 5TeV, corrected",
-        "pPb 8TeV",
-        "  & Z correction"
+        "pPb 8 TeV, corrected",
+        "pp 5 TeV, corrected",
+        "pp extrapolated 8 TeV"
     };
-    string output = Form("plots/zspectrum/pppPb_ZPT%s_trkPT%s_%s", zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
+    string file_tag = (doCombine) ? "all" : "pppPb";
+    string output = Form("plots/zspectrum/%s_ZPT%s_trkPT%s_%s", file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag_pp.c_str());
 
     // read results file
     vector<TH1*> hZPt;
@@ -58,17 +61,28 @@ int main(int argc, char *argv[]) {
         // Z pt eta Phi
         TH3D* this_hZPtEtaPhi = (TH3D*)fin->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
         TH1D* this_hZPt = this_hZPtEtaPhi->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
-        TH1D* this_hZEta = this_hZPtEtaPhi->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
-        TH1D* this_hZPhi = this_hZPtEtaPhi->ProjectionZ(Form("ZPhi_%s", labels[i].c_str()));
 
         TH1D* hNZ = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
+        float nZ = hNZ->GetBinContent(1);
 
-        cout<<" "<<this_hZPtEtaPhi->Integral()<<endl;
-        cout<<"hNZ bin content: "<<hNZ->Integral()<<endl;
+        //undo nZ normalization
+        this_hZPt->Scale(nZ);
 
+        if (doCombine && i == 0) {
+            TFile* fin_pbp = TFile::Open(Form("%s-result.root", input_ZPT_file_pbp.c_str()), "READ");
+
+            TH3D* this_hZPtEtaPhi_pbp = (TH3D*)fin_pbp->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
+            TH1D* this_hZPt_pbp = this_hZPtEtaPhi_pbp->ProjectionX(Form("ZPt_pbp_%s", labels[i].c_str()));
+            TH1D* hNZ_pbp = (TH1D*)fin_pbp->Get(Form("hNZData_%s", trkPtRange.c_str()));
+            float nZ_pbp = hNZ_pbp->GetBinContent(1);
+            this_hZPt_pbp->Scale(nZ_pbp);
+
+            this_hZPt->Add(this_hZPt_pbp);
+            nZ += nZ_pbp;
+        }
+
+        this_hZPt->Scale(1.0 / nZ);
         divideByWidth(this_hZPt);
-        divideByWidth(this_hZEta);
-        divideByWidth(this_hZPhi);
 
         hZPt.push_back(this_hZPt);
 
@@ -92,7 +106,7 @@ int main(int argc, char *argv[]) {
         hZPt, "", labels,
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "p_{T}^{Z}", 0.5, 300,
+        "p_{T}^{Z}", 0.5, 1000,
         "(1/N_{Z}) dN_{Z}/dp_{T}^{Z}", -1, -1,
         "pPb / pp", 0.5, 1.5,
         0,

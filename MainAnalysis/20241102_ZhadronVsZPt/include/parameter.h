@@ -38,6 +38,7 @@ public:
    string ZWeightFile;      // Z weight file
    bool useResidualWeight;   // Flag to see if we use residual correction
    string residualWeightFile; // Residual weight file
+   string EnergyExtraFile; // Input file for energy extrapolation
    bool isPPb;            // Flag to check if this is a PPb analysis
    float yBoost;          // Rapidity boost for pPb analysis
     
@@ -65,6 +66,7 @@ public:
       cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
       cout << "UseResidualWeight: " << (useResidualWeight ? "true" : "false") << endl;
       cout << "ResidualWeightFile: " << residualWeightFile << endl;
+      cout << "EnergyExtraFile: " << EnergyExtraFile << endl;
       cout << "Scale factor: " << scaleFactor << endl;
       cout << "SumHF shift: " << shift << endl;
       cout << "Number of Threads: " << nThread << endl;

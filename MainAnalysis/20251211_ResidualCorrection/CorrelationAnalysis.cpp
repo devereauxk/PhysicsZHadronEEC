@@ -82,12 +82,14 @@ float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
 // Z hadron dphi calculation
 //============================================================//
 float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const Parameters& par) {
+   /*
    if (par.isAddUE) {
       if (MZUE->GetEntries()<MZSignal->GetEntries()) {
          cout <<"Error! Smaller number of UE events than Z events"<<endl;
          return -1;
       }   
    }
+   */
    float nZ = 0;
    h->Sumw2();
    par.printParameters();
@@ -119,7 +121,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
 
       // get UE from EPOS file if needed
       if (par.isAddUE) {
-         MZUE->GetEntry(i);
+         MZUE->GetEntry(i % MZUE->GetEntries()); // this is really cringe for OO and might mess up pPb closure idk
       }
 
       // Check if the event passes the selection criteria
@@ -136,7 +138,8 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
       float zY  = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       if (zPhi < 0) zPhi += 2 * M_PI;
-      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
+      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1; // for pPb use manually calculated weights
+      ZWeight *= (par.isOO) ? MZSignal->ZWeight : 1; // for OO, weights already in skim
 
       float this_eventWeight = MZSignal->EventWeight * ZWeight * MZSignal->VZWeight;
 
@@ -272,6 +275,7 @@ int main(int argc, char *argv[])
    par.output        = CL.Get      ("Output",  "output.root");                             	// Output file
    par.isGen         = CL.GetBool  ("IsGen", false); // Determine if the analysis is gen level
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     
+   par.isOO          = CL.GetBool  ("IsOO", false);        // Flag to check if this is an OO analysis 
    par.isPUReject    = CL.GetBool  ("IsPUReject", true);  // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
    par.ZWeightFile   = CL.Get      ("ZWeightFile", "");           // Z weight file
