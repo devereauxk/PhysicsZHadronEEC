@@ -13,7 +13,7 @@ DOPBP=$3
 # PT_RANGES=("0.5_500")
 
 cat > config.sh <<EOF
-ZPT_RANGES=("20_30")
+ZPT_RANGES=("10_20")
 PT_RANGES=("0.5_500")
 EOF
 

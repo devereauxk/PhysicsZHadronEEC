@@ -9,7 +9,7 @@ do
     do
         echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
 
-        ./ExecutePPPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pptag ZV4_trkV22_nmix10
+        ./ExecutePPPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pptag EEV2_ZV4_trkV22_nmix10
 
     done
 done

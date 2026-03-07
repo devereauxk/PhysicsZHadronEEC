@@ -3,6 +3,7 @@
 #include <TH2D.h>
 #include <TH3D.h>
 #include <TF1.h>
+#include <TEllipse.h>
 #include <iostream>
 using namespace std;
 
@@ -34,9 +35,9 @@ int main(int argc, char *argv[]) {
     vector<string> labels = {
         "MC DY-GEN"
     };
-    string output = Form("plots/%s_ZPT%s_%s-closure", collisionType.c_str(), zPtRange.c_str(), tag.c_str());
+    string output = Form("plots/%s_ZPT%s_%s", collisionType.c_str(), zPtRange.c_str(), tag.c_str());
 
-    vector<TH1*> hDeltaRMuTrk;
+    vector<TH2D*> hDeltaRMuTrk;
 
     // Loop over nosub files
     int i = 0;
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
         }
 
         // muon-track deltaR distribution
-        TH1D* this_hDeltaRMuTrk = (TH1D*)fin->Get("hDeltaRMuTrkData");
+        TH2D* this_hDeltaRMuTrk = (TH2D*)fin->Get("hDeltaRMuTrkData");
         this_hDeltaRMuTrk->SetName(Form("hDeltaRMuTrk_%d", i));
         hDeltaRMuTrk.push_back(this_hDeltaRMuTrk);
 
@@ -60,19 +61,45 @@ int main(int argc, char *argv[]) {
 
     // make canvas
 
-    TCanvas* c2D_muTrk = new TCanvas("c2D_muTrk", "c2D_muTrk", 600, 600);
-    TPad* p2D_muTrk = (TPad*) plotCMSSimple(
-        c2D_muTrk, hDeltaRMuTrk, "GEN muon vs track #Delta R", {"#Delta R_{mu,trk}"},
-        {cmsBlue},
-        {0},
-        {cmsBlue},
-        {0},
-        "#Delta R_{mu,trk}", 0, 0.005,
-        "counts", -1, -1,
-        false, true
-    );
+    gStyle->SetPalette(kRainbow);
 
-    c2D_muTrk->SaveAs(Form("%s-Delta2D-muTrk.pdf", output.c_str()));
+    TCanvas* c2D = new TCanvas("c2D", "c2D", 600, 600);
+    c2D->SetLeftMargin(0.15);
+    c2D->SetBottomMargin(0.15);
+    c2D->SetRightMargin(0.15);
+    
+    hDeltaRMuTrk[0]->SetTitle("track-muon #Delta#eta vs. #Delta#phi");
+    hDeltaRMuTrk[0]->GetXaxis()->SetTitle("#Delta #eta_{mu,ch}");
+    hDeltaRMuTrk[0]->GetXaxis()->SetRangeUser(-0.01, 0.01);
+    hDeltaRMuTrk[0]->GetYaxis()->SetTitle("#Delta#phi_{mu,ch}");
+    hDeltaRMuTrk[0]->GetYaxis()->SetRangeUser(-0.01, 0.01);
+    hDeltaRMuTrk[0]->GetZaxis()->SetTitle("Counts");
+    hDeltaRMuTrk[0]->SetStats(0);
+    
+    gPad->SetLogz();
+    hDeltaRMuTrk[0]->Draw("COLZ");
+    
+    TEllipse* circle = new TEllipse(0, 0, 0.0025, 0.0025);
+    circle->SetLineColor(kBlack);
+    circle->SetLineWidth(3);
+    circle->SetFillStyle(0);
+    circle->Draw();
+    
+    TEllipse* circle2 = new TEllipse(0, 0, 0.01, 0.01);
+    circle2->SetLineColor(kBlack);
+    circle2->SetLineWidth(3);
+    circle2->SetFillStyle(0);
+    circle2->Draw();
+
+    TEllipse* circle3 = new TEllipse(0, 0, 0.004, 0.004);
+    circle3->SetLineColor(kBlack);
+    circle3->SetLineWidth(3);
+    circle3->SetFillStyle(0);
+    circle3->Draw();
+    
+    c2D->Update();
+
+    c2D->SaveAs(Form("%s-Delta2D-muTrk.pdf", output.c_str()));
 
     return 0;
 }

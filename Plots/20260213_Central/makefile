@@ -1,9 +1,4 @@
-default: clean ExecuteClosureTest ExecuteCentralPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot ExecuteEnergyExtrapolationPlot ExecutePPPlot
-
-ExecuteClosureTest: plot_closure.cpp
-	g++ plot_closure.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
-		-o ExecuteClosureTest `root-config --cflags --glibs` \
-		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
+default: clean ExecuteCentralPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot ExecuteEnergyExtrapolationPlot ExecutePPPlot ExecutePUPlot ExecuteVZPlot ExecuteCentralOverlayPPbPbPPlot
 
 ExecuteCentralPlot: plot_central.cpp
 	g++ plot_central.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
@@ -40,8 +35,22 @@ ExecutePPPlot: plot_pp.cpp
 		-o ExecutePPPlot `root-config --cflags --glibs` \
 		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
 
+ExecuteCentralOverlayPPbPbPPlot: plot_central_overlay_PPbPbP.cpp
+	g++ plot_central_overlay_PPbPbP.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecuteCentralOverlayPPbPbPPlot `root-config --cflags --glibs` \
+		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
+
+ExecutePUPlot: plot_PU.cpp
+	g++ plot_PU.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecutePUPlot `root-config --cflags --glibs` \
+		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
+
+ExecuteVZPlot: plot_VZ.cpp
+	g++ plot_VZ.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecuteVZPlot `root-config --cflags --glibs` \
+		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
+
 clean:
-	rm -f ExecuteClosureTest
 	rm -f ExecuteCentralPlot
 	rm -f ExecuteZMassPlot
 	rm -f ExecuteZSpectrumPlot
@@ -49,3 +58,6 @@ clean:
 	rm -f ExecuteCentralCombinedPlot
 	rm -f ExecuteEnergyExtrapolationPlot
 	rm -f ExecutePPPlot
+	rm -f ExecuteCentralOverlayPPbPbPPlot
+	rm -f ExecutePUPlot
+	rm -f ExecuteVZPlot

@@ -165,12 +165,12 @@ double* getLinBins(float min, float max, int nBins) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
+double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                ZHadronMessenger *MZUE,
                TH2D *h, TH2D *hSub0, TH3D *hTrkPtEtaPhi, TH3D* hZPtEtaPhi,
                TH1D* hVZ, TH1D* hZmass, TH3D* hTrkResidualCorrectionPtEtaPhi,
                const Parameters& par, TNtuple *nt = 0) {
-   float nZ = 0;
+   double nZ = 0;
    h->Sumw2();
    if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Sumw2();
    if (hZPtEtaPhi != 0) hZPtEtaPhi->Sumw2();
@@ -584,7 +584,7 @@ public:
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
-      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
+      //hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {

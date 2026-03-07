@@ -165,13 +165,13 @@ double* getLinBins(float min, float max, int nBins) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
+double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                ZHadronMessenger *MZUE,
                TH2D *h, TH2D *hSub0, TH3D *hTrkPtEtaPhi, TH3D* hZPtEtaPhi,
                TH1D* hVZ, TH1D* hZmass, TH3D* hTrkResidualCorrectionPtEtaPhi,
-               TH1D* hDeltaRMuTrk, TH2D* hDeltaRZGenReco,
+               TH2D* hDeltaRMuTrk, TH2D* hDeltaRZGenReco,
                const Parameters& par, TNtuple *nt = 0) {
-   float nZ = 0;
+   double nZ = 0;
    h->Sumw2();
    if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Sumw2();
    if (hZPtEtaPhi != 0) hZPtEtaPhi->Sumw2();
@@ -302,12 +302,41 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
       nZ += eventWeightSignal;
 
+      if ((*MZSignal->muEta1).size() == 0) continue;
+
+      float muEta1 = (*MZSignal->muEta1)[0];
+      float muPhi1 = (*MZSignal->muPhi1)[0];
+      float muPt1 = (*MZSignal->muPt1)[0];
+
+      float muEta2 = (*MZSignal->muEta2)[0];
+      float muPhi2 = (*MZSignal->muPhi2)[0];
+      float muPt2 = (*MZSignal->muPt2)[0];
+
       //==================================================//
       // loop over tracks
       //==================================================//
       for (unsigned long k = 0; k < MZSignal->trackPhi->size(); k++) {
 
-         //hDeltaRMuTrk->Fill((*MZSignal->trackMuDR)[k]);
+         // track selection without delta R cut
+         if ((*MZSignal->trackPt)[k] > par.MaxTrackPT) continue;  
+         if ((*MZSignal->trackPt)[k] < par.MinTrackPT) continue;
+         if ((*MZSignal->trackEta)[k] > 2.4) continue;
+         if ((*MZSignal->trackEta)[k] < -2.4) continue;
+
+         float trackEta = (*MZSignal->trackEta)[k];
+         float trackPhi = (*MZSignal->trackPhi)[k];
+
+         if (muPt1 > 20 && abs(muEta1) < 2.4) {
+            float deltaEta1 = trackEta - muEta1;
+            float deltaPhi1 = trackPhi - muPhi1;
+            hDeltaRMuTrk->Fill(deltaEta1, deltaPhi1);
+         }
+
+         if (muPt2 > 20 && abs(muEta2) < 2.4) {
+            float deltaEta2 = trackEta - muEta2;
+            float deltaPhi2 = trackPhi - muPhi2;
+            hDeltaRMuTrk->Fill(deltaEta2, deltaPhi2);
+         }
       
       } // end track loop
 
@@ -328,7 +357,7 @@ public:
    TH3D *hZPtEtaPhi;
    TH1D *hZmass;
    TH2D *h = 0, *hSub0 = 0, *hMix = 0;
-   TH1D *hDeltaRMuTrk = 0;
+   TH2D *hDeltaRMuTrk = 0;
    TH2D *hDeltaRZGenReco = 0;
    ZHadronMessenger *MZHadron, *MMix, *MZHadronUE;
    string title;
@@ -430,7 +459,7 @@ public:
       
       hVZ = new TH1D(Form("hVZ%s", title.c_str()), "", 40, -20, 20);
       hZmass = new TH1D(Form("hZmass%s", title.c_str()), "", 40, 60, 120);
-      hDeltaRMuTrk = new TH1D(Form("hDeltaRMuTrk%s", title.c_str()), "", 100, 0, 0.01);
+      hDeltaRMuTrk = new TH2D(Form("hDeltaRMuTrk%s", title.c_str()), "", 100, -0.01, 0.01, 100, -0.01, 0.01);
       hDeltaRZGenReco = new TH2D(Form("hDeltaRZGenReco%s", title.c_str()), "", 100, -0.5, 0.5, 100, -1, 1);
       
       h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);

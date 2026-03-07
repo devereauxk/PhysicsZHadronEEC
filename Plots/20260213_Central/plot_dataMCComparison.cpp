@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "p_{T}^{Z}", 0, 50,
         "(1/N_{Z}) dN_{Z}/dp_{T}^{Z}", -1, -1,
-        "Ratio to GEN", 0.9, 1.1,
+        "Ratio to GEN", 0.5, 1.5,
         0,
         true, false, false
     );
@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "y_{Z}", -4, 4,
-        "(1/N_{Z}) dN_{Z}/d y_{Z}", -1, -1,
-        "Ratio to GEN", 0.8, 1.2,
+        "(1/N_{Z}) dN_{Z}/d y_{Z}", 0, 0.5,
+        "Ratio to GEN", 0.5, 1.5,
         0,
         false, false, false
     ); 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "p_{T}^{ch}", 0, 10,
         "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -27, 160,
-        "Ratio to GEN", 0.9, 1.1,
+        "Ratio to GEN", 0.5, 1.5,
         0,
         true, false, false
     );
@@ -186,8 +186,8 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "y_{ch}", -4, 4,
-        "(1/N_{Z}) dN_{ch}/d y_{ch}", (collisionType == "pp" ? -1 : 8), (collisionType == "pp" ? -1 : 22),
-        "Ratio to GEN", 0.9, 1.1,
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", (collisionType == "pp" ? 2 : 8), (collisionType == "pp" ? 8 : 27),
+        "Ratio to GEN", 0.5, 1.5,
         0,
         false, false, false
     );

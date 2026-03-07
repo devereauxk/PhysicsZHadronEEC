@@ -40,16 +40,16 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
+        "MC DY-GEN",
         "MC DY-RECO",
         "  & Z correction",
-        "  & Z + track correction",
-        "MC DY-GEN"
+        "  & Z + track correction"
     };
     string output = Form("plots/%s/%s_ZPT%s_trkPT%s_%s-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
@@ -143,10 +143,10 @@ int main(int argc, char *argv[]) {
     }
 
 
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kMagenta-3, cmsYellow, cmsGray};
+    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, cmsYellow, cmsGray};
     vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {0, 2, 2, 1, 1};
+    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, cmsTealL1, cmsRed, cmsRed};
+    vector<int> lineStyles = {0, 2, 1, 0, 1};
 
     // make canvas
     TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);
@@ -159,7 +159,8 @@ int main(int argc, char *argv[]) {
         "Signal d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
-        false, false, true
+        false, false, true,
+        0.6
     );
 
     AddCMSHeader(
@@ -182,10 +183,11 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "Signal d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", (collisionType == "pp") ? 0 : 15, (collisionType == "pp") ? 35 : 50,
+        "Signal d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
-        false, false, true
+        false, false, true,
+        0.2
     );
 
     AddCMSHeader(
@@ -209,7 +211,8 @@ int main(int argc, char *argv[]) {
         "Mixed d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
-        false, false, true
+        false, false, true,
+        0.6
     );
 
     AddCMSHeader(
@@ -227,10 +230,11 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", (collisionType == "pp") ? 0 : 15, (collisionType == "pp") ? 35 : 50,
+        "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", (collisionType == "pp") ? 2 : 8, (collisionType == "pp") ? 12 : 20,
         "Ratio to GEN", 0.92, 1.08,
         0,
-        false, false, true
+        false, false, true,
+        0.2
     );
 
     AddCMSHeader(
@@ -244,15 +248,16 @@ int main(int argc, char *argv[]) {
 
 
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
-    TPad* pResult1 = (TPad*) plotCMSRatio(
+    TPad* pResult1 = (TPad*) plotCMSDiff(
         hDeltaEta, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "Ratio to GEN", 0.8, 1.2,
+        "RECO - GEN", -0.05, 0.05,
         0,
-        false, false, true
+        false, false, true,
+        0.2
     );
 
     AddCMSHeader(
@@ -265,15 +270,16 @@ int main(int argc, char *argv[]) {
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
     TCanvas* cResult2 = new TCanvas("cResult2", "cResult2", 600, 600);
-    TPad* pResult2 = (TPad*) plotCMSRatio(
+    TPad* pResult2 = (TPad*) plotCMSDiff(
         hDeltaPhi, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "Ratio to GEN", 0.8, 1.2,
+        "RECO - GEN", -0.1, 0.1,
         0,
-        false, false, true
+        false, false, true,
+        0.2
     );
 
     AddCMSHeader(

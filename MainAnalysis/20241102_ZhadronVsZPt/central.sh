@@ -3,33 +3,35 @@ DOPP=$1
 DOPPB=$2
 DOPBP=$3
 
-# ZPT_RANGES=("0_10" "10_500")
-# PT_RANGES=("0.5_2" "2_500")
-
-# ZPT_RANGES=("0_5" "5_10" "10_20" "20_30")
-# PT_RANGES=("0.5_4" "4_500")
-
 cat > config.sh <<EOF
-ZPT_RANGES=("5_500")
+ZPT_RANGES=("0_500")
 PT_RANGES=("0.5_500") 
 EOF
 
+# EVENT WEIGHT MESSED WITH ON/OFF IN THIS FILE
 
 # pp
 if [ "$DOPP" == "1" ]; then
     nMix=10
     TAG="_EEV2_ZV4_trkV22_nmix10"
 
-    ./system-analysis.sh "pp_EExtrapolation${TAG}" \
-        --IsPP true --IsGenZ false --IsData true \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight true \
-        --UseTrackWeight true --UseResidualWeight true \
-        --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260129_ZCorrection_V4_pp_zPt0-500.root \
-        --ResidualWeightFile my_residualWeights/20260129_TrackResidualCorrection_V22_ZWeight_V4_pp_zPt \
-        --EnergyExtraFile my_EnergyExtrapolation/20260222_EnergyExtrapolation_V1.root
+    ./system-analysis.sh "pythiaMC_nominal${TAG}" \
+        --IsPP true --IsGenZ false --IsData false \
+        --Input mergedSample/pythia-v11-Zpt0.root \
+        --MixFile mergedSample/pythia-v11-Zpt0.root \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix $nMix
+
+    ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
+        --IsPP true --IsGenZ true --IsData false \
+        --Input mergedSample/pythia-gen-v11-Zpt0.root  \
+        --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix $nMix
+
+    exit
 
     ./system-analysis.sh "pp_nominal${TAG}" \
         --IsPP true --IsGenZ false --IsData true \
@@ -39,32 +41,37 @@ if [ "$DOPP" == "1" ]; then
         --UseTrackWeight true --UseResidualWeight false \
         --yBoost 0 --nMix $nMix
 
-    ./system-analysis.sh "pp_ZResidual${TAG}" \
-        --IsPP true --IsGenZ false --IsData true \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight true \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260129_ZCorrection_V4_pp_zPt0-500.root
+    #./system-analysis.sh "pp_ZResidual${TAG}" \
+    #    --IsPP true --IsGenZ false --IsData true \
+    #    --Input mergedSample/pp-v11-Zpt0.root \
+    #    --MixFile mergedSample/pp-v11-Zpt0.root \
+    #    --UseEventWeight true --UseZWeight true \
+    #    --UseTrackWeight true --UseResidualWeight false \
+    #    --yBoost 0 --nMix $nMix \
+    #    --ZWeightFile my_ZWeights/20260129_ZCorrection_V4_pp_zPt0-500.root
 
-    ./system-analysis.sh "pp_trkResidual${TAG}" \
-        --IsPP true --IsGenZ false --IsData true \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight true \
-        --UseTrackWeight true --UseResidualWeight true \
-        --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260129_ZCorrection_V4_pp_zPt0-500.root \
-        --ResidualWeightFile my_residualWeights/20260129_TrackResidualCorrection_V22_ZWeight_V4_pp_zPt
+    #./system-analysis.sh "pp_trkResidual${TAG}" \
+    #    --IsPP true --IsGenZ false --IsData true \
+    #    --Input mergedSample/pp-v11-Zpt0.root \
+    #    --MixFile mergedSample/pp-v11-Zpt0.root \
+    #    --UseEventWeight true --UseZWeight true \
+    #    --UseTrackWeight true --UseResidualWeight true \
+    #    --yBoost 0 --nMix $nMix \
+    #    --ZWeightFile my_ZWeights/20260129_ZCorrection_V4_pp_zPt0-500.root \
+    #    --ResidualWeightFile my_residualWeights/20260129_TrackResidualCorrection_V22_ZWeight_V4_pp_zPt
 
-    ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
-        --IsPP true --IsGenZ true --IsData false \
-        --Input mergedSample/pythia-gen-v11-Zpt0.root  \
-        --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
+    #./system-analysis.sh "pp_EExtrapolation${TAG}" \
+    #    --IsPP true --IsGenZ false --IsData true \
+    #    --Input mergedSample/pp-v11-Zpt0.root \
+    #    --MixFile mergedSample/pp-v11-Zpt0.root \
+    #    --UseEventWeight true --UseZWeight true \
+    #    --UseTrackWeight true --UseResidualWeight true \
+    #    --yBoost 0 --nMix $nMix \
+    #    --ZWeightFile my_ZWeights/20260129_ZCorrection_V4_pp_zPt0-500.root \
+    #    --ResidualWeightFile my_residualWeights/20260129_TrackResidualCorrection_V22_ZWeight_V4_pp_zPt \
+    #    --EnergyExtraFile my_EnergyExtrapolation/20260222_EnergyExtrapolation_V1.root
+
+    
 
 fi
 
@@ -77,8 +84,8 @@ if [ "$DOPPB" == "1" ]; then
         --IsPP false --IsGenZ true --IsData false --IsPPb true \
         --Input pPbSample/V0.2/PPbMC_Gen.root \
         --MixFile pPbSample/V0.2/PPbMC_Gen.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
+        --UseEventWeight false --UseZWeight false \
+        --UseTrackWeight false --UseResidualWeight false \
         --EPOSFile mergedEPOS/PPbMC_Gen.root --Fraction 1 \
         --yBoost 0 --nMix $nMix
 
