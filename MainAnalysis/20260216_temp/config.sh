@@ -1,0 +1,2 @@
+ZPT_RANGES=("5_500")
+PT_RANGES=("0.5_500")

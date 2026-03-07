@@ -165,12 +165,12 @@ double* getLinBins(float min, float max, int nBins) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
+double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                ZHadronMessenger *MZUE,
                TH2D *h, TH2D *hSub0, TH3D *hTrkPtEtaPhi, TH3D* hZPtEtaPhi,
                TH1D* hVZ, TH1D* hZmass, TH3D* hTrkResidualCorrectionPtEtaPhi,
                const Parameters& par, TNtuple *nt = 0) {
-   float nZ = 0;
+   double nZ = 0;
    h->Sumw2();
    if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Sumw2();
    if (hZPtEtaPhi != 0) hZPtEtaPhi->Sumw2();
@@ -188,6 +188,12 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    unsigned long mixstart_i = mix_i;
    int deltaI = (iEnd - iStart) / 100 + 1;
    float dPhi_threshold = M_PI / 2;
+
+   // open pp energy extrapolation file if needed
+   TrackResidualCorrector *EnergyCorrector;
+   if (par.EnergyExtraFile != "") {
+      EnergyCorrector = new TrackResidualCorrector(par.EnergyExtraFile.c_str());
+   }
 
    // open Z correction if needed
    TrackResidualCorrector *Zcorrector;
@@ -254,6 +260,14 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       float eventWeightSignalUE = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
       if (par.useEPOSFile) eventWeightSignalUE *= 1; //MZUE->VZWeight; // * MZUE->EventWeight;
       if (par.useZWeight) eventWeightSignalUE *= ZWeight;
+
+      // energy extrapolation
+      //eta, phi dummy variables since the correction is only a function of Z pT
+      if (par.EnergyExtraFile != "" && par.isPP) {
+         float energyExtrapolationWeight = EnergyCorrector->GetCorrectionFactor(zPt, 1, 1);
+         eventWeightSignal *= energyExtrapolationWeight;
+         eventWeightSignalUE *= energyExtrapolationWeight;
+      }
 
       if (hZPtEtaPhi != 0) hZPtEtaPhi->Fill(zPt, zY, zPhi, eventWeightSignal);
       if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeightSignal);
@@ -347,6 +361,13 @@ float getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
             if (par.useEventWeight) eventWeightMixUE *= MMix->EventWeight * MMix->VZWeight;
             if (par.useZWeight) eventWeightMixUE *= ZWeightMix;
+
+            // energy extrapolation
+            if (par.EnergyExtraFile != "" && par.isPP) {
+               float energyExtrapolationWeightMix = EnergyCorrector->GetCorrectionFactor(zPtMix, 1, 1);
+               //eventWeightMix *= energyExtrapolationWeightMix;
+               //eventWeightMixUE *= energyExtrapolationWeightMix;
+            }
          }
 
          nZ += (par.mix) ? eventWeightMix : eventWeightSignal;
@@ -563,7 +584,7 @@ public:
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
-      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
+      //hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {
@@ -619,6 +640,7 @@ int main(int argc, char *argv[])
    par.ZWeightFile     = CL.Get      ("ZWeightFile", "");           // Z weight file
    par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
+   par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.

@@ -23,7 +23,7 @@ void reweight_VZ() {
         "Reco PbP",
         "Data PbP"
     };
-    const char* output =  "summary/20251003_ZPT0_350";
+    const char* output =  "summary/20260215_ZPT0_350";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
@@ -126,7 +126,7 @@ void reweight_VZ() {
         false
     );
 
-    AddUPCHeader(p6, "8 TeV", "pPb");
+    AddUPCHeader(p6, "8.16 TeV", "pPb");
     p6->Update();
     c6->SaveAs(Form("%s-Vz_ppb.pdf", output));
 
@@ -178,7 +178,7 @@ void reweight_VZ() {
         false
     );
 
-    AddUPCHeader(p8, "8 TeV", "PbP");
+    AddUPCHeader(p8, "8.16 TeV", "PbP");
     p8->Update();
     c8->SaveAs(Form("%s-Vz_pbp.pdf", output));
 

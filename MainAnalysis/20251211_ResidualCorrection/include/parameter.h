@@ -29,6 +29,7 @@ public:
     bool isMuTagged;       // Flag to enable/disable muon tagging requirement
     bool isPUReject;       // Flag to reject PU sample for systemaitcs.
     bool isPP;             // Flag to check if this is a PP analysis
+    bool isOO;
     bool isJewel;             // Flag to check if this is a Jewel analysis
     int ExtraZWeight;
     bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
@@ -48,6 +49,7 @@ public:
        cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
        cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
        cout << "isPP: " << (isPP ? "true" : "false") << endl;
+       cout << "isOO: " << (isOO ? "true" : "false") << endl;
        cout << "Scale factor: " << scaleFactor << endl;
        cout << "SumHF shift: " << shift << endl;
        cout << "Number of Threads: " << nThread << endl;

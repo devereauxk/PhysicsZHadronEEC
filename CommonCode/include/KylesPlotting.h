@@ -459,7 +459,8 @@ TPad* plotCMSRatio(vector<TH1*> hists, const char* title, vector<string> labels,
     const char* rTitle, double rmin, double rmax,
     int baseline = 0,
     bool logx = false, bool logy = false,
-    bool errorBars = true) {
+    bool errorBars = true, 
+    float xLegend = 0.55) {
 
     // linestyle options
     // -1: no line, only markers [homemade]
@@ -484,7 +485,7 @@ TPad* plotCMSRatio(vector<TH1*> hists, const char* title, vector<string> labels,
     // >>> Apply the CMS TDR style <<<
     SetTDRStyle();
 
-    TLegend* leg = new TLegend(0.55, 0.7, 0.78, 0.85);
+    TLegend* leg = new TLegend(xLegend, 0.7, xLegend+0.23, 0.85);
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextFont(42);
@@ -614,7 +615,8 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
     const char* yTitle, double ymin, double ymax,
     const char* rTitle, double rmin, double rmax,
     int baseline = 0, bool logx = false, bool logy = false,
-    bool errorBars = true) {
+    bool errorBars = true,
+    float xLegend = 0.55) {
 
     // linestyle options
     // -1: no line, only markers [homemade]
@@ -639,7 +641,7 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
     // >>> Apply the CMS TDR style <<<
     SetTDRStyle();
 
-    TLegend* leg = new TLegend(0.55, 0.7, 0.78, 0.85);
+    TLegend* leg = new TLegend(xLegend, 0.7, xLegend+0.23, 0.85);
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextFont(42);

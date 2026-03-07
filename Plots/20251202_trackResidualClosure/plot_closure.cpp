@@ -27,11 +27,13 @@ int main(int argc, char *argv[]) {
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
+    string mctag = (collisionType == "pp" ? "pythia" : collisionType);
+
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "MC DY-GEN",
@@ -168,7 +170,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(pTrk1, "8 TeV", "pPb MC");
+    AddUPCHeader(pTrk1, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
 
     cTrk1->Update();
     cTrk1->SaveAs(Form("%s-pt.pdf", output.c_str()));
@@ -251,7 +253,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(p2, "8 TeV", "pPb");
+   AddUPCHeader(pTrk1, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
     p2->Update();
 
     c2->SaveAs(Form("%s-DeltaPhi-all.pdf", output.c_str()));
