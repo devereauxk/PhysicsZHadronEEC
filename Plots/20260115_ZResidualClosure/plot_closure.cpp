@@ -27,18 +27,20 @@ int main(int argc, char *argv[]) {
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
+    string mctag = (collisionType == "pp") ? "pythia" : collisionType;
+
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_residual_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "MC DY-GEN",
         "MC DY-RECO",
         "MC DY-RECO (corrected)"
     };
-    string output = Form("plots/%s/%s_ZPT%s_%s-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), tag.c_str());
+    string output = Form("plots/%s/ZPT%s_%s-closure", collisionType.c_str(), zPtRange.c_str(), tag.c_str());
 
     vector<TH1*> hZPt;
     vector<TH1*> hZEta;
@@ -100,7 +102,7 @@ int main(int argc, char *argv[]) {
         false
     );
 
-    AddUPCHeader(pZ1, "8 TeV", "pPb MC");
+    AddUPCHeader(pZ1, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
 
     cZ1->Update();
     cZ1->SaveAs(Form("%s-pt.pdf", output.c_str()));
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "y_{Z}", -4, 4,
-        "(1/N_{Z}) dN_{Z}/d y_{Z}", -1, -1,
+        "(1/N_{Z}) dN_{Z}/d y_{Z}", 0, 0.4,
         "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, false
@@ -126,7 +128,7 @@ int main(int argc, char *argv[]) {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "#phi_{Z}", 0, 2*M_PI,
-        "(1/N_{Z}) dN_{Z}/d #phi_{Z}", -1, -1,
+        "(1/N_{Z}) dN_{Z}/d #phi_{Z}", 0, 0.3,
         "Ratio to GEN", 0.8, 1.2,
         0,
         false, false, false

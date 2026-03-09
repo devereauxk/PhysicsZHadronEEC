@@ -30,12 +30,14 @@ public:
     bool isPP;             // Flag to check if this is a PP analysis
     bool isJewel;             // Flag to check if this is a Jewel analysis
     int ExtraZWeight;
+    string VZWeightFile;
     bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
 
    void printParameters() const {
        cout << "Input file: " << input << endl;
        cout << "Output file: " << output << endl;
-       cout << "Residla File: " << residualFile << endl;
+       cout << "Residual File: " << residualFile << endl;
+       cout << "VZ Weight File: " << VZWeightFile << endl;
        cout << "MinZPT: " << MinZPT << " GeV/c" << endl;
        cout << "MaxZPT: " << MaxZPT << " GeV/c" << endl;
        cout << "MinZY: " << MinZY << "" << endl;

@@ -4,8 +4,8 @@ DOPPB=$2
 DOPBP=$3
 
 cat > config.sh <<EOF
-ZPT_RANGES=("40_350")
-PT_RANGES=("0.5_500") 
+ZPT_RANGES=("0_350")
+PT_RANGES=("1_10") 
 EOF
 
 
@@ -13,7 +13,64 @@ EOF
 if [ "$DOPP" == "1" ]; then
 
     nMix=1
-    TAG="_noEvtWeight_nmix1"
+    TAG="_myEvtWeight_VZOnly_nmix1"
+
+    ./system-analysis.sh "pythiaMC_nominal${TAG}" \
+        --IsPP true --IsGenZ false --IsData false \
+        --Input mergedSample/pythia-v11-Zpt0.root \
+        --MixFile mergedSample/pythia-v11-Zpt0.root \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix $nMix \
+        --VZWeightFile /home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/20260307_VzReweightFits_pp.root
+
+    ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
+        --IsPP true --IsGenZ true --IsData false \
+        --Input mergedSample/pythia-gen-v11-Zpt0.root  \
+        --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix $nMix \
+        --VZWeightFile /home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/20260307_VzReweightFits_pp.root
+
+    ./system-analysis.sh "pp_nominal${TAG}" \
+        --IsPP true --IsGenZ false --IsData true \
+        --Input mergedSample/pp-v11-Zpt0.root \
+       --MixFile mergedSample/pp-v11-Zpt0.root \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix $nMix
+
+    nMix=1
+    TAG="_EvtWeight_VZOnly_nmix1"
+
+    ./system-analysis.sh "pythiaMC_nominal${TAG}" \
+        --IsPP true --IsGenZ false --IsData false \
+        --Input mergedSample/pythia-v11-Zpt0.root \
+        --MixFile mergedSample/pythia-v11-Zpt0.root \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix $nMix
+
+    ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
+        --IsPP true --IsGenZ true --IsData false \
+        --Input mergedSample/pythia-gen-v11-Zpt0.root  \
+        --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix $nMix
+
+    ./system-analysis.sh "pp_nominal${TAG}" \
+        --IsPP true --IsGenZ false --IsData true \
+        --Input mergedSample/pp-v11-Zpt0.root \
+        --MixFile mergedSample/pp-v11-Zpt0.root \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix $nMix
+
+
+    nMix=1
+    TAG="_noEvtWeight_VZOnly_nmix1"
 
     ./system-analysis.sh "pythiaMC_nominal${TAG}" \
         --IsPP true --IsGenZ false --IsData false \
@@ -39,32 +96,6 @@ if [ "$DOPP" == "1" ]; then
         --UseTrackWeight true --UseResidualWeight false \
         --yBoost 0 --nMix $nMix
 
-    nMix=1
-    TAG="_EvtWeight_nmix1"
-
-    ./system-analysis.sh "pythiaMC_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData false \
-        --Input mergedSample/pythia-v11-Zpt0.root \
-        --MixFile mergedSample/pythia-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
-        --IsPP true --IsGenZ true --IsData false \
-        --Input mergedSample/pythia-gen-v11-Zpt0.root  \
-        --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "pp_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData true \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
 
 fi
 

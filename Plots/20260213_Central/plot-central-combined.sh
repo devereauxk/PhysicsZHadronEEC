@@ -6,7 +6,7 @@ make ExecuteCentralCombinedPlot
 ZPT_RANGES=("5_500")
 PT_RANGES=("0.5_500")
 
-PP_TAG="EEV2_ZV4_trkV22_nmix10"
+PP_TAG="ZV5_trkV23_nmix10"
 PPB_TAG="ZV5_trkV23_nmix10"
 
 for zPtRange in "${ZPT_RANGES[@]}"

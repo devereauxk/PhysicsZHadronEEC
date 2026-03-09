@@ -66,25 +66,14 @@ int main(int argc, char *argv[]) {
         this_hDeltaEta->Scale(1./2);
         this_hDeltaPhi->Scale(1./2);
 
-        // Z pt eta Phi
-        TH3D* this_hZPtEtaPhi = (TH3D*)fin->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
-        TH1D* this_hZPt = this_hZPtEtaPhi->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
-        TH1D* this_hZEta = this_hZPtEtaPhi->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
-        TH1D* this_hZPhi = this_hZPtEtaPhi->ProjectionZ(Form("ZPhi_%s", labels[i].c_str()));
-
-        TH1D* hNZ = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
-
-        cout<<" "<<this_hZPtEtaPhi->Integral()<<endl;
-        cout<<"hNZ bin content: "<<hNZ->Integral()<<endl;
-
-        divideByWidth(this_hZPt);
-        divideByWidth(this_hZEta);
-        divideByWidth(this_hZPhi);
-
-        hZPt.push_back(this_hZPt);
+        cout<<"Integral of DeltaEta: "<<this_hDeltaEta->Integral()<<endl;
+        cout<<"Integral of DeltaPhi: "<<this_hDeltaPhi->Integral()<<endl;
 
         hDeltaEta.push_back(this_hDeltaEta);
         hDeltaPhi.push_back(this_hDeltaPhi);
+
+        TH1D* hNZ = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
+        cout<<"hNZ bin content: "<<hNZ->Integral()<<endl;
 
         i++;
         

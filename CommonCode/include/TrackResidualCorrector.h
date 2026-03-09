@@ -116,3 +116,38 @@ private:
    TrackResidualCorrector *TRC3;
    TrackResidualCorrector *TRC4;
 };
+
+class VZCorrector
+{
+public:
+   VZCorrector(std::string filename = "VZCorrector_20230508/totalCorrection.root")
+   {
+      f = new TFile(filename.c_str());
+      hVZCorrTotal  = (TF1 *)f->Get("VZ_reweight_pp");
+   }
+
+   ~VZCorrector()
+   {
+      f->Close();
+      delete f;
+   }
+
+   double GetCorrectionFactor(double vz)
+   {
+
+      double corr = hVZCorrTotal->Eval(vz);
+      if (abs(vz) > 20) corr = 1;
+
+      if(isnan(corr))
+      {
+         std::cerr << "Error!  nan efficiency! " << vz << std::endl;
+         corr = 1;
+      }
+
+      return corr;
+   }
+
+private:
+   TFile* f;
+   TF1 *hVZCorrTotal;
+};

@@ -39,6 +39,7 @@ public:
    bool useResidualWeight;   // Flag to see if we use residual correction
    string residualWeightFile; // Residual weight file
    string EnergyExtraFile; // Input file for energy extrapolation
+   string VZWeightFile;      // VZ weight file
    bool isPPb;            // Flag to check if this is a PPb analysis
    float yBoost;          // Rapidity boost for pPb analysis
     
@@ -76,6 +77,7 @@ public:
       cout << "Muon Tagging Enabled: " << (isMuTagged ? "true" : "false") << endl;
       cout << "PU rejection: " << (isPUReject ? "true" : "false") << endl;
       cout << "yBoost: " << yBoost << endl;
+      cout << "VZWeightFile: " << VZWeightFile << endl;
       if (mix) cout << "Event mixing!" << endl;
    }
 };

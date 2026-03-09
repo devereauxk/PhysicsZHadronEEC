@@ -81,14 +81,14 @@ float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *hEventWeight, const Parameters& par) {
+double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *hEventWeight, const Parameters& par) {
    if (par.isAddUE) {
       if (MZUE->GetEntries()<MZSignal->GetEntries()) {
          cout <<"Error! Smaller number of UE events than Z events"<<endl;
          return -1;
       }   
    }
-   float nZ = 0;
+   double nZ = 0;
    h->Sumw2();
    par.printParameters();
    unsigned long nEntry = MZSignal->GetEntries() * par.scaleFactor;
@@ -102,6 +102,12 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
    unsigned long mixstart_i = mix_i;
    int deltaI = (iEnd-iStart)/100+1;
    TrackResidualCorrector corrector(par.residualFile.c_str());              
+
+   // open VZ correction if needed
+   VZCorrector *vzCorrector;
+   if (par.VZWeightFile != "") {
+      vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
+   }
 
    int i_EPOS = iStart;
    for (unsigned long i = iStart; i < iEnd; i++) {
@@ -119,15 +125,21 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *h
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       if (zPhi < 0) zPhi += 2 * M_PI;
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
-
-      // fill with event weight
-      hEventWeight->Fill(MZSignal->EventWeight * MZSignal->VZWeight);
-
-      float this_eventWeight = MZSignal->EventWeight * MZSignal->VZWeight;
       float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, zPhi);
+
+      // fill histograms
+      // hard coded since SIM should have event weights of 1, for pp pythia+MADGRAPH for some reason they aren't
+      float this_eventWeight = 1; // MZSignal->EventWeight;
+      if (par.VZWeightFile != "") {
+         float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
+         this_eventWeight *= vzCorrectionFactor;
+      } else {
+         this_eventWeight *= MZSignal->VZWeight;
+      }
       this_eventWeight *= residualCorrection;
 
       h->Fill(zPt, zY, zPhi, this_eventWeight);
+      hEventWeight->Fill(this_eventWeight);
 
       nZ += this_eventWeight; //1;
 
@@ -235,6 +247,7 @@ int main(int argc, char *argv[])
    par.input         = CL.Get      ("Input",   "mergedSample/HISingleMuon-v5.root");            // Input file
    par.inputUE       = CL.Get      ("InputUE", "");                                             // Input file for UE
    par.residualFile  = CL.Get      ("residualFile", "");            // Input Mix file
+   par.VZWeightFile   = CL.Get      ("VZWeightFile", "");           // Input VZ weight file
    par.output        = CL.Get      ("Output",  "output.root");                             	// Output file
    par.isGen         = CL.GetBool  ("IsGen", false); // Determine if the analysis is gen level
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     

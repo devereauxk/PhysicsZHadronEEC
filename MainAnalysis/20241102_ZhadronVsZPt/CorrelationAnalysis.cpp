@@ -201,6 +201,12 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       Zcorrector = new TrackResidualCorrector(par.ZWeightFile.c_str());
    }
 
+   // open VZ correction if needed
+   VZCorrector *vzCorrector;
+   if (par.VZWeightFile != "") {
+      vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
+   }
+
    // open track residual correctors if needed
    TrackResidualCorrector *corrector;
    TrackResidualCorrector *corrector_0_10;
@@ -218,7 +224,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    //==================================================//
    // loop over events
    //==================================================//
-   for (unsigned long i = iStart; i < iEnd; i++) {
+   for (unsigned long i = iStart; i < iEnd; i++) { 
       MZSignal->GetEntry(i);
 
       if (i % deltaI == 0) {
@@ -254,19 +260,21 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       //==================================================//
       float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
 
-      float eventWeightSignal = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
+      float eventWeightSignal = 1;
+      if (par.useEventWeight) eventWeightSignal *= MZSignal->EventWeight;
+      if (par.VZWeightFile != "") {
+         float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
+         eventWeightSignal *= vzCorrectionFactor;
+      } else if (par.useEventWeight) {
+         eventWeightSignal *= MZSignal->VZWeight;
+      }
       if (par.useZWeight) eventWeightSignal *= ZWeight;
-
-      float eventWeightSignalUE = (par.useEventWeight ? MZSignal->EventWeight * MZSignal->VZWeight : 1);
-      if (par.useEPOSFile) eventWeightSignalUE *= 1; //MZUE->VZWeight; // * MZUE->EventWeight;
-      if (par.useZWeight) eventWeightSignalUE *= ZWeight;
 
       // energy extrapolation
       //eta, phi dummy variables since the correction is only a function of Z pT
       if (par.EnergyExtraFile != "" && par.isPP) {
          float energyExtrapolationWeight = EnergyCorrector->GetCorrectionFactor(zPt, 1, 1);
          eventWeightSignal *= energyExtrapolationWeight;
-         eventWeightSignalUE *= energyExtrapolationWeight;
       }
 
       if (hZPtEtaPhi != 0) hZPtEtaPhi->Fill(zPt, zY, zPhi, eventWeightSignal);
@@ -293,7 +301,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          float trackEta  = (*MZSignal->trackEta)[j];
          float trackPt   = (*MZSignal->trackPt)[j];
          float residualCorrection = ((par.residualWeightFile=="")||par.isGenZ==1)? 1 : corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
-         float weight = (par.useEPOSFile && UEmaskSignal->at(j)==1) ? eventWeightSignalUE : eventWeightSignal;
+         float weight = eventWeightSignal;
          //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
          weight*= (*MZSignal->trackWeight)[j];
          if (par.useResidualWeight) weight*= residualCorrection;  
@@ -348,7 +356,6 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          // calculate mix event weight
          //==================================================//
          float eventWeightMix = eventWeightSignal;
-         float eventWeightMixUE = eventWeightSignalUE;
          if (par.mix) {
             float zPtMix = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
             float zYMix = (par.isGenZ ? (*MMix->genZY)[0] : (*MMix->zY)[0]);
@@ -356,17 +363,20 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             if (zPhiMix < 0) zPhiMix += 2 * M_PI;
             float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, zPhiMix) : 1;
             
-            if (par.useEventWeight) eventWeightMix *= MMix->EventWeight * MMix->VZWeight;
+            float eventWeightMix = 1;
+            if (par.useEventWeight) eventWeightMix *= MMix->EventWeight;
+            if (par.VZWeightFile != "") {
+               float vzCorrectionFactorMix = vzCorrector->GetCorrectionFactor(MMix->VZ);
+               eventWeightMix *= vzCorrectionFactorMix;
+            } else if (par.useEventWeight) {
+               eventWeightMix *= MMix->VZWeight;
+            }
             if (par.useZWeight) eventWeightMix *= ZWeightMix;
-
-            if (par.useEventWeight) eventWeightMixUE *= MMix->EventWeight * MMix->VZWeight;
-            if (par.useZWeight) eventWeightMixUE *= ZWeightMix;
 
             // energy extrapolation
             if (par.EnergyExtraFile != "" && par.isPP) {
                float energyExtrapolationWeightMix = EnergyCorrector->GetCorrectionFactor(zPtMix, 1, 1);
-               //eventWeightMix *= energyExtrapolationWeightMix;
-               //eventWeightMixUE *= energyExtrapolationWeightMix;
+               eventWeightMix *= energyExtrapolationWeightMix;
             }
          }
 
@@ -402,14 +412,11 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             // calculate total weight
             //==================================================//
             // event + VZ + Z residual weight
-            // four cases: 1) mix UE 2) mix no UE 3) signal UE 4) signal no UE
             float this_eventWeight = 1;
             if (par.mix) {
-               if (par.useEPOSFile && UEmaskMix->at(j) == 1) this_eventWeight = eventWeightMixUE;
-               else this_eventWeight = eventWeightMix;
+               this_eventWeight = eventWeightMix;
             } else {
-               if (par.useEPOSFile && UEmaskSignal->at(j) == 1) this_eventWeight = eventWeightSignalUE;
-               else this_eventWeight = eventWeightSignal;
+               this_eventWeight = eventWeightSignal;
             }
 
             // track weight
@@ -584,7 +591,7 @@ public:
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
-      //hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
+      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
    void writeHistograms(TFile* outf) {
@@ -641,6 +648,7 @@ int main(int argc, char *argv[])
    par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
+   par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.

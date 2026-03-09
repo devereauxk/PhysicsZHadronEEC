@@ -81,7 +81,7 @@ float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const Parameters& par) {
+double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const Parameters& par) {
    /*
    if (par.isAddUE) {
       if (MZUE->GetEntries()<MZSignal->GetEntries()) {
@@ -90,7 +90,7 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
       }   
    }
    */
-   float nZ = 0;
+   double nZ = 0;
    h->Sumw2();
    par.printParameters();
    unsigned long nEntry = MZSignal->GetEntries() * par.scaleFactor;
@@ -111,6 +111,12 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
       Zcorrector = new TrackResidualCorrector(par.ZWeightFile.c_str());
    }
 
+   // open VZ correction if needed
+   VZCorrector *vzCorrector;
+   if (par.VZWeightFile != "") {
+      vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
+   }
+
    for (unsigned long i = iStart; i < iEnd; i++) {
       MZSignal->GetEntry(i);
       
@@ -127,13 +133,6 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
       // Check if the event passes the selection criteria
       if (!eventSelection(MZSignal, par)) continue;
 
-      // KD: partition of weights here is nontrivial, but I think is proper. For +EPOS events we need to add on UE, for these events EventWeight==1, trackWeight==1, VZWeight allowed to vary. For Z counting however we should use
-      // nZ = hard EventWeight * hard VZ
-      // track (hard) = hard EventWeight * hard VZ * hard trackWeight * [residual]
-      // track (UE) = UE EventWeight * UE VZ * UE trackWeight * [residual]
-      // IMPORTANT: for closure the central value script should use same weighting strat as here
-      // TODO missing Z scale factor now since not in skim for pPb sets yet
-
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       float zY  = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
@@ -141,7 +140,14 @@ float get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const P
       float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1; // for pPb use manually calculated weights
       ZWeight *= (par.isOO) ? MZSignal->ZWeight : 1; // for OO, weights already in skim
 
-      float this_eventWeight = MZSignal->EventWeight * ZWeight * MZSignal->VZWeight;
+      // hard coded since SIM should have event weights of 1, for pp pythia+MADGRAPH for some reason they aren't
+      float this_eventWeight = ZWeight; // * MZSignal->EventWeight; 
+      if (par.VZWeightFile != "") {
+         float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
+         this_eventWeight *= vzCorrectionFactor;
+      } else {
+         this_eventWeight *= MZSignal->VZWeight;
+      }
 
       for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
          if (!trackSelection(MZSignal, par, j)) continue;
@@ -272,6 +278,7 @@ int main(int argc, char *argv[])
    par.input         = CL.Get      ("Input",   "mergedSample/HISingleMuon-v5.root");            // Input file
    par.inputUE       = CL.Get      ("InputUE", "");                                             // Input file for UE
    par.residualFile  = CL.Get      ("residualFile", "");            // Input Mix file
+   par.VZWeightFile   = CL.Get      ("VZWeightFile", "");           // Input VZ weight file
    par.output        = CL.Get      ("Output",  "output.root");                             	// Output file
    par.isGen         = CL.GetBool  ("IsGen", false); // Determine if the analysis is gen level
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     

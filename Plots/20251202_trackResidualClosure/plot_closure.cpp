@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "p_{T}^{ch}", 0, 10,
-        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -27, 160,
+        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", 0, 100,
         "Ratio to GEN", 0.9, 1.1,
         0,
         true, false, false
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "y_{ch}", -4, 4,
-        "(1/N_{Z}) dN_{ch}/d y_{ch}", (collisionType == "pp" ? -1 : 8), (collisionType == "pp" ? -1 : 22),
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", (collisionType == "pp" ? 0 : 8), (collisionType == "pp" ? 12 : 22),
         "Ratio to GEN", 0.9, 1.1,
         0,
         false, false, false
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#phi_{ch}", 0, 2*M_PI,
-        "(1/N_{Z}) dN_{ch}/d #phi_{ch}", (collisionType == "pp" ? -1 : 6), (collisionType == "pp" ? -1 : 18),
+        "(1/N_{Z}) dN_{ch}/d #phi_{ch}", (collisionType == "pp" ? 0 : 6), (collisionType == "pp" ? 10 : 18),
         "Ratio to GEN", 0.9, 1.1,
         0,
         false, false, false
