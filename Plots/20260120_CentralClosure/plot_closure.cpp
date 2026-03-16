@@ -230,7 +230,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", (collisionType == "pp") ? 2 : 8, (collisionType == "pp") ? 12 : 20,
+        "Mixed d#DeltaN_{ch}/d#Delta#phi_{ch,Z}", hDeltaPhi_all[0]->GetMinimum(), hDeltaPhi_all[0]->GetMaximum(),
         "Ratio to GEN", 0.92, 1.08,
         0,
         false, false, true,

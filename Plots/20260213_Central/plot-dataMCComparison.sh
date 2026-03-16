@@ -1,7 +1,24 @@
 make ExecuteDataMCComparison
 
-./ExecuteDataMCComparison --collisionType pPb --zPtRange 5_500 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-#./ExecuteDataMCComparison --collisionType PbP --zPtRange 5_500 --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix10
-#./ExecuteDataMCComparison --collisionType pp --zPtRange 5_500 --trkPtRange 0.5_500 --tag ZV4_trkV22_nmix10
+# input your Z and track selections here
+ZPT_RANGES=("5_500")
+PT_RANGES=("0.5_500") 
+
+# note mixing is turned off for these studies
+PP_TAG="ZV5_trkV23_nmix0"
+PPB_TAG="ZV5_trkV23_nmix0"
+
+for zPtRange in "${ZPT_RANGES[@]}"
+do
+    for trkPtRange in "${PT_RANGES[@]}"
+    do
+        echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
+
+        ./ExecuteDataMCComparison --collisionType pPb --zPtRange $zPtRange --trkPtRange $trkPtRange --tag $PPB_TAG
+        #./ExecuteDataMCComparison --collisionType PbP --zPtRange $zPtRange --trkPtRange $trkPtRange --tag $PPB_TAG
+
+    done
+done
+
 
 exit

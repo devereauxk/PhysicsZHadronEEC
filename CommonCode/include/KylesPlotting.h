@@ -485,7 +485,7 @@ TPad* plotCMSRatio(vector<TH1*> hists, const char* title, vector<string> labels,
     // >>> Apply the CMS TDR style <<<
     SetTDRStyle();
 
-    TLegend* leg = new TLegend(xLegend, 0.7, xLegend+0.23, 0.85);
+    TLegend* leg = new TLegend(xLegend, (labels.size() > 5) ? 0.6 : 0.7, xLegend+0.23, 0.85);
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextFont(42);
@@ -728,6 +728,8 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
             hRatio->GetYaxis()->SetTitleOffset(0.5);
             hRatio->SetLineColor(linecolors[i]);
             hRatio->SetLineStyle(linestyles[i]);
+            hRatio->SetMarkerColor(markercolors[i]);
+            hRatio->SetMarkerStyle(markerstyles[i]);
             hRatio->SetLineWidth(2);
             hRatio->Draw("HIST SAME");
 

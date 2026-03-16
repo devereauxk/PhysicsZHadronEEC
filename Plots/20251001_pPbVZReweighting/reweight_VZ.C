@@ -12,10 +12,10 @@
 void reweight_VZ() {
 
     vector<string> input_ZPT_files = {
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_noEvtWeight_ZPT0_350-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_w1_noEvtWeight_ZPT0_350-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_noEvtWeight_ZPT0_350-result.root",
-        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_w0_noEvtWeight_ZPT0_350-result.root"
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_nominal_noVZWeight_nmix0_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_noVZWeight_nmix0_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_nominal_noVZWeight_nmix0_ZPT0_350-result.root",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_w0_nominal_noVZWeight_nmix0_ZPT0_350-result.root"
     };
     vector<string> labels = {
         "Reco PPb",
@@ -23,7 +23,7 @@ void reweight_VZ() {
         "Reco PbP",
         "Data PbP"
     };
-    const char* output =  "summary/20260215_ZPT0_350";
+    const char* output =  "summary/20260311_ZPT0_350";
 
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
@@ -72,22 +72,30 @@ void reweight_VZ() {
     TH1D* hVZRatio_ppb = (TH1D*)hVZ[1]->Clone("hVZRatio_ppb");
     hVZRatio_ppb->Divide(hVZ[0]);
     TF1* fitFunc_ppb = new TF1("VZ_reweight_ppb", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x", -20, 20);
-    fitFunc_ppb->SetParameters(1, 0, 0, 0, 0); // Initial guess for parameters
+    fitFunc_ppb->SetParameters(1, 0, 0, 0, 0);
     hVZRatio_ppb->Fit(fitFunc_ppb, "R");
 
     TH1D* hVZRatio_pbp = (TH1D*)hVZ[3]->Clone("hVZRatio_pbp");
     hVZRatio_pbp->Divide(hVZ[2]);
     TF1* fitFunc_pbp = new TF1("VZ_reweight_pbp", "[0] + [1]*x + [2]*x*x + [3]*x*x*x + [4]*x*x*x*x", -20, 20);
-    fitFunc_pbp->SetParameters(1, 0, 0, 0, 0); // Initial guess for parameters
+    fitFunc_pbp->SetParameters(1, 0, 0, 0, 0);
     hVZRatio_pbp->Fit(fitFunc_pbp, "R");
 
-    // save fits to root file
-    TFile* fout = TFile::Open("20251003_VzReweightFits.root", "RECREATE");
-    fitFunc_ppb->Write();
-    fitFunc_pbp->Write();
-    fout->Close();
+    // save fits to separate root files with identical object name: VZ_reweight
+    {
+        TFile* fout_ppb = TFile::Open("20251003_VzReweightFits_PPb.root", "RECREATE");
+        TF1* out_ppb = (TF1*)fitFunc_ppb->Clone("VZ_reweight");
+        out_ppb->Write();
+        fout_ppb->Close();
+    }
+    {
+        TFile* fout_pbp = TFile::Open("20251003_VzReweightFits_PbP.root", "RECREATE");
+        TF1* out_pbp = (TF1*)fitFunc_pbp->Clone("VZ_reweight");
+        out_pbp->Write();
+        fout_pbp->Close();
+    }
 
-    //reweight the MC
+    // reweight the MC
     TH1D* hVZReweighted_ppb = (TH1D*)hVZ[0]->Clone("hVZReweighted_ppb");
     for (int bin = 1; bin <= hVZReweighted_ppb->GetNbinsX(); ++bin) {
         double vz = hVZReweighted_ppb->GetBinCenter(bin);

@@ -1,7 +1,7 @@
 make ExecuteEnergyExtrapolationPlot
 
-ZPT_RANGES=("5_500")
-PT_RANGES=("0.5_500")
+ZPT_RANGES=("5_30" "30_500")
+PT_RANGES=("0.5_4" "4_500")
 
 for zPtRange in "${ZPT_RANGES[@]}"
 do

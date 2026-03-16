@@ -2,8 +2,11 @@ minZpt=$1
 maxZpt=$2
 name=$3
 
-ZWeightFile_pPb="my_ZWeights/20260202_ZCorrection_V5_PPb_zPt0-500.root"
-ZWeightFile_PbP="my_ZWeights/20260202_ZCorrection_V5_PbP_zPt0-500.root"
+VZWeightFile_PPb=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_pPb.root
+VZWeightFile_PbP=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_PbP.root
+
+ZWeightFile_pPb="my_ZWeights/20260311_ZCorrection_V6_PPb_zPt0-500.root"
+ZWeightFile_PbP="my_ZWeights/20260311_ZCorrection_V6_PbP_zPt0-500.root"
 
 # pPb
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --IsGen false --IsPP false --IsGenZ false --ZWeightFile $ZWeightFile_pPb
@@ -26,7 +29,6 @@ mv output/${name}_PPb.root output/${name}_PPb_zPt$minZpt-$maxZpt.root
 
 ./finalAnalysis.sh output/DY RECO $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --residualFile output/${name}_PPb_zPt$minZpt-$maxZpt.root --IsGen false --IsPP false --IsGenZ false --ZWeightFile $ZWeightFile_pPb
 root -l -q -b "plot_closure.C(\"plots/isPPb_ZPT${minZpt}_${maxZpt}\")"
-
 
 # PbP
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PbPMC_Reco.root     --IsGen false --IsPP false --IsGenZ false --ZWeightFile $ZWeightFile_PbP

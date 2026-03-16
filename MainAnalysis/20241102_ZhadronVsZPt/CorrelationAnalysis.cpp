@@ -181,6 +181,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    unsigned long iStart = nEntry * (par.nChunk - 1) / par.nThread;
    unsigned long iEnd = nEntry * par.nChunk / par.nThread;
    unsigned int targetMix = ((par.nMix - 1) * par.mix + 1);
+   targetMix = (targetMix < 1) ? 1 : targetMix; // ensure targetMix is at least 1
 
    ProgressBar Bar(cout, iEnd - iStart);
    Bar.SetStyle(1);
@@ -262,11 +263,13 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
       float eventWeightSignal = 1;
       if (par.useEventWeight) eventWeightSignal *= MZSignal->EventWeight;
-      if (par.VZWeightFile != "") {
-         float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
-         eventWeightSignal *= vzCorrectionFactor;
-      } else if (par.useEventWeight) {
-         eventWeightSignal *= MZSignal->VZWeight;
+      if (par.useVZWeight) {
+         if (par.VZWeightFile != "") {
+            float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
+            eventWeightSignal *= vzCorrectionFactor;
+         } else {
+            eventWeightSignal *= MZSignal->VZWeight;
+         }
       }
       if (par.useZWeight) eventWeightSignal *= ZWeight;
 
@@ -365,11 +368,13 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             
             float eventWeightMix = 1;
             if (par.useEventWeight) eventWeightMix *= MMix->EventWeight;
-            if (par.VZWeightFile != "") {
-               float vzCorrectionFactorMix = vzCorrector->GetCorrectionFactor(MMix->VZ);
-               eventWeightMix *= vzCorrectionFactorMix;
-            } else if (par.useEventWeight) {
-               eventWeightMix *= MMix->VZWeight;
+            if (par.useVZWeight) {
+               if (par.VZWeightFile != "") {
+                  float vzCorrectionFactorMix = vzCorrector->GetCorrectionFactor(MMix->VZ);
+                  eventWeightMix *= vzCorrectionFactorMix;
+               } else {
+                  eventWeightMix *= MMix->VZWeight;
+               }
             }
             if (par.useZWeight) eventWeightMix *= ZWeightMix;
 
@@ -587,10 +592,12 @@ public:
       //==================================================//
       // Second histogram with mix=true
       //==================================================//
-
+      
       par.mix = true;
       hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
+
+      if(par.nMix<1) return; // skip if nMix=0 (turned off)
       hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
    }
 
@@ -649,6 +656,7 @@ int main(int argc, char *argv[])
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
+   par.useVZWeight       = CL.GetBool  ("UseVZWeight", true);
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.

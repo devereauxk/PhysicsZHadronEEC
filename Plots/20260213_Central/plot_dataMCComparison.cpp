@@ -32,19 +32,25 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sNoEPOSMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythia%sEPOSMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s-nosub.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_trkResidual_%s_ZPT%s-nosub.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        Form("MC Gen"),
-        Form("MC Reco"),
-        Form("%s DATA", collisionType.c_str()),
-        Form("  + correction", collisionType.c_str()),
+        "Powheg+EPOS GEN",
+        "Powheg GEN (x2)",
+        "Powheg+EPOS RECO",
+        "  + corrections",
+        "Pythia+EPOS GEN",
+        "DATA",
+        "  + corrections"
     };
     
-    string output =  Form("plots/dataMCComparison/%s_ZPT%s-%s", collisionType.c_str(), zPtRange.c_str(), tag.c_str());
+    string output =  Form("plots/dataMCComparison/%s_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str());
 
     vector<TH1*> hZMass;
     vector<TH1*> hZPt;
@@ -92,6 +98,8 @@ int main(int argc, char *argv[]) {
         TH1D* this_hTrkEta = this_hTrkPtEtaPhi->ProjectionY(Form("trkEta_%d", i));
         TH1D* this_hTrkPhi = this_hTrkPtEtaPhi->ProjectionZ(Form("trkPhi_%d", i));
 
+        if (i==1) this_hTrkEta->Scale(2);
+
         divideByWidth(this_hTrkPt);
         divideByWidth(this_hTrkEta);
         divideByWidth(this_hTrkPhi);
@@ -102,10 +110,10 @@ int main(int argc, char *argv[]) {
         i++;
     }
 
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsYellow, cmsGray};
-    vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {0, 2, 1, 0, 1};
+    vector<int> markerColors = {cmsBlue, kMagenta, cmsRed, kSpring-6, cmsTealL1, kOrange+7, kSpring+7, cmsGray};
+    vector<int> markerStyles = {mSquareFill, mDiamondFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
+    vector<int> lineColors = markerColors;
+    vector<int> lineStyles = {0, 0, 2, 0, 1, 2, 0};
 
 
     // ===========================================
@@ -130,9 +138,9 @@ int main(int argc, char *argv[]) {
     TCanvas* cZ1 = new TCanvas("cZ", "cZ", 600, 600);
     TPad* pZ1 = (TPad*) plotCMSRatio(
         hZPt, "", labels,
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "p_{T}^{Z}", 0, 50,
+        lineColors, lineStyles,
+        markerColors, markerStyles,
+        "p_{T}^{Z}", 5, 200,
         "(1/N_{Z}) dN_{Z}/dp_{T}^{Z}", -1, -1,
         "Ratio to GEN", 0.5, 1.5,
         0,
@@ -146,8 +154,8 @@ int main(int argc, char *argv[]) {
     TCanvas* cZ2 = new TCanvas("cZ2", "cZ2", 600, 600);
     TPad* pZ2 = (TPad*) plotCMSRatio(
         hZEta, "", labels,
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        lineColors, lineStyles,
+        markerColors, markerStyles,
         "y_{Z}", -4, 4,
         "(1/N_{Z}) dN_{Z}/d y_{Z}", 0, 0.5,
         "Ratio to GEN", 0.5, 1.5,
@@ -169,7 +177,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "p_{T}^{ch}", 0, 10,
-        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -27, 160,
+        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -1, -1,
         "Ratio to GEN", 0.5, 1.5,
         0,
         true, false, false
@@ -186,7 +194,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "y_{ch}", -4, 4,
-        "(1/N_{Z}) dN_{ch}/d y_{ch}", (collisionType == "pp" ? 2 : 8), (collisionType == "pp" ? 8 : 27),
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", 10, 25,
         "Ratio to GEN", 0.5, 1.5,
         0,
         false, false, false

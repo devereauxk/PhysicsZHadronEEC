@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "p_{T}^{ch}", 0, 10,
-        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", 0, 100,
+        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", (collisionType == "pp" ? 0 : 0), (collisionType == "pp" ? 100 : 150),
         "Ratio to GEN", 0.9, 1.1,
         0,
         true, false, false

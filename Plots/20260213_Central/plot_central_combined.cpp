@@ -36,22 +36,22 @@ int main(int argc, char *argv[]) {
     string input_ZPT_files_pp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EExtrapolation_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str());
     vector<string> input_ZPT_files = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     vector<string> input_ZPT_files_pbp = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        "pp 5TeV, corrected",
-        Form("%s 8TeV", collisionType.c_str()),
-        "  & Z correction",
-        "  & Z + track correction",
-        Form("%s 8TeV, GEN-DY+EPOS", collisionType.c_str())
+        "pp",
+        Form("%s", collisionType.c_str()),
+        //"  & Z correction",
+        //"  & Z + track correction",
+        "Powheg+EPOS"
     };
     string file_tag = (doCombine) ? "all" : collisionType;
     string output = Form("plots/central_combined/%s/%s_ZPT%s_trkPT%s_%s", tag_pp.c_str(), file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
@@ -226,10 +226,17 @@ int main(int argc, char *argv[]) {
 
     }
 
+    /*
     vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsYellow, cmsGray};
     vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
     vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
     vector<int> lineStyles = {0, 2, 2, 0, 1};
+    */
+    
+    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-8, kMagenta-3, cmsYellow, cmsGray};
+    vector<int> markerStyles = {mSquareFill, mCircleFill, 0, mCircleFill, mCircleFill};
+    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-8, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
+    vector<int> lineStyles = {0, 0, 1};
 
     float diffMin = (trkPtRange == "4_500") ? -0.1 : -0.35;
     float diffMax = (trkPtRange == "4_500") ? 0.1 : 0.35;
@@ -237,13 +244,23 @@ int main(int argc, char *argv[]) {
     // ===========================================
     // results
     // ===========================================
+    // Parse pT ranges from "LOW_HIGH" strings
+    auto ParseRange = [](const string &range) -> pair<string, string> {
+        size_t pos = range.find('_');
+        if (pos == string::npos) return {range, ""};
+        return {range.substr(0, pos), range.substr(pos + 1)};
+    };
+
+    pair<string, string> zRange = ParseRange(zPtRange);
+    pair<string, string> trkRange = ParseRange(trkPtRange);
+
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
     TPad* pResult1 = (TPad*) plotCMSDiff(
         hDeltaEta_combined, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
-        "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
+        "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
         "pPb - pp", diffMin, diffMax,
         0,
         false, false, true,
@@ -255,7 +272,18 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult1, "8 TeV", collisionType.c_str());
+    AddUPCHeader(pResult1, "8.16 TeV", Form("%s, pp", collisionType.c_str()));
+
+    // Top-right eta-plot label
+    pResult1->cd();
+    TLatex latex;
+    latex.SetNDC();
+    latex.SetTextAlign(31);   // right-aligned
+    latex.SetTextSize(0.035);
+    latex.DrawLatex(0.8, 0.82, Form("%s < p_{T}^{Z} < %s", zRange.first.c_str(), zRange.second.c_str()));
+    latex.DrawLatex(0.8, 0.77, Form("%s < p_{T}^{ch} < %s", trkRange.first.c_str(), trkRange.second.c_str()));
+    latex.DrawLatex(0.8, 0.72, "|y_{Z}| < 2.4, |#Delta#varphi_{ch,Z}| < #pi/2");
+
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
@@ -264,8 +292,8 @@ int main(int argc, char *argv[]) {
         hDeltaPhi_combined, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
-        "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
+        "#Delta#varphi_{ch,Z}", -1.5707, 4.7123,
+        "d#LT#DeltaN_{ch}#GT/d#Delta#varphi_{ch,Z}", -1, -1,
         "pPb - pp", diffMin, diffMax,
         0,
         false, false, true,
@@ -277,7 +305,18 @@ int main(int argc, char *argv[]) {
         "Internal",
         false
     );
-    AddUPCHeader(pResult2, "8 TeV", collisionType.c_str());
+    AddUPCHeader(pResult2, "8.16 TeV", Form("%s, pp", collisionType.c_str()));
+
+    // Phi-plot labels (lowest line at x=0.5, y=0.3)
+    pResult2->cd();
+    TLatex latex2;
+    latex2.SetNDC();
+    latex2.SetTextAlign(11);   // centered
+    latex2.SetTextSize(0.035);
+    latex2.DrawLatex(0.21, 0.60, Form("%s < p_{T}^{Z} < %s", zRange.first.c_str(), zRange.second.c_str()));
+    latex2.DrawLatex(0.21, 0.55, Form("%s < p_{T}^{ch} < %s", trkRange.first.c_str(), trkRange.second.c_str()));
+    latex2.DrawLatex(0.21, 0.5, "|y_{Z}| < 2.4");
+
     cResult2->Update();
     cResult2->SaveAs(Form("%s-DeltaPhi-result.pdf", output.c_str()));
 

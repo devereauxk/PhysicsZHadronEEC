@@ -123,7 +123,7 @@ public:
    VZCorrector(std::string filename = "VZCorrector_20230508/totalCorrection.root")
    {
       f = new TFile(filename.c_str());
-      hVZCorrTotal  = (TF1 *)f->Get("VZ_reweight_pp");
+      hVZCorrTotal  = (TF1 *)f->Get("VZ_reweight");
    }
 
    ~VZCorrector()
