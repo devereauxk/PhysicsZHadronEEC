@@ -10,10 +10,18 @@ ZPT_RANGES=("0_500")
 PT_RANGES=("0.5_500")
 EOF
 
+# Speedup path for repeated system-analysis calls:
+# build once, then skip per-call clean/rebuild and allow optional cross-cut parallelism.
+if [ "${SKIP_CLEAN:-0}" != "1" ]; then
+    source clean.sh
+fi
+export SKIP_CLEAN=1
+export CUT_PARALLELISM=${CUT_PARALLELISM:-1}
+export NTHREAD=${NTHREAD:-20}
+export NSLICE_FACTOR=${NSLICE_FACTOR:-1}
+
 # pp
 if [ "$DOPP" == "1" ]; then
-
-    VZWeightFile=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/20260307_VzReweightFits_pp.root
 
     ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
         --IsPP true --IsGenZ true --IsData false \
@@ -21,7 +29,7 @@ if [ "$DOPP" == "1" ]; then
         --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
         --UseEventWeight false --UseZWeight false \
         --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix --VZWeightFile $VZWeightFile
+        --yBoost 0 --nMix $nMix
 
     ./system-analysis.sh "pythiaMC_nominal${TAG}" \
         --IsPP true --IsGenZ false --IsData false \
@@ -29,7 +37,7 @@ if [ "$DOPP" == "1" ]; then
         --MixFile mergedSample/pythia-v11-Zpt0.root \
         --UseEventWeight false --UseZWeight false \
         --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix --VZWeightFile $VZWeightFile
+        --yBoost 0 --nMix $nMix
 
     ./system-analysis.sh "pythiaMC_ZResidual${TAG}" \
         --IsPP true --IsGenZ false --IsData false \
@@ -37,15 +45,13 @@ if [ "$DOPP" == "1" ]; then
         --MixFile mergedSample/pythia-v11-Zpt0.root \
         --UseEventWeight false --UseZWeight true \
         --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix --VZWeightFile $VZWeightFile \
-        --ZWeightFile my_ZWeights/20260308_ZCorrection_V5_pp_zPt0-500.root
+        --yBoost 0 --nMix $nMix \
+        --ZWeightFile my_ZWeights/20260317_ZCorrection_V6_pp_zPt0-500.root
         
 fi
 
 # pPb
 if [ "$DOPPB" == "1" ]; then
-
-    VZWeightFile=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_pPb.root
 
     ./system-analysis.sh "pPbMC_Gen_nominal${TAG}" \
         --IsPP false --IsGenZ true --IsData false --IsPPb true \
@@ -54,8 +60,7 @@ if [ "$DOPPB" == "1" ]; then
         --UseEventWeight true --UseZWeight false \
         --UseTrackWeight true --UseResidualWeight false \
         --EPOSFile mergedEPOS/PPbMC_Gen.root --Fraction 1 \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile $VZWeightFile
+        --yBoost 0 --nMix $nMix
 
     ./system-analysis.sh "pPbMC_nominal${TAG}" \
         --IsPP false --IsGenZ false --IsData false --IsPPb true \
@@ -63,8 +68,7 @@ if [ "$DOPPB" == "1" ]; then
         --MixFile pPbSample/V0.2/PPbMC_Reco.root \
         --UseEventWeight true --UseZWeight false \
         --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile $VZWeightFile
+        --yBoost 0 --nMix $nMix
 
     ./system-analysis.sh "pPbMC_ZResidual${TAG}" \
         --IsPP false --IsGenZ false --IsData false --IsPPb true \
@@ -73,14 +77,11 @@ if [ "$DOPPB" == "1" ]; then
         --UseEventWeight true --UseZWeight true \
         --UseTrackWeight true --UseResidualWeight false \
         --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260311_ZCorrection_V6_PPb_zPt0-500.root \
-        --VZWeightFile $VZWeightFile
+        --ZWeightFile my_ZWeights/20260202_ZCorrection_V5_PPb_zPt0-500.root
 fi
 
 # PbP
 if [ "$DOPBP" == "1" ]; then
-
-    VZWeightFile=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_PbP.root
 
     ./system-analysis.sh "PbPMC_Gen_nominal${TAG}" \
         --IsPP false --IsGenZ true --IsData false --IsPPb false \
@@ -89,8 +90,7 @@ if [ "$DOPBP" == "1" ]; then
         --UseEventWeight true --UseZWeight false \
         --UseTrackWeight true --UseResidualWeight false \
         --EPOSFile mergedEPOS/PbPMC_Gen.root --Fraction 1 \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile $VZWeightFile
+        --yBoost 0 --nMix $nMix
 
     ./system-analysis.sh "PbPMC_nominal${TAG}" \
         --IsPP false --IsGenZ false --IsData false --IsPPb false \
@@ -98,8 +98,7 @@ if [ "$DOPBP" == "1" ]; then
         --MixFile pPbSample/V0.2/PbPMC_Reco.root \
         --UseEventWeight true --UseZWeight false \
         --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile $VZWeightFile
+        --yBoost 0 --nMix $nMix
 
     ./system-analysis.sh "PbPMC_ZResidual${TAG}" \
         --IsPP false --IsGenZ false --IsData false --IsPPb false \
@@ -108,6 +107,5 @@ if [ "$DOPBP" == "1" ]; then
         --UseEventWeight true --UseZWeight true \
         --UseTrackWeight true --UseResidualWeight false \
         --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260311_ZCorrection_V6_PbP_zPt0-500.root \
-        --VZWeightFile $VZWeightFile
+        --ZWeightFile my_ZWeights/20260202_ZCorrection_V5_PbP_zPt0-500.root
 fi

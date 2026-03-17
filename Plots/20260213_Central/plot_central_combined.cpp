@@ -3,6 +3,7 @@
 #include <TH2D.h>
 #include <TH3D.h>
 #include <TF1.h>
+#include <TSystem.h>
 #include <iostream>
 using namespace std;
 
@@ -54,6 +55,7 @@ int main(int argc, char *argv[]) {
         "Powheg+EPOS"
     };
     string file_tag = (doCombine) ? "all" : collisionType;
+    gSystem->mkdir(Form("plots/central_combined/%s", tag_pp.c_str()), true);
     string output = Form("plots/central_combined/%s/%s_ZPT%s_trkPT%s_%s", tag_pp.c_str(), file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     // plotted histograms

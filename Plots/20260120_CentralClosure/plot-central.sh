@@ -9,9 +9,9 @@ do
     do
         echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
 
-        #./ExecuteClosureTest --collisionType pp --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV5_trkV23_nmix10
-        ./ExecuteClosureTest --collisionType pPb --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV6_trkV24_nmix10
-        ./ExecuteClosureTest --collisionType PbP --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV6_trkV24_nmix10
+        ./ExecuteClosureTest --collisionType pp --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV6_trkV24_nmix10
+        ./ExecuteClosureTest --collisionType pPb --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV5_trkV23_nmix10
+        ./ExecuteClosureTest --collisionType PbP --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV5_trkV23_nmix10
     
     done
 done

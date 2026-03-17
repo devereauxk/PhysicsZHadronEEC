@@ -1,19 +1,20 @@
-source ./clean.sh
+make ExecuteCentralPlot
 
-ZPT_RANGES=("0_30" "30_500" "0_500")
-PT_RANGES=("0.5_500")
+PPB_TAG="ZV5_trkV23_nmix10"
+PP_TAG="ZV6_trkV24_EEV3_nmix10"
 
-for zPtRange in "${ZPT_RANGES[@]}"
-do
-    for trkPtRange in "${PT_RANGES[@]}"
-    do
-        echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
+run_one() {
+    local ZPT=$1
+    local TRKPT=$2
+    ./ExecuteCentralPlot --collisionType pPb --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG"
+    ./ExecuteCentralPlot --collisionType PbP --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG"
+}
 
-        ./ExecuteCentralPlot --collisionType pPb --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag ZV5_trkV23_nmix10 --pptag ZV4_trkV22_nmix10
-        ./ExecuteCentralPlot --collisionType PbP --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag ZV5_trkV23_nmix10 --pptag ZV4_trkV22_nmix10
-
-    done
-done
+run_one "5_30" "0.5_4"
+run_one "5_30" "4_500"
+run_one "30_500" "0.5_4"
+run_one "30_500" "4_500"
+run_one "5_500" "0.5_500"
 
 exit
 

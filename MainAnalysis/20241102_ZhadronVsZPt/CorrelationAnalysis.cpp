@@ -127,6 +127,13 @@ bool isSameZpTBin(float zPt_sig, float zPt_bkg) {
    return false;
 }
 
+int getZpTBin(float zPt) {
+   if (zPt < 10) return 0;
+   if (zPt < 20) return 1;
+   if (zPt < 40) return 2;
+   return 3;
+}
+
 float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector *corrector) {
    float mult = 0;
    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
@@ -221,6 +228,27 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       corrector_40_500 = new TrackResidualCorrector(Form("%s40-500.root", par.residualWeightFile.c_str()));              
    }
 
+   // Optional fast-mixing metadata cache:
+   // keep event-matching logic the same but avoid repeated eventSelection scans in the inner loop.
+   vector<char> mixEventPass;
+   vector<char> mixEventIsPPb;
+   vector<char> mixEventZPtBin;
+   bool useFastMixingCache = (par.mix && par.useFastMixing && !par.useEPOSFile);
+   if (useFastMixingCache) {
+      unsigned long nMixEntry = MMix->GetEntries();
+      mixEventPass.assign(nMixEntry, 0);
+      mixEventIsPPb.assign(nMixEntry, 0);
+      mixEventZPtBin.assign(nMixEntry, -1);
+      for (unsigned long m = 0; m < nMixEntry; m++) {
+         MMix->GetEntry(m);
+         if (!eventSelection(MMix, par)) continue;
+         float mixZPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
+         mixEventPass[m] = 1;
+         mixEventIsPPb[m] = isPPbEvent(MMix) ? 1 : 0;
+         mixEventZPtBin[m] = getZpTBin(mixZPt);
+      }
+   }
+
 
    //==================================================//
    // loop over events
@@ -249,6 +277,8 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       if (zPhi < 0) zPhi += 2 * M_PI;
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       float zMass = (par.isGenZ ? (*MZSignal->genZMass)[0] : (*MZSignal->zMass)[0]);
+      int zPtBin = getZpTBin(zPt);
+      bool signalIsPPb = isPPbEvent(MZSignal);
 
       if (zPt < 10) corrector = corrector_0_10;
       else if (zPt >= 10 && zPt < 20) corrector = corrector_10_20;
@@ -326,6 +356,15 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                mix_i = (mix_i + 1);
                if (mix_i >= MMix->GetEntries()) mix_i = 0;
                if (mixstart_i == mix_i) break;
+
+               if (useFastMixingCache) {
+                  if (mixEventPass[mix_i] == 0) continue;
+                  if (!par.isPP && par.isData && (signalIsPPb != (mixEventIsPPb[mix_i] == 1))) continue;
+                  if (mixEventZPtBin[mix_i] != zPtBin) continue;
+                  if (i != mix_i) foundMix = true;
+                  continue;
+               }
+
                MMix->GetEntry(mix_i);
 
                // add epos particles if needed
@@ -657,6 +696,7 @@ int main(int argc, char *argv[])
    par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
    par.useVZWeight       = CL.GetBool  ("UseVZWeight", true);
+   par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.

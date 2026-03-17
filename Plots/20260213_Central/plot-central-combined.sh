@@ -3,24 +3,21 @@ make ExecuteCentralCombinedPlot
 
 
 # input your Z and track selections here
-ZPT_RANGES=("5_500")
-PT_RANGES=("0.5_500")
-
-PP_TAG="ZV5_trkV23_nmix10"
+PP_TAG="ZV6_trkV24_EEV3_nmix10"
 PPB_TAG="ZV5_trkV23_nmix10"
 
-for zPtRange in "${ZPT_RANGES[@]}"
-do
-    for trkPtRange in "${PT_RANGES[@]}"
-    do
-        echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
+run_one() {
+    local ZPT=$1
+    local TRKPT=$2
+    ./ExecuteCentralCombinedPlot --zPtRange $ZPT --trkPtRange $TRKPT --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine true
+    ./ExecuteCentralCombinedPlot --zPtRange $ZPT --trkPtRange $TRKPT --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine false --collisionType pPb
+    ./ExecuteCentralCombinedPlot --zPtRange $ZPT --trkPtRange $TRKPT --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine false --collisionType PbP
+}
 
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine true
-
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine false --collisionType pPb
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine false --collisionType PbP
-    done
-done
+run_one 5_30 0.5_4
+run_one 5_30 4_500
+run_one 30_500 0.5_4
+run_one 30_500 4_500
+run_one 5_500 0.5_500
 
 exit
-

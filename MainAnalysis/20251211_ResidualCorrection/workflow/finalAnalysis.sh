@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Number of threads per instance
-nThread=40
+# Number of chunks to process in parallel.
+# Use NTHREAD to override (default lowered for better stability on segfault-prone samples).
+nThread=${NTHREAD:-20}
 
 # Array to hold the names of the output files
 declare -a outputFileNames
@@ -29,4 +30,3 @@ do
     rm -f $fileName
 done
 echo "All chunks have been processed and merged into output.root."
-

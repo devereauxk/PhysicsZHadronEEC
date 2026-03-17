@@ -6,9 +6,9 @@ sleep 1
 
 minZpt=0
 maxZpt=500
-name="20260308_ZCorrection_V5"
+name="20260317_ZCorrection_V6"
 
-VZWeightFile=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/20260307_VzReweightFits_pp.root
+VZWeightFile=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260317_ZV6_ZPT0_350_VzReweightFits_pp.root
 
 # pp
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input mergedSample/pythia-v11-Zpt0.root     --IsGen false --IsPP true --IsGenZ false --VZWeightFile $VZWeightFile

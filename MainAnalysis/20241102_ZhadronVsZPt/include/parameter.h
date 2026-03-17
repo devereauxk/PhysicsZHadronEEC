@@ -36,6 +36,7 @@ public:
    bool useEventWeight;      // Flag to see if we use event efficiency correction
    bool useZWeight;          // Flag to see if we use Z efficiency correction
    bool useVZWeight;          // Flag to see if we use VZ efficiency correction
+   bool useFastMixing;        // Use precomputed mixing metadata to reduce candidate scanning
    string ZWeightFile;      // Z weight file
    bool useResidualWeight;   // Flag to see if we use residual correction
    string residualWeightFile; // Residual weight file
@@ -65,6 +66,7 @@ public:
       cout << "UseEventWeight: " << (useEventWeight ? "true" : "false") << endl;
       cout << "UseZWeight: " << (useZWeight ? "true" : "false") << endl;
       cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
+      cout << "UseFastMixing: " << (useFastMixing ? "true" : "false") << endl;
       cout << "ZWeightFile: " << ZWeightFile << endl;
       cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
       cout << "UseResidualWeight: " << (useResidualWeight ? "true" : "false") << endl;
