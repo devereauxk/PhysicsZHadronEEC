@@ -1,102 +1,76 @@
-# pPb/PbP VZ-Weight Label-Mismatch Remediation Plan (Reviewer Handoff)
+# pPb/PbP VZ-Weight Plan for Analyzer (Post EventWeight-Bug Context)
 
-## Goal
-Correct the pPb/PbP data-label mismatch in VZ reweighting and downstream corrections, then reproduce MC central-value closure quality for both beam orientations while regenerating note-facing plots with new tags.
+## Reviewer preface and constraints
+- This plan is for analyzer execution; reviewer scope is planning/review only.
+- The mixed-event `UseEventWeight` bug in `CorrelationAnalysis.cpp` is now known and may have contributed to prior VZ-weight behavior/closure interpretations.
+- **Mandatory ordering:** first reproduce current note-result plots with current pPb/PbP weights; only after that begin exploratory new-weight workflow.
+- When running production, use `system-analysis.sh` via maintained shell scripts (modify existing scripts or add new scripts). Avoid one-off arbitrary terminal command chains.
 
-## Context and findings from review
-- Current note-facing tags are `ZV5` + `trkV23` (seen across Overleaf `src/analysis.tex` and `src/results.tex` figure names).
-- VZ weights are produced from same-labeled data/MC pairs in `Plots/20251001_pPbVZReweighting/reweight_VZ.cpp` and `run-reweight.sh`.
-- Final central production currently flips data files by orientation in `MainAnalysis/20241102_ZhadronVsZPt/central.sh`:
-  - pPb chain reads `PbPData_Reco.root`
-  - PbP chain reads `PPbData_Reco.root`
-- This likely explains why closure can look good even though VZ weights were computed with literal labels.
+## High-level objective
+1) Recover/update note-facing baseline results with the current weighting configuration under fixed code.
+2) Explore a new VZ-weight derivation method (correct orientation mapping), propagate through correction stack to **MC central-value closure only**.
+3) Stop there for exploratory branch; do **not** push exploratory new-weight outputs to Overleaf.
 
-## Scope
-- In scope:
-  - Recompute VZ weights with the **physically correct opposite-orientation data file mapping** for each beam orientation.
-  - Propagate new VZ weights through Z correction and track residual correction.
-  - Reproduce closure and central/result plots for pPb, PbP, and combined pPb where applicable.
-  - Update Overleaf figure assets/references that depend on updated tags.
-- Out of scope:
-  - pp correction logic (except compatibility checks).
-  - Unrelated systematic variations.
+---
 
-## Proposed tag/versioning strategy
-- Keep old outputs intact (`ZV5_trkV23`) for reproducibility.
-- Introduce a new, explicit label family (example): `ZV6_trkV24` for corrected-orientation workflow.
-- Add a short README note in relevant workflow folders documenting old vs new semantics.
+## Phase A (required first): Reproduce note-facing results with CURRENT pPb/PbP weights
 
-## Execution plan (for implementation agent)
+### A1. Baseline reproduction setup
+- Use existing note tags currently in use (`ZV5_trkV23` family for pPb/PbP outputs in note).
+- Re-run central production scripts used for note-facing pPb/PbP result plots, with fixed analysis code.
+- Ensure script-driven workflow only (`central.sh`, plotting scripts in `Plots/20260213_Central/`, or dedicated wrapper scripts committed locally).
 
-### 1) Baseline snapshot and comparators
-- Freeze current references:
-  - Existing VZ fit files in `Plots/20251001_pPbVZReweighting/summary/`.
-  - Existing closure plots in `Plots/20251202_trackResidualClosure/plots/` and `Plots/20260120_CentralClosure/plots/`.
-  - Existing central plots in `Plots/20260213_Central/plots/`.
-- Define quantitative closure metrics (same metric for old/new):
-  - Ratio-to-GEN envelope over plotted bins.
-  - Mean absolute deviation and max deviation for `DeltaEta` and `DeltaPhi`.
+### A2. Required validation before Overleaf copy
+- Confirm key output ROOT and PDF files are regenerated (fresh timestamps and non-empty).
+- Check subtraction-normalization sanity for pPb/PbP central products:
+  - verify `DeltaPhi_Result*` and `DeltaEta_Result*` integrals are stable and physically reasonable.
+  - verify no large GEN-only mixed-subtraction offset remains in the corresponding MC cross-checks.
 
-### 2) Make VZ reweighting orientation mapping explicit and correct
-- Update VZ-weight production workflow (`Plots/20251001_pPbVZReweighting/`):
-  - Enforce mapping table in code or wrapper script:
-    - pPb correction uses `PPbMC_*` with `PbPData_*`.
-    - PbP correction uses `PbPMC_*` with `PPbData_*`.
-  - Add runtime printout of `(collisionType, MC input, data input)` for auditability.
-- Produce new fit files with new tag stamp (e.g. date + `ZV6`).
+### A3. Overleaf update for current-weight results (this step was previously missed)
+- Copy regenerated **current-weight** note-facing result PDFs to:
+  - `~/OverleafZHadronInPPb/figures/result/` (and any other currently referenced target folders).
+- Keep filenames consistent with existing TeX references unless a rename is explicitly needed.
+- Record exact copied file list.
 
-### 3) Thread corrected VZ files into Z-correction workflow
-- Update `MainAnalysis/20260115_ZCorrection/workflow/pPb-DY-analysis.sh` (and any companion scripts) to consume new VZ fit files.
-- Regenerate Z correction outputs for both orientations.
-- Preserve prior files; write new output names rather than overwrite legacy V5/V23 products.
+---
 
-### 4) Thread corrected VZ+Z into track residual correction
-- Update `MainAnalysis/20251211_ResidualCorrection/workflow/pPb-DY-analysis.sh` to point at new Z-correction and VZ-correction products.
-- Rebuild track residual correction for pPb and PbP with new tags (`trkV24` override allowed).
+## Phase B (exploratory): New VZ-weight method with corrected mapping
 
-### 5) Regenerate closure chains end-to-end
-- Run closure drivers in `MainAnalysis/20241102_ZhadronVsZPt/`:
-  - `closure-VZ.sh`
-  - `closure-Z.sh`
-  - `closure-trk.sh`
-- Confirm pPb and PbP MC central-value closure is statistically comparable to baseline.
-- If degradation appears, inspect whether any later-stage label flip (data vs display) still exists and remove hidden compensation.
+### B1. New VZ-weight derivation
+- In VZ reweighting workflow, enforce corrected mapping explicitly:
+  - pPb correction uses `PPbMC` with `PbPData`.
+  - PbP correction uses `PbPMC` with `PPbData`.
+- Add explicit runtime logging of selected MC/data inputs in script output.
+- Write new outputs under new tags (example pattern: `..._newVZFix_...`) without overwriting current-weight artifacts.
 
-### 6) Regenerate central/result production with corrected semantics
-- In `MainAnalysis/20241102_ZhadronVsZPt/central.sh`, make orientation mapping intentional and documented.
-- Ensure no silent “flip at plotting stage” assumptions remain in:
-  - `Plots/20260213_Central/plot-central*.sh`
-  - `Plots/20260213_Central/plot_central_combined.cpp`
-  - `Plots/20260213_Central/plot_central_overlay_PPbPbP.cpp`
-- Regenerate pPb, PbP, and combined plots with new tags.
+### B2. Propagate through correction stack
+- Feed new VZ weights into:
+  - Z correction workflow
+  - Track residual correction workflow
+- Keep all products namespaced under new exploratory tags/version suffixes.
 
-### 7) Overleaf update pass
-- Replace note figure assets under `~/OverleafZHadronInPPb/figures/...` with new tagged outputs.
-- Update references in:
-  - `src/analysis.tex` (closure figures currently hardcoded to `ZV5_trkV23`)
-  - `src/results.tex` (result figures currently hardcoded to `ZV5_trkV23`)
-- Add a short note in text/changelog clarifying corrected orientation treatment.
+### B3. End point for exploratory branch
+- Run closure chain to **MC central-value closure** (pp/pPb/PbP where relevant for comparison).
+- Required checks:
+  - `DeltaPhi` and `DeltaEta` closure consistency vs GEN in all relevant Z bins.
+  - compare against current-weight baseline closure metrics.
+- **Stop here.** Do not produce/push exploratory central result plots to Overleaf in this phase.
 
-### 8) Validation and sign-off checklist
-- For each of pPb and PbP:
-  - VZ fit plots (`Vz`, `VzRatio`) look physical and stable.
-  - Z-correction closure unchanged within tolerance.
-  - Track-residual closure unchanged within tolerance.
-  - Final MC central closure (DeltaEta/DeltaPhi) matches or improves vs baseline.
-- For combined pPb result:
-  - Reproduces prior qualitative behavior and no unexpected asymmetry artifacts.
-- Archive comparison package:
-  - old vs new plots
-  - summary table of closure metrics
-  - exact file/version manifest.
+---
 
-## Risk points to watch
-- Hidden compensating flips between production and plotting can mask incorrect physics mapping.
-- Mixed-event orientation handling (`IsPPb`) in `CorrelationAnalysis.cpp` should remain consistent with corrected file mapping.
-- Tag collisions (old/new outputs sharing names) can silently contaminate plot scripts.
+## Impact/risk checks to include
+- Re-check whether any compensating label flips remain in production/plot scripts.
+- Confirm `IsPPb` logic and orientation handling remain consistent across signal and mixed-event paths.
+- Ensure no cross-contamination between current-weight and exploratory outputs (strict tag separation).
 
-## Deliverables expected from implementation agent
-- Updated scripts/code with explicit orientation mapping and new tags.
-- Rebuilt correction ROOT files (VZ, Z, track residual).
-- Regenerated closure and central/result plots for note usage.
-- One comparison summary (old vs corrected) with closure metrics and pass/fail decision.
+## Deliverables required from analyzer
+1. Command/script log (which scripts were modified/added and executed).
+2. Phase A summary:
+   - regenerated current-weight pPb/PbP note-facing outputs
+   - list of files copied to Overleaf
+   - validation notes.
+3. Phase B summary:
+   - new VZ-weight files
+   - propagated Z/residual products
+   - MC central-closure comparison table (current vs new method)
+   - recommendation on whether to proceed to note-level plotting in a later step.

@@ -2,11 +2,17 @@ minZpt=$1
 maxZpt=$2
 name=$3
 
-VZWeightFile_PPb=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_pPb.root
-VZWeightFile_PbP=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_PbP.root
+VZWeightFile_PPb="${VZ_WEIGHT_FILE_PPB:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_pPb.root}"
+VZWeightFile_PbP="${VZ_WEIGHT_FILE_PBP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_PbP.root}"
 
-ZWeightFile_pPb="my_ZWeights/20260311_ZCorrection_V6_PPb_zPt0-500.root"
-ZWeightFile_PbP="my_ZWeights/20260311_ZCorrection_V6_PbP_zPt0-500.root"
+ZWeightFile_pPb="${Z_WEIGHT_FILE_PPB:-my_ZWeights/20260311_ZCorrection_V6_PPb_zPt0-500.root}"
+ZWeightFile_PbP="${Z_WEIGHT_FILE_PBP:-my_ZWeights/20260311_ZCorrection_V6_PbP_zPt0-500.root}"
+
+echo "[pPb-DY-analysis] minZpt=${minZpt} maxZpt=${maxZpt} name=${name}"
+echo "[pPb-DY-analysis] VZWeightFile_PPb=${VZWeightFile_PPb}"
+echo "[pPb-DY-analysis] VZWeightFile_PbP=${VZWeightFile_PbP}"
+echo "[pPb-DY-analysis] ZWeightFile_pPb=${ZWeightFile_pPb}"
+echo "[pPb-DY-analysis] ZWeightFile_PbP=${ZWeightFile_PbP}"
 
 # pPb
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --IsGen false --IsPP false --IsGenZ false --ZWeightFile $ZWeightFile_pPb --VZWeightFile $VZWeightFile_PPb

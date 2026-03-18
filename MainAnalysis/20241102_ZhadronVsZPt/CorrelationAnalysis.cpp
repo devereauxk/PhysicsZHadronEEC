@@ -405,23 +405,25 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             if (zPhiMix < 0) zPhiMix += 2 * M_PI;
             float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, zPhiMix) : 1;
             
-            float eventWeightMix = 1;
-            if (par.useEventWeight) eventWeightMix *= MMix->EventWeight;
+            float computedMixWeight = 1;
+            if (par.useEventWeight) computedMixWeight *= MMix->EventWeight;
             if (par.useVZWeight) {
                if (par.VZWeightFile != "") {
                   float vzCorrectionFactorMix = vzCorrector->GetCorrectionFactor(MMix->VZ);
-                  eventWeightMix *= vzCorrectionFactorMix;
+                  computedMixWeight *= vzCorrectionFactorMix;
                } else {
-                  eventWeightMix *= MMix->VZWeight;
+                  computedMixWeight *= MMix->VZWeight;
                }
             }
-            if (par.useZWeight) eventWeightMix *= ZWeightMix;
+            if (par.useZWeight) computedMixWeight *= ZWeightMix;
 
             // energy extrapolation
             if (par.EnergyExtraFile != "" && par.isPP) {
                float energyExtrapolationWeightMix = EnergyCorrector->GetCorrectionFactor(zPtMix, 1, 1);
-               eventWeightMix *= energyExtrapolationWeightMix;
+               computedMixWeight *= energyExtrapolationWeightMix;
             }
+            eventWeightMix = computedMixWeight;
+
          }
 
          nZ += (par.mix) ? eventWeightMix : eventWeightSignal;

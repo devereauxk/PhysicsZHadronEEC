@@ -2,7 +2,7 @@ make ExecutePPPlot
 
 ZPT_RANGES=("40_350")
 PT_RANGES=("1_2" "2_4" "4_10")
-PP_TAGS=("evtWeightOn_ZV6_trkV24_nmix10" "evtWeightOff_ZV6_trkV24_nmix10")
+PP_TAGS=("evtWeightOn_ZV6_trkV24_nmix10")
 
 for tag in "${PP_TAGS[@]}"
 do

@@ -18,6 +18,35 @@ Operationally, treat this as the first-step checklist before any exploration, ed
 - Do not use repository data/files for training.
 - Do not interfere with other users' processes.
 
+## Reviewer / Analyzer role model (mandatory when prompted)
+
+When initialized with wording like **"you are a reviewer..."** or **"you are an analyzer..."**, apply this role contract strictly.
+
+### Reviewer role
+- The reviewer communicates directly with the user.
+- Reviewer scope is limited to:
+  - code review,
+  - impact analysis,
+  - task planning,
+  - writing task instructions in `.md` files for analyzers.
+- Reviewer should generally not run analyzer-assigned production work; instead delegate via task markdown and review the returned summary.
+
+### Analyzer role
+- Analyzers generally do not interact directly with the user.
+- Analyzers execute tasks from reviewer-written `.md` files.
+- Execute tasks sequentially unless the task file explicitly allows parallel tracks.
+- Return a completion summary `.md` including:
+  - commands run,
+  - outputs produced,
+  - validation checks,
+  - failures/retries,
+  - final status.
+
+### Relationship and handoff
+- Reviewer defines scope, acceptance criteria, ordering, and stop conditions.
+- Analyzer executes and reports.
+- Reviewer validates analyzer results and communicates final conclusions/actions to the user.
+
 ## Build, test, and lint commands
 
 ### Environment setup (required before most builds)
@@ -68,7 +97,7 @@ This repository is organized as **standalone, date-stamped analysis snapshots**.
 - `Systematics/`: systematic-harvesting/combination utilities.
 - `Plots/`: plotting/post-processing executables and ROOT macro-driven figure production.
 
-Typical flow: **SampleGeneration → MainAnalysis/TrackingEfficiency → Systematics → Plots**.
+Typical flow: **SampleGeneration -> MainAnalysis/TrackingEfficiency -> Systematics -> Plots**.
 
 ## Key conventions specific to this codebase
 
@@ -88,6 +117,20 @@ Typical flow: **SampleGeneration → MainAnalysis/TrackingEfficiency → Systema
 - **ROOT-first toolchain**: builds rely on `g++` + ``root-config --cflags --glibs`` and typically link `$(ProjectBase)/CommonCode/library/Messenger.o`.
 - **Output layout convention**: scripts usually write intermediates to `output/` and merged products/plots to `plots/`, with suffixes like `-result.root` and `-nosub.root`.
 
+## Production workflow style (official outputs)
+
+- For official production/reprocessing, favor:
+  - modifying existing scripts, or
+  - adding new dedicated scripts in-repo.
+- Avoid one-off arbitrary terminal command chains for official plot/correction production.
+- Prefer driving these via scripted `system-analysis.sh` calls.
+- One-off ad hoc terminal commands are acceptable for debugging/diagnostics.
+
+## Runtime and filesystem norms
+
+- Use `python3` (not `python`).
+- Files intended for `/tmp` should instead be written under `/tmp/kdeverea`.
+- Default behavior: write plots/products to analysis repo paths unless task explicitly says otherwise.
 
 ## User defined folder meanings
 
@@ -115,7 +158,7 @@ Typical flow: **SampleGeneration → MainAnalysis/TrackingEfficiency → Systema
   - `figures/tracking/`
   - `figures/z_reco/eff/`
 
-When updating note plots, copy generated PDFs from this analysis repository directly to the matching Overleaf figure folder, then ensure `\includegraphics{...}` paths in `src/*.tex` match those filenames.
+When updating note plots, copy generated PDFs from this analysis repository to Overleaf **only when explicitly called for by the user or reviewer plan**, then ensure `\includegraphics{...}` paths in `src/*.tex` match those filenames.
 
 Typical copy pattern for central-analysis products:
 ```bash
@@ -125,6 +168,14 @@ cp -f /home/kdeverea/PhysicsZHadronEEC/Plots/20260213_Central/plots/<subdir>/*.p
 
 After copying, run a reference audit to ensure there are no missing or uncited figures in Overleaf.
 
+## Correction-stack order and closure expectation
+
 The order with which corrections should be calculated is: VZ, Z correction, track residual correction, energy extrapolation (for pp only). The VZ reweighting is used in the Z correction, and both the VZ and Z corrections are used in the track residual correction. The final correlation analysis can be run with any combination of these corrections, but the central result should use all of them together. "Total" closure of the correction in the main analysis script is demonstrated on MC sets as run by `MainAnalysis/20241102_ZhadronVsZPt/closure-trk.sh` and plots produced in `Plots/20260120_ZhadronVsZPtClosure/`.
 
 Finally, the main results are produced in `MainAnalysis/20241102_ZhadronVsZPt/central.sh` and plots are produced in `Plots/20260213_Central/`.
+
+## Known issue context to keep in mind
+
+- A mixed-event `UseEventWeight` bug was identified in `CorrelationAnalysis.cpp` and fixed in later work; this affected mixed-event normalization.
+- Historical VZ/event-weight interpretations may be biased if outputs were generated pre-fix.
+- In planning/review documents, explicitly label outputs as pre-fix or post-fix where relevant.

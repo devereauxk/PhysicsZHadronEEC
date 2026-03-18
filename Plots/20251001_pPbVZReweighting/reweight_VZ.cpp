@@ -19,24 +19,29 @@ int main(int argc, char *argv[]) {
     CommandLine CL(argc, argv);
 
     string collisionType = CL.Get("collisionType", "pPb");
+    string mcCollisionType = CL.Get("mcCollisionType", collisionType);
+    string dataCollisionType = CL.Get("dataCollisionType", collisionType);
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
     string outputTag = CL.Get("output", "20260308_ZPT0_350");
 
-    cout<<"Collision Type: "<<collisionType<<endl;
+    cout<<"Collision Type (output label): "<<collisionType<<endl;
+    cout<<"MC source collision type: "<<mcCollisionType<<endl;
+    cout<<"Data source collision type: "<<dataCollisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
-    string mctag = (collisionType == "pp") ? "pythia" : collisionType;
+    string mctag = (mcCollisionType == "pp") ? "pythia" : mcCollisionType;
+    string datatag = dataCollisionType;
 
     vector<string> input_ZPT_files = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s-result.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s-result.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s-result.root", datatag.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        "Reco pp",
-        "Data pp"
+        Form("Reco %s", mcCollisionType.c_str()),
+        Form("Data %s", dataCollisionType.c_str())
     };
     string output =  Form("summary/%s", outputTag.c_str());
 
@@ -45,6 +50,7 @@ int main(int argc, char *argv[]) {
     // Loop over all input files
     int i = 0;
     for (const auto& input_ZPT : input_ZPT_files) {
+        cout << "Input file[" << i << "]: " << input_ZPT << endl;
         TFile* fin = TFile::Open(input_ZPT.c_str(), "READ");
         if (!fin || fin->IsZombie()) {
             std::cerr << "Error: Unable to open file " << input_ZPT << std::endl;
@@ -58,6 +64,11 @@ int main(int argc, char *argv[]) {
         hVZ.push_back(this_hVZ);
 
         i++;
+    }
+
+    if (hVZ.size() != 2) {
+        cerr << "Error: expected 2 valid VZ histograms (MC, Data), got " << hVZ.size() << endl;
+        return 1;
     }
 
     // fit quartic function to Data / MC VZ Ratio
