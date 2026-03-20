@@ -158,15 +158,52 @@ Typical flow: **SampleGeneration -> MainAnalysis/TrackingEfficiency -> Systemati
   - `figures/tracking/`
   - `figures/z_reco/eff/`
 
-When updating note plots, copy generated PDFs from this analysis repository to Overleaf **only when explicitly called for by the user or reviewer plan**, then ensure `\includegraphics{...}` paths in `src/*.tex` match those filenames.
+When updating note plots, copy generated PDFs from this analysis repository to Overleaf **only when explicitly called for by the user or reviewer plan**.
 
-Typical copy pattern for central-analysis products:
+Standards for figure updates:
+- derive an **explicit manifest** of the figures to update from `~/OverleafZHadronInPPb/src/*.tex`; do not use broad basename matching or global sync,
+- preserve the **source basename exactly** when copying refreshed figures into Overleaf; do **not** rename a new `ZV6/trkV24` file to an older `ZV5/trkV23` or other stale note filename,
+- if the note should use a new figure filename, update the corresponding `\includegraphics{...}` path in `src/*.tex` to that exact copied filename,
+- if multiple figures would collide in the same Overleaf directory, preserve the source basename and resolve the collision with directory structure or a deliberate TeX path update rather than silently renaming to an old filename,
+- after updating references, remove stale superseded copies only if they are no longer referenced by any `src/*.tex` file.
+
+Concrete method:
+1. Extract the current note references from `src/*.tex` and identify the exact figures that must be refreshed.
+2. Build a source-to-destination manifest for only those figures.
+3. Copy each refreshed PDF to Overleaf using the source basename.
+4. Update `src/*.tex` so every changed `\includegraphics{...}` points to the copied source basename and directory.
+5. Run a post-copy audit on the changed figure set.
+
+Typical copy/update pattern for central-analysis products:
 ```bash
-cp -f /home/kdeverea/PhysicsZHadronEEC/Plots/20260213_Central/plots/<subdir>/*.pdf \
-      /home/kdeverea/OverleafZHadronInPPb/figures/<target-subdir>/
+python3 - <<'PY'
+from pathlib import Path
+import shutil
+
+source = Path("/home/kdeverea/PhysicsZHadronEEC/Plots/20260213_Central/plots/central_combined/ZV6_trkV24_EEV3_nmix10/all_ZPT5_500_trkPT0.5_500_ZV6_trkV24_nmix10-DeltaPhi-result.pdf")
+destdir = Path("/home/kdeverea/OverleafZHadronInPPb/figures/result")
+destdir.mkdir(parents=True, exist_ok=True)
+shutil.copy2(source, destdir / source.name)
+PY
 ```
 
-After copying, run a reference audit to ensure there are no missing or uncited figures in Overleaf.
+Typical TeX update pattern after copying:
+```bash
+python3 - <<'PY'
+from pathlib import Path
+tex = Path("/home/kdeverea/OverleafZHadronInPPb/src/results.tex")
+old = "figures/result/all_ZPT5_500_trkPT0.5_500_ZV5_trkV23_nmix10-DeltaPhi-result.pdf"
+new = "figures/result/all_ZPT5_500_trkPT0.5_500_ZV6_trkV24_nmix10-DeltaPhi-result.pdf"
+text = tex.read_text()
+tex.write_text(text.replace(old, new))
+PY
+```
+
+Required validation after copying:
+- verify the copied Overleaf PDF is byte-identical to the analysis source for the changed figure set (for example with `sha256`),
+- verify there are no missing `\includegraphics{...}` targets among the changed figures,
+- distinguish unrelated pre-existing missing references from the figures changed in the current task,
+- check `git status --short` in `~/OverleafZHadronInPPb` and confirm the modified files match the intended manifest.
 
 ## Correction-stack order and closure expectation
 

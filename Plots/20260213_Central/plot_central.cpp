@@ -3,6 +3,7 @@
 #include <TH2D.h>
 #include <TH3D.h>
 #include <TF1.h>
+#include <TSystem.h>
 #include <iostream>
 using namespace std;
 
@@ -44,6 +45,7 @@ int main(int argc, char *argv[]) {
         "  & Z correction",
         "  & Z + track correction"
     };
+    gSystem->mkdir("plots/central", true);
     string output = Form("plots/central/pp%s_ZPT%s_trkPT%s_%s", collisionType.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     // read results file
