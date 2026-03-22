@@ -3,6 +3,8 @@
 #include <TH2D.h>
 #include <TH3D.h>
 #include <TF1.h>
+#include <TSystem.h>
+#include <algorithm>
 #include <iostream>
 using namespace std;
 
@@ -14,6 +16,25 @@ using namespace std;
 #include <vector>
 #include <string>
 
+namespace
+{
+   bool FileExists(const string &path)
+   {
+      return gSystem->AccessPathName(path.c_str()) == false;
+   }
+
+   string PickExistingFile(const vector<string> &candidates, const string &label)
+   {
+      for(const string &candidate : candidates)
+         if(FileExists(candidate))
+            return candidate;
+
+      cerr << "Error: unable to resolve " << label << " input from candidates:" << endl;
+      for(const string &candidate : candidates)
+         cerr << "  " << candidate << endl;
+      return "";
+   }
+}
 
 int main(int argc, char *argv[]) {
 
@@ -29,12 +50,61 @@ int main(int argc, char *argv[]) {
     cout<<"Tag: "<<tag<<endl;
 
     string mctag = (collisionType == "pp") ? "pythia" : collisionType;
+    string mcTagName = tag;
+    if(collisionType == "pp")
+    {
+        const string oldFragment = "_EEV3_";
+        const string newFragment = "_vz20260320_";
+        size_t position = mcTagName.find(oldFragment);
+        if(position != string::npos)
+            mcTagName.replace(position, oldFragment.size(), newFragment);
+    }
+
+    vector<string> dataCandidates = {
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s-nosub.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+    };
+    if(collisionType != "pp")
+        dataCandidates.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT5_500-nosub.root", collisionType.c_str(), tag.c_str()));
+    string dataFile = PickExistingFile(dataCandidates, Form("%s data", collisionType.c_str()));
+
+    string mcGenFile = "";
+    string mcRecoFile = "";
+    string mcClosureGenFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str());
+    string mcClosureRecoFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str());
+    string mcTaggedGenFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
+    string mcTaggedRecoFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
+
+    if(FileExists(mcTaggedGenFile) && FileExists(mcTaggedRecoFile)) {
+        mcGenFile = mcTaggedGenFile;
+        mcRecoFile = mcTaggedRecoFile;
+    }
+    else if(FileExists(mcClosureGenFile) && FileExists(mcClosureRecoFile)) {
+        mcGenFile = mcClosureGenFile;
+        mcRecoFile = mcClosureRecoFile;
+    }
+    else {
+        mcGenFile = PickExistingFile({
+            mcTaggedGenFile,
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT0_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT5_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
+            mcClosureGenFile
+        }, Form("%s MC Gen", collisionType.c_str()));
+        mcRecoFile = PickExistingFile({
+            mcTaggedRecoFile,
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT0_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT5_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
+            mcClosureRecoFile
+        }, Form("%s MC Reco", collisionType.c_str()));
+    }
+
+    if(dataFile == "" || mcGenFile == "" || mcRecoFile == "")
+        return 1;
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s-nosub.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str())
+        dataFile,
+        mcGenFile,
+        mcRecoFile
     };
     
     string output =  Form("plots/zmass/%s_ZPT%s-%s", collisionType.c_str(), zPtRange.c_str(), tag.c_str());
@@ -61,7 +131,13 @@ int main(int argc, char *argv[]) {
 
         // track pt eta phi
         TH1D* this_hZmass = (TH1D*)fin->Get(Form("hZmassData_%s", trkPtRange.c_str()));
+        if(this_hZmass == nullptr) {
+            cerr << "Error: histogram hZmassData_" << trkPtRange << " missing in " << input_ZPT << endl;
+            return 1;
+        }
         this_hZmass->SetName(Form("Zmass_%d", i));
+        this_hZmass->SetDirectory(0);
+        fin->Close();
 
         hZmass.push_back(this_hZmass);
 
@@ -78,6 +154,11 @@ int main(int argc, char *argv[]) {
         i++;
     }
 
+    if(hZmass.size() != 3) {
+        cerr << "Error: expected 3 z-mass histograms, found " << hZmass.size() << endl;
+        return 1;
+    }
+
     vector<string> labels = {
         Form("%s DATA", collisionType.c_str()),
         Form("MC Gen (x %.4f)", genscale),
@@ -89,7 +170,9 @@ int main(int argc, char *argv[]) {
     vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed};
     vector<int> lineStyles = {0, 2, 1, 0, 1};
 
-    int max_genpeak = hZmass[1]->GetMaximum();
+    double max_peak = 0;
+    for(TH1* hist : hZmass)
+        max_peak = max(max_peak, hist->GetMaximum());
 
     // ===========================================
     // Z mass peak
@@ -107,7 +190,7 @@ int main(int argc, char *argv[]) {
         false, false, false
     );
 
-    hZmass[0]->GetYaxis()->SetRangeUser(0, max_genpeak*1.5);
+    hZmass[0]->GetYaxis()->SetRangeUser(0, max_peak * 1.60);
 
     AddCMSHeader(
         pTrk1,

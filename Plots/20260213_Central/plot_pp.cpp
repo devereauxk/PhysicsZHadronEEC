@@ -30,16 +30,21 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythiaMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythiaMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythiaMC_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythiaMC_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        "DATA pp 5TeV, uncorrected",
-        "  & Z correction",
-        "  & Z + track correction",
-        "GEN pp 5TeV"
+        "DATA pp 5TeV [corrected]",
+        "DATA pp 5TeV [uncorrected]",
+        //"  & Z correction",
+        //"  & Z + track correction",
+        "GEN pp 5TeV",
+        "RECO pp 5TeV [corrected]",
+        "RECO pp 5TeV [uncorrected]"        
     };
     string output = Form("plots/pp/%s_ZPT%s_trkPT%s", tag.c_str(), zPtRange.c_str(), trkPtRange.c_str());
 
@@ -79,10 +84,10 @@ int main(int argc, char *argv[]) {
         
     }
 
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kMagenta-3, cmsYellow, cmsGray};
+    vector<int> markerColors = {cmsBlue, kSpring-6, kMagenta-3, cmsTealL1, cmsRed, cmsGray};
     vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {2, 2, 0, 1};
+    vector<int> lineColors = {cmsBlue, kSpring-6, kMagenta-3, cmsTealL1, cmsRed, cmsGray, cmsRed};
+    vector<int> lineStyles = {0, 2, 1, 1, 1};
 
     float diffMin = (trkPtRange == "4_500") ? -0.05 : -0.5;
     float diffMax = (trkPtRange == "4_500") ? 0.05 : 0.5;

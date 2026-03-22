@@ -4,7 +4,7 @@ cd ..
 cd $WORKINGDIR
 sleep 1
 
-name="${NAME_TAG:-20260311_TrackResidualCorrection_V24_ZWeight_V6}"
+name="${NAME_TAG:-20260321_ZV6_trkV24_TrackResidualCorrection}"
 echo "[run-pPb] NAME_TAG=${name}"
 ./pPb-DY-analysis.sh 0 10 $name
 ./pPb-DY-analysis.sh 10 20 $name

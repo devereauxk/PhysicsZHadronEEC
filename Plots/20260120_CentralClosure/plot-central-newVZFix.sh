@@ -2,7 +2,7 @@ make
 
 ZPT_RANGES=("0_10" "10_20" "20_40" "40_500")
 PT_RANGES=("0.5_500")
-TAG="newVZFix_ZV6_trkV24_nmix10"
+TAG="ZV6_trkV24_vz20260320_nmix10"
 
 for zPtRange in "${ZPT_RANGES[@]}"
 do

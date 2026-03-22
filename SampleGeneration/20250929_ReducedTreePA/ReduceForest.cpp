@@ -18,7 +18,7 @@ double GetGenHFSum(GenParticleTreeMessenger *M, int SubEvent = -1);
 
 int main(int argc, char *argv[])
 {
-   string VersionString = "V0.1";
+   string VersionString = "V0.0";
    
    CommandLine CL(argc, argv);
 
@@ -71,6 +71,8 @@ int main(int argc, char *argv[])
       int EntryCount = MEvent.GetEntries() * Fraction;
       ProgressBar Bar(cout, EntryCount);
       Bar.SetStyle(-1);
+
+      cout<<"Processing " << InputFileName << " with " << EntryCount << " entries (out of " << MEvent.GetEntries() << ")" << endl;
       
       /////////////////////////////////
       //////// Main Event Loop ////////
@@ -93,8 +95,8 @@ int main(int argc, char *argv[])
          MTrigger.GetEntry(iE);
 
          // Specific run ranges
-         if(RunStart > MEvent.Run)   continue;
-         if(RunEnd < MEvent.Run)     continue;
+         if(RunStart > int(MEvent.Run))   continue;
+         if(RunEnd < int(MEvent.Run))     continue;
 
          MZHadron.Clear();
 
@@ -322,10 +324,12 @@ int main(int argc, char *argv[])
             Z.SetPtEtaPhiM(MZHadron.zPt->at(0), MZHadron.zEta->at(0), MZHadron.zPhi->at(0), MZHadron.zMass->at(0));
             
             if(IsData == false)
-               MZHadron.ZWeight = GetZWeightPA8TeVMC(Z.Pt(), Z.Rapidity());
+               //MZHadron.ZWeight = GetZWeightPA8TeVMC(Z.Pt(), Z.Rapidity());
+               MZHadron.ZWeight = 1;
             else
             {
-               MZHadron.ZWeight = GetZWeightPA8TeVDataTrigger(Z.Pt(), Z.Rapidity());
+               //MZHadron.ZWeight = GetZWeightPA8TeVDataTrigger(Z.Pt(), Z.Rapidity());
+               MZHadron.ZWeight = 1;
 
                double Mu1Eta = MZHadron.muEta1->at(0);
                double Mu1PT = MZHadron.muPt1->at(0);

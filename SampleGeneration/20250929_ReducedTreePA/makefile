@@ -11,14 +11,14 @@ Prepare:
 
 TestRun: Execute
 	./Execute --Input Samples/PAMC/HiForestAOD_1.root --Output SkimReco.root --MinZPT 20 --Fraction 0.05 \
-		--TrackEfficiencyPath $(AnalysisBasePA)/Corrections/Tracking/Hijing_8TeV_dataBS.root --DoGenLevel false \
+		--TrackEfficiencyPath ../Corrections/Tracking/Hijing_8TeV_dataBS.root --DoGenLevel false \
 		--DoTrackResidual false
 	./Execute --Input Samples/PAMC/HiForestAOD_1.root --Output SkimGen.root --MinZPT 20 --Fraction 0.05 \
-		--TrackEfficiencyPath $(AnalysisBasePA)/Corrections/Tracking/Hijing_8TeV_dataBS.root --DoGenLevel true \
+		--TrackEfficiencyPath ../Corrections/Tracking/Hijing_8TeV_dataBS.root --DoGenLevel true \
 		--DoTrackResidual false
 
 Execute: ReduceForest.cpp
-	g++ ReduceForest.cpp -o Execute \
+	g++ ReduceForest.cpp -o Execute -I./include \
 		`root-config --cflags --glibs` \
 		-I$(ProjectBase)/CommonCode/include $(ProjectBase)/CommonCode/library/Messenger.o
 

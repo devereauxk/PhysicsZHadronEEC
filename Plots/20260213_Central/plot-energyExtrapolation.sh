@@ -14,4 +14,6 @@ do
     done
 done
 
+./ExecuteEnergyExtrapolationPlot --zPtRange 5_500 --trkPtRange 0.5_500 --pptag ZV6_trkV24_EEV3_nmix10
+
 exit

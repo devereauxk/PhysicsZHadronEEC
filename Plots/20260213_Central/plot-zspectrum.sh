@@ -1,6 +1,6 @@
 make ExecuteZSpectrumPlot
 
-./ExecuteZSpectrumPlot --zPtRange 5_500 --trkPtRange 0.5_500 --pPbtag ZV5_trkV23_nmix10 --pptag EEV1_ZV4_trkV22_nmix10
-./ExecuteZSpectrumPlot --zPtRange 5_500 --trkPtRange 0.5_500 --pPbtag ZV5_trkV23_nmix10 --pptag EEV1_ZV4_trkV22_nmix10 --doCombine true
+./ExecuteZSpectrumPlot --zPtRange 5_500 --trkPtRange 0.5_500 --pPbtag ZV6_trkV24_vz20260320_nmix10 --pptag ZV6_trkV24_EEV3_nmix10
+./ExecuteZSpectrumPlot --zPtRange 5_500 --trkPtRange 0.5_500 --pPbtag ZV6_trkV24_vz20260320_nmix10 --pptag ZV6_trkV24_EEV3_nmix10 --doCombine true
 
 exit

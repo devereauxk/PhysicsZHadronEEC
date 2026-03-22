@@ -28,6 +28,27 @@ bool checkError(const Parameters& par) {
       return true;  // Return true indicates an error was found
    }
 
+   if (par.isData) {
+      if (par.useVZWeight) {
+         std::cout << "Error! Data stages must run with UseVZWeight=false." << std::endl;
+         return true;
+      }
+      if (par.VZWeightFile != "") {
+         std::cout << "Error! Data stages must not receive VZWeightFile." << std::endl;
+         return true;
+      }
+   }
+
+   if (par.useVZWeight && par.VZWeightFile == "") {
+      std::cout << "Error! UseVZWeight=true requires an explicit external VZWeightFile for MC stages." << std::endl;
+      return true;
+   }
+
+   if (!par.useVZWeight && par.VZWeightFile != "") {
+      std::cout << "Error! VZWeightFile was provided but UseVZWeight=false. Pass both explicitly for MC VZ weighting." << std::endl;
+      return true;
+   }
+
    return false;    // No errors found
 }
 
@@ -210,8 +231,8 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    }
 
    // open VZ correction if needed
-   VZCorrector *vzCorrector;
-   if (par.VZWeightFile != "") {
+   VZCorrector *vzCorrector = nullptr;
+   if (par.useVZWeight) {
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
    }
 
@@ -293,14 +314,8 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
       float eventWeightSignal = 1;
       if (par.useEventWeight) eventWeightSignal *= MZSignal->EventWeight;
-      if (par.useVZWeight) {
-         if (par.VZWeightFile != "") {
-            float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
-            eventWeightSignal *= vzCorrectionFactor;
-         } else {
-            eventWeightSignal *= MZSignal->VZWeight;
-         }
-      }
+      if (par.useVZWeight)
+         eventWeightSignal *= vzCorrector->GetCorrectionFactor(MZSignal->VZ);
       if (par.useZWeight) eventWeightSignal *= ZWeight;
 
       // energy extrapolation
@@ -407,14 +422,8 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             
             float computedMixWeight = 1;
             if (par.useEventWeight) computedMixWeight *= MMix->EventWeight;
-            if (par.useVZWeight) {
-               if (par.VZWeightFile != "") {
-                  float vzCorrectionFactorMix = vzCorrector->GetCorrectionFactor(MMix->VZ);
-                  computedMixWeight *= vzCorrectionFactorMix;
-               } else {
-                  computedMixWeight *= MMix->VZWeight;
-               }
-            }
+            if (par.useVZWeight)
+               computedMixWeight *= vzCorrector->GetCorrectionFactor(MMix->VZ);
             if (par.useZWeight) computedMixWeight *= ZWeightMix;
 
             // energy extrapolation
@@ -697,7 +706,7 @@ int main(int argc, char *argv[])
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
-   par.useVZWeight       = CL.GetBool  ("UseVZWeight", true);
+   par.useVZWeight       = CL.GetBool  ("UseVZWeight", false);
    par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.

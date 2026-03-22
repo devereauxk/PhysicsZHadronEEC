@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     // make canvas
     TCanvas* c6 = new TCanvas("c6", "c6", 600, 600);
     TPad* p6 = (TPad*) plotCMSRatio(
-        {hVZ[1], hVZ[0], hVZReweighted}, "", {labels[1], labels[0], "Reco pp (reweighted)"},
+        {hVZ[1], hVZ[0], hVZReweighted}, "", {labels[1], labels[0], Form("Reco %s (reweighted)", mcCollisionType.c_str())},
         {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsGray}, {1, 2, 1, 2, 1, 0},
         {cmsBlue, cmsRed, cmsTealL1, kOrange+7, kSpring+7, kMagenta+1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "V_{Z}", -20, 20,

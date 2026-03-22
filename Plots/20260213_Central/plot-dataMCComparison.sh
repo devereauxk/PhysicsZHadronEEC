@@ -5,8 +5,8 @@ ZPT_RANGES=("5_500")
 PT_RANGES=("0.5_500") 
 
 # note mixing is turned off for these studies
-PP_TAG="ZV5_trkV23_nmix0"
-PPB_TAG="ZV5_trkV23_nmix0"
+PP_TAG="ZV6_trkV24_vz20260320_nmix10"
+PPB_TAG="ZV6_trkV24_vz20260320_nmix0"
 
 for zPtRange in "${ZPT_RANGES[@]}"
 do

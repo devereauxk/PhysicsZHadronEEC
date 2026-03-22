@@ -116,6 +116,9 @@ Typical flow: **SampleGeneration -> MainAnalysis/TrackingEfficiency -> Systemati
   - then run `./system-analysis.sh ...` as usual.
 - **ROOT-first toolchain**: builds rely on `g++` + ``root-config --cflags --glibs`` and typically link `$(ProjectBase)/CommonCode/library/Messenger.o`.
 - **Output layout convention**: scripts usually write intermediates to `output/` and merged products/plots to `plots/`, with suffixes like `-result.root` and `-nosub.root`.
+- **V0.2 heavy-ion input convention**: for official pPb / PbP correction and closure work, do not trust the raw `V0.2` basename as the physical-system label. Follow the switched convention already used in the correction producers: the physical `PPb` branch uses `PbPMC_*` plus `PbPData_Reco.root` and `mergedEPOS/PPbMC_Gen.root`, while the physical `PbP` branch uses `PPbMC_*` plus `PPbData_Reco.root` and `mergedEPOS/PbPMC_Gen.root`.
+- **Canonical 20241102 runner convention**: in `MainAnalysis/20241102_ZhadronVsZPt/`, the maintained official entrypoints are `closure-VZ.sh`, `closure-Z.sh`, `closure-trk.sh`, and `central.sh`. When a rerun needs fixes, fold them into these scripts directly rather than creating new persistent variants such as `*-newVZFix.sh`.
+- **Official tag/version convention**: do not promote ad hoc descriptive suffixes such as `newVZFix` or `skimVZOff` into official correction or note-facing tags. If a correction family is unchanged, keep the existing promoted tag; if the physics content changes, increment the canonical version families (`ZV*`, `trkV*`) instead of adding another descriptor.
 
 ## Production workflow style (official outputs)
 
@@ -125,6 +128,7 @@ Typical flow: **SampleGeneration -> MainAnalysis/TrackingEfficiency -> Systemati
 - Avoid one-off arbitrary terminal command chains for official plot/correction production.
 - Prefer driving these via scripted `system-analysis.sh` calls.
 - One-off ad hoc terminal commands are acceptable for debugging/diagnostics.
+- For the `20241102_ZhadronVsZPt` workflow specifically, avoid parallel “fixup” runner families for official reruns. Update the canonical script in place, commenting or replacing superseded calls there, so future reviewer/analyzer work has one authoritative entrypoint per stage.
 
 ## Runtime and filesystem norms
 
@@ -141,10 +145,30 @@ Typical flow: **SampleGeneration -> MainAnalysis/TrackingEfficiency -> Systemati
 - `MainAnalysis/20251211_ResidualCorrection/workflow/plots/`: track residual correction-iteration outputs; latest updated set uses `TrackResidualCorrection_V24_ZWeight_V6`.
 - `Plots/20251202_trackResidualClosure/plots/`: track-level no-subtraction closure outputs (`*-nosub-closure-*`), including the `trkV24` updated pPb/PbP figures.
 - `Plots/20260120_CentralClosure/plots/`: background-subtracted and pre-subtraction closure outputs (`*-closure-Delta{Eta,Phi}-{all,bkg,result}.pdf`), including `trkV24` updated pPb/PbP figures.
+- `SampleGeneration/20250929_ReducedTreePA/`: the PA reduced-tree skimming workflow that produced the skim inputs now used under `pPbSample/V0.2/`. `ReduceForest.cpp` converts full forest ROOT inputs into skim trees; `make Prepare` creates `Samples/{PAMC,APMC,PAData}` symlinks to the forest locations, and the forest-side pPb/PbP orientation labels are the correct physical ones even where downstream skim naming later became swapped.
 - `MainAnalysis/20260222_EnergyExtrapolation/`: the workflow for extrapolating the Z-hadron correlation measurement to higher collision energies. For pp data only.
 - `Plots/20260213_Central/plot_dataMCComparison.cpp` + `plot-dataMCComparison.sh`: data/MC comparison plotting entrypoint; reads ROOT inputs from `MainAnalysis/20241102_ZhadronVsZPt/plots/` and writes figures to `Plots/20260213_Central/plots/dataMCComparison/`.
 - `Plots/20260213_Central/plot_pp.cpp` + `plot-pp.sh`: pp closure/data-vs-GEN plotting entrypoint; it expects `plots/{pp_nominal,pp_ZResidual,pp_trkResidual,pythiaMC_Gen_nominal}_<tag>_ZPT*-result.root` in `MainAnalysis/20241102_ZhadronVsZPt/plots/`, with all requested track-pt histograms merged into each ZPT result file.
 - `~/OverleafZHadronInPPb/`: analysis-note source tree; main file is `AN-23-ABC.tex` with sections in `src/*.tex`. Figure assets are organized by topic under `figures/` (`event`, `z_reco/eff`, `tracking`, `tracking/appendix`, `analysis/closure`, etc.).
+
+## PA skimming workflow (`SampleGeneration/20250929_ReducedTreePA`)
+
+- This directory contains the skim producer that turns PA forest files into the reduced ROOT datasets later consumed as `pPbSample/V0.2/*`.
+- The main executable is built from `ReduceForest.cpp`; it reads one or more forest files via `--Input` and writes a skim via `--Output`, with toggles such as `--DoGenLevel`, `--IsData`, `--RunStart/RunEnd`, `--TrackEfficiencyPath`, and `--IgnoreEventWeight`.
+- `make Prepare` creates local `Samples/` symlinks to the forest locations on `/eos`:
+  - `Samples/PAMC` -> correctly labeled pPb MC forest directory
+  - `Samples/APMC` -> correctly labeled PbP MC forest directory
+  - `Samples/PAData` -> PA single-muon data forests
+- Accessing those `/eos` forest paths requires the user to run `kinit -5` first. If a future task needs to inspect the forest files directly, ask the user to do that first. Do not modify or execute files on `/eos`; treat those locations as read-only unless the user explicitly says otherwise in a future task.
+- Condor preparation is done by `PrepareCondor.sh`, which writes a submit description file `SubmitPA.condor` in the working directory. Submission is then done explicitly from that directory (for example with `condor_submit SubmitPA.condor`).
+- Each Condor job runs `Condor.sh`, which:
+  - bootstraps the CMSSW runtime on lxplus,
+  - copies the local `Execute` binary into the job sandbox,
+  - runs one reco skim and one gen skim for MC inputs,
+  - or runs two reco skims for data, split into `_AP` and `_PA` outputs using the run ranges embedded in the script.
+- Output naming convention from the Condor wrapper is:
+  - MC: `Reco*.root` and `Gen*.root`
+  - data: split reco outputs suffixed with `_AP.root` and `_PA.root`
 
 ## Overleaf workflow and structure
 
@@ -216,3 +240,4 @@ Finally, the main results are produced in `MainAnalysis/20241102_ZhadronVsZPt/ce
 - A mixed-event `UseEventWeight` bug was identified in `CorrelationAnalysis.cpp` and fixed in later work; this affected mixed-event normalization.
 - Historical VZ/event-weight interpretations may be biased if outputs were generated pre-fix.
 - In planning/review documents, explicitly label outputs as pre-fix or post-fix where relevant.
+- Closure-only regressions do not automatically imply downstream central/result plots are stale. Propagate reruns only when the underlying promoted correction ROOTs or central ROOTs actually change; for example, pp correction changes can affect energy extrapolation and final combined plots, while heavy-ion closure-label fixes alone do not.
