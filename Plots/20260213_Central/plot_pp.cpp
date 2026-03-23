@@ -31,20 +31,13 @@ int main(int argc, char *argv[]) {
     // files to load
     vector<string> input_ZPT_files = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythiaMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythiaMC_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythiaMC_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythiaMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "DATA pp 5TeV [corrected]",
-        "DATA pp 5TeV [uncorrected]",
-        //"  & Z correction",
-        //"  & Z + track correction",
-        "GEN pp 5TeV",
-        "RECO pp 5TeV [corrected]",
-        "RECO pp 5TeV [uncorrected]"        
+        "DY-RECO pp 5TeV [corrected]",
+        "DY-GEN pp 5TeV"
     };
     string output = Form("plots/pp/%s_ZPT%s_trkPT%s", tag.c_str(), zPtRange.c_str(), trkPtRange.c_str());
 
@@ -102,8 +95,8 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "pp - [GEN]", diffMin, diffMax,
-        3,
+        "MC - data", diffMin, diffMax,
+        0,
         false, false, true,
         0.2
     );
@@ -124,8 +117,8 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "pp - [GEN]", diffMin, diffMax,
-        3,
+        "MC - data", diffMin, diffMax,
+        0,
         false, false, true,
         0.2
     );

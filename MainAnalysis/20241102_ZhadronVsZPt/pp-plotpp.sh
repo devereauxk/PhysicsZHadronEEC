@@ -7,9 +7,9 @@
 set -euo pipefail
 
 nMix=10
-VZ_FILE="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260320_skimVZOff_ZPT0_350_VzReweightFits_pp.root"
-Z_FILE="my_ZWeights/20260320_ZCorrection_V6_skimVZOff_pp_zPt0-500.root"
-R_FILE="my_residualWeights/20260320_TrackResidualCorrection_V24_ZWeight_V6_skimVZOff_pp_zPt"
+VZ_FILE="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pp.root"
+Z_FILE="my_ZWeights/20260321_ZCorrection_V6_pp_zPt0-500.root"
+R_FILE="my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_pp_zPt"
 TEMP_CONFIGS=()
 cleanup_configs() {
     rm -f "${TEMP_CONFIGS[@]}"
@@ -21,7 +21,7 @@ if [ "${SKIP_CLEAN:-1}" != "1" ]; then
 fi
 export SKIP_CLEAN=1
 export CUT_PARALLELISM="${CUT_PARALLELISM:-1}"
-export NTHREAD="${NTHREAD:-8}"
+export NTHREAD="${NTHREAD:-15}"
 export NSLICE_FACTOR="${NSLICE_FACTOR:-1}"
 
 write_config() {
@@ -44,14 +44,14 @@ run_one_tag() {
     local TAG="$1"
     local USE_EVENT_WEIGHT="$2"
 
-    ./system-analysis.sh "pythiaMC_nominal_${TAG}" \
-        --IsPP true --IsGenZ false --IsData false \
-        --Input mergedSample/pythia-v11-Zpt0.root \
-        --MixFile mergedSample/pythia-v11-Zpt0.root \
-        --UseEventWeight "${USE_EVENT_WEIGHT}" --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --UseVZWeight true --VZWeightFile "${VZ_FILE}" \
-        --yBoost 0 --nMix "${nMix}"
+    #./system-analysis.sh "pythiaMC_nominal_${TAG}" \
+    #    --IsPP true --IsGenZ false --IsData false \
+    #    --Input mergedSample/pythia-v11-Zpt0.root \
+    #    --MixFile mergedSample/pythia-v11-Zpt0.root \
+    #    --UseEventWeight "${USE_EVENT_WEIGHT}" --UseZWeight false \
+    #    --UseTrackWeight true --UseResidualWeight false \
+    #    --UseVZWeight true --VZWeightFile "${VZ_FILE}" \
+    #    --yBoost 0 --nMix "${nMix}"
 
     ./system-analysis.sh "pythiaMC_trkResidual_${TAG}" \
         --IsPP true --IsGenZ false --IsData false \
@@ -73,13 +73,13 @@ run_one_tag() {
         --UseVZWeight true --VZWeightFile "${VZ_FILE}" \
         --yBoost 0 --nMix "${nMix}"
 
-    ./system-analysis.sh "pp_nominal_${TAG}" \
-        --IsPP true --IsGenZ false --IsData true --UseVZWeight false \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight "${USE_EVENT_WEIGHT}" --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix "${nMix}"
+    #./system-analysis.sh "pp_nominal_${TAG}" \
+    #    --IsPP true --IsGenZ false --IsData true --UseVZWeight false \
+    #    --Input mergedSample/pp-v11-Zpt0.root \
+    #    --MixFile mergedSample/pp-v11-Zpt0.root \
+    #    --UseEventWeight "${USE_EVENT_WEIGHT}" --UseZWeight false \
+    #    --UseTrackWeight true --UseResidualWeight false \
+    #    --yBoost 0 --nMix "${nMix}"
 
     ./system-analysis.sh "pp_trkResidual_${TAG}" \
         --IsPP true --IsGenZ false --IsData true --UseVZWeight false \
@@ -94,10 +94,8 @@ run_one_tag() {
 
 CONFIG_FILE="$(write_config '"40_350"' '"1_2" "2_4" "4_10"')"
 export CONFIG_FILE
-run_one_tag "ZV6_trkV24_vz20260320_nmix10" true
+run_one_tag "ppcompare_ZV6_trkV24_nmix10" true
 
 CONFIG_FILE="$(write_config '"20_40" "40_60" "60_500"' '"2_500"')"
 export CONFIG_FILE
-run_one_tag "ZV6_trkV24_vz20260320_nmix10" true
-
-#run_one_tag "evtWeightOff_ZV6_trkV24_vz20260320_nmix10" false
+run_one_tag "ppcompare_ZV6_trkV24_nmix10" true

@@ -1039,6 +1039,10 @@ void TriggerTreeMessenger::FillTriggerNames()
    Name.push_back("HLT_HIL3Mu20_v2");
    Name.push_back("HLT_HIL3Mu20_v3");
 
+   // muon pA triggers
+   Name.push_back("HLT_PAL2Mu12_v1");
+   Name.push_back("HLT_PAL3Mu12_v1");
+
    std::sort(Name.begin(), Name.end());
    std::vector<std::string>::iterator iter = std::unique(Name.begin(), Name.end());
    Name.erase(iter, Name.end());
@@ -1319,8 +1323,6 @@ bool TrackTreeMessenger::PassZHadron2022Cut(int index)
 
 bool TrackTreeMessenger::PassZHadron2022CutLoose(int index)
 {
-   // TODO
-
    if(index >= nTrk)
       return false;
 
@@ -1349,8 +1351,6 @@ bool TrackTreeMessenger::PassZHadron2022CutLoose(int index)
 
 bool TrackTreeMessenger::PassZHadron2022CutTight(int index)
 {
-   // TODO
-   
    if(index >= nTrk)
       return false;
 

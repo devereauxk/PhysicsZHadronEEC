@@ -1,11 +1,8 @@
 #source ./clean.sh
 
-export ProjectBase=/home/kdeverea/PhysicsZHadronEEC
-export AnalysisBasePA=$ProjectBase/SampleGeneration
-export NTHREAD=${NTHREAD:-5}
-#make Execute
+source clean.sh
 
-OUTPUTDIR=/eos/cms/store/group/phys_heavyions/kdeverea/Run2_2016_pPb_Skim/V0.0
+OUTPUTDIR=/eos/cms/store/group/phys_heavyions/kdeverea/Run2_2016_pPb_Skim/V0.1
 mkdir -p $OUTPUTDIR/PAData
 mkdir -p $OUTPUTDIR/PAMC
 mkdir -p $OUTPUTDIR/APMC
@@ -18,6 +15,7 @@ if [[ "$DODATA" == "1" ]]; then
    for i in `ls $PWD/Samples/PAData/000*/HiForestAOD_*.root | sed "s/ /,/g" | sed "s/,[,]*$//"`
    do
       ./local_skim.sh PAData8TeV ${i} $OUTPUTDIR/PAData/Reco$(basename ${i}) Dummy
+      exit
    done
 fi
 

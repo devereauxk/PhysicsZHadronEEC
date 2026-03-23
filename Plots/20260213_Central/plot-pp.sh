@@ -1,6 +1,6 @@
 make ExecutePPPlot
 
-PP_TAG="ZV6_trkV24_vz20260320_nmix10"
+PP_TAG="ppcompare_ZV6_trkV24_nmix10"
 
 for trkPtRange in 1_2 2_4 4_10
 do

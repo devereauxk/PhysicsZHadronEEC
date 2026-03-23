@@ -11,6 +11,7 @@ using namespace std;
 #include "Messenger.h"
 
 #include "TrackEfficiencyCorrector.h"
+#include "JSON_handler.h"
 
 int main(int argc, char *argv[]);
 double GetHFSum(PFTreeMessenger *M);
@@ -18,7 +19,7 @@ double GetGenHFSum(GenParticleTreeMessenger *M, int SubEvent = -1);
 
 int main(int argc, char *argv[])
 {
-   string VersionString = "V0.0";
+   string VersionString = "V0.1";
    
    CommandLine CL(argc, argv);
 
@@ -26,6 +27,7 @@ int main(int argc, char *argv[])
    string OutputFileName = CL.Get("Output");
 
    bool DoGenLevel                    = CL.GetBool("DoGenLevel", true);
+   bool IsPP                          = CL.GetBool("IsPP", false);
    bool IsData                        = CL.GetBool("IsData", false);
    int RunStart                       = IsData ? CL.GetInt("RunStart", -1) : -1;
    int RunEnd                         = IsData ? CL.GetInt("RunEnd", 999999) : 999999;
@@ -34,15 +36,28 @@ int main(int argc, char *argv[])
    double Fraction                    = CL.GetDouble("Fraction", 1.00);
    double MinZPT                      = CL.GetDouble("MinZPT", 20);
    double MinTrackPT                  = CL.GetDouble("MinTrackPT", 1);
-   // bool DoAlternateTrackSelection     = CL.GetBool("DoAlternateTrackSelection", false);
-   // int AlternateTrackSelection        = DoAlternateTrackSelection ? CL.GetInt("AlternateTrackSelection") : 0;
    bool DoSumET                       = CL.GetBool("DoSumET", false);
    double MuonVeto                    = CL.GetDouble("MuonVeto", 0.01);
    bool CheckZ                        = CL.GetBool("CheckZ", true);
    string TrackEfficiencyPath         = (DoGenLevel == false) ? CL.Get("TrackEfficiencyPath") : "";
+   string TrackSelectionMode          = CL.Get("TrackSelectionMode", "Nominal");
    bool IgnoreEventWeight             = CL.GetBool("IgnoreEventWeight", false);
-
+   string JSONPath                    = IsData ? CL.Get("JSONPath", "") : "";
    string PFTreeName                  = CL.Get("PFTree", "pfcandAnalyzer/pfTree");
+
+   if (TrackSelectionMode != "Nominal" && TrackSelectionMode != "Loose" && TrackSelectionMode != "Tight")
+   {
+      cerr << "Error: invalid TrackSelectionMode '" << TrackSelectionMode << "'. Use 'Nominal', 'Loose', or 'Tight'." << endl;
+      return 1;
+   }
+   if (RunStart != -1 || RunEnd != 999999)
+   {
+      cerr << "Warning: manual run number selections not supported. Using all events unless JSON supplied." << endl;
+   }
+
+   JSON_handler *JSONHandler = nullptr;
+   if(JSONPath != "")
+      JSONHandler = new JSON_handler(JSONPath);
 
    TrackEfficiencyCorrector *TrackEfficiency = nullptr;
    if(DoGenLevel == false)
@@ -95,8 +110,8 @@ int main(int argc, char *argv[])
          MTrigger.GetEntry(iE);
 
          // Specific run ranges
-         if(RunStart > int(MEvent.Run))   continue;
-         if(RunEnd < int(MEvent.Run))     continue;
+         //if(RunStart > int(MEvent.Run))   continue;
+         //if(RunEnd < int(MEvent.Run))     continue;
 
          MZHadron.Clear();
 
@@ -155,12 +170,19 @@ int main(int argc, char *argv[])
          {
             if(IsData == true)
             {
+               // JSON selection
+               if (JSONHandler != nullptr && !(JSONHandler->isGood(MEvent.Run, MEvent.Lumi)))
+                  continue;
+               
+               // offline event selection
                int pprimaryVertexFilter = MSkim.PVFilter;
                int beamScrapingFilter = MSkim.BeamScrapingFilter;
 
                // Event selection criteria
                //    see https://twiki.cern.ch/twiki/bin/viewauth/CMS/HIPhotonJe5TeVpp2017PbPb2018
                if(pprimaryVertexFilter == 0 || beamScrapingFilter == 0)
+                  continue;
+               if(abs(MZHadron.VZ) > 15)
                   continue;
 
                //HLT trigger to select dimuon events, see Kaya's note: AN2019_143_v12, p.5
@@ -179,13 +201,20 @@ int main(int argc, char *argv[])
          {
             if(IsData == true)
             {
+               // JSON selection
+               if (JSONHandler != nullptr && !(JSONHandler->isGood(MEvent.Run, MEvent.Lumi)))
+                  continue;
+
+               // offline event selection
                int pprimaryVertexFilter = MSkim.PVFilter;
                int beamScrapingFilter = MSkim.BeamScrapingFilter;
-               int phfCoincFilter3 = MSkim.HFCoincidenceFilter;
+               //int phfCoincFilter3 = MSkim.HFCoincidenceFilter; // TODO reforest
 
                // Event selection criteria
                //    see https://twiki.cern.ch/twiki/bin/viewauth/CMS/HIPhotonJe5TeVpp2017PbPb2018
-               if(pprimaryVertexFilter == 0 || beamScrapingFilter == 0 || phfCoincFilter3 == 0)
+               if(pprimaryVertexFilter == 0 || beamScrapingFilter == 0 ) // || phfCoincFilter3 == 0)
+                  continue;
+               if(abs(MZHadron.VZ) > 15)
                   continue;
 
                int HLT_PAL2Mu12 = MTrigger.CheckTriggerStartWith("HLT_PAL2Mu12");
@@ -412,7 +441,11 @@ int main(int argc, char *argv[])
             }
             if(DoGenLevel == false)
             {
-               if(MTrack.PassZHadron2022Cut(iT) == false)
+               if(TrackSelectionMode == "Loose" && MTrack.PassZHadron2022CutLoose(iT) == false)
+                  continue;
+               if(TrackSelectionMode == "Nominal" && MTrack.PassZHadron2022Cut(iT) == false)
+                  continue;
+               if(TrackSelectionMode == "Tight" && MTrack.PassZHadron2022CutTight(iT) == false)
                   continue;
             }
 

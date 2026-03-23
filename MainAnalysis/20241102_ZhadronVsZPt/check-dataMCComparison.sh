@@ -16,66 +16,32 @@ ZPT_RANGES=("5_500")
 PT_RANGES=("0.5_500") 
 EOF
 
-VZWeightFile_PP="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260320_skimVZOff_ZPT0_350_VzReweightFits_pp.root"
-VZWeightFile_PPb="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260320_pPbPbpRelabelFix_skimVZOff_ZPT0_500_VzReweightFits_pPb.root"
-VZWeightFile_PbP="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260320_pPbPbpRelabelFix_skimVZOff_ZPT0_500_VzReweightFits_PbP.root"
-ZWeightFile_PPb="my_ZWeights/20260320_ZCorrection_V6_skimVZOff_PPb_zPt0-500.root"
-ZWeightFile_PbP="my_ZWeights/20260320_ZCorrection_V6_skimVZOff_PbP_zPt0-500.root"
-ResidualWeightFile_PPb="my_residualWeights/20260320_TrackResidualCorrection_V24_ZWeight_V6_skimVZOff_PPb_zPt"
-ResidualWeightFile_PbP="my_residualWeights/20260320_TrackResidualCorrection_V24_ZWeight_V6_skimVZOff_PbP_zPt"
+VZWeightFile_PP="${VZ_WEIGHT_FILE_PP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pp.root}"
+VZWeightFile_PPb="${VZ_WEIGHT_FILE_PPB:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pPb.root}"
+VZWeightFile_PbP="${VZ_WEIGHT_FILE_PBP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_PbP.root}"
+
+ZWeightFile_PP="${Z_WEIGHT_FILE_PP:-my_ZWeights/20260321_ZCorrection_V6_pp_zPt0-500.root}"
+ZWeightFile_PPb="${Z_WEIGHT_FILE_PPB:-my_ZWeights/20260321_ZCorrection_V6_PPb_zPt0-500.root}"
+ZWeightFile_PbP="${Z_WEIGHT_FILE_PBP:-my_ZWeights/20260321_ZCorrection_V6_PbP_zPt0-500.root}"
+
+RWeightFile_PP="${R_WEIGHT_FILE_PP:-my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_pp_zPt}"
+RWeightFile_PPb="${R_WEIGHT_FILE_PPB:-my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_PPb_zPt}"
+RWeightFile_PbP="${R_WEIGHT_FILE_PBP:-my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_PbP_zPt}"
+
+# IMPORTANT: the following is intentionally hard coded to read files we KNOW are wrongly labeled. pPb and Pbp files are known to be swapped in many of the sets. Here we code files LITERALLY in order to test out the different labels.
 
 # pp
 if [ "$DOPP" == "1" ]; then
 
     echo "not implemented"
-    exit
-
-    nMix=10
-    TAG="_ZV5_trkV23_nmix10"
-    VZWeightFile=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/20260320_skimVZOff_ZPT0_350_VzReweightFits_pp.root
-
-    #./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
-    #    --IsPP true --IsGenZ true --IsData false \
-    #    --Input mergedSample/pythia-gen-v11-Zpt0.root  \
-    #    --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
-    #    --UseEventWeight false --UseZWeight false \
-    #    --UseTrackWeight true --UseResidualWeight false \
-    #    --yBoost 0 --nMix $nMix \
-    #    --UseVZWeight true --VZWeightFile $VZWeightFile
-
-    ./system-analysis.sh "pp_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData true --UseVZWeight false \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "pp_ZResidual${TAG}" \
-        --IsPP true --IsGenZ false --IsData true --UseVZWeight false \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight true \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260308_ZCorrection_V5_pp_zPt0-500.root
-
-    ./system-analysis.sh "pp_trkResidual${TAG}" \
-        --IsPP true --IsGenZ false --IsData true --UseVZWeight false \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight true \
-        --UseTrackWeight true --UseResidualWeight true \
-        --yBoost 0 --nMix $nMix \
-        --ZWeightFile my_ZWeights/20260308_ZCorrection_V5_pp_zPt0-500.root \
-        --ResidualWeightFile my_residualWeights/20260308_TrackResidualCorrection_V23_ZWeight_V5_pp_zPt   
+    exit 
 
 fi
 
 # pPb
 if [ "$DOPPB" == "1" ]; then
     nMix=0
-    TAG="_ZV6_trkV24_vz20260320_nmix0"
+    TAG="_dataMCComparison_ZV6_trkV24_nmix0"
 
     ./system-analysis.sh "pythiapPbEPOSMC_Gen_nominal${TAG}" \
         --IsPP true --IsGenZ true --IsData false \
@@ -125,7 +91,7 @@ if [ "$DOPPB" == "1" ]; then
         --yBoost 0 --nMix $nMix \
         --UseVZWeight true --VZWeightFile $VZWeightFile_PPb \
         --ZWeightFile $ZWeightFile_PPb \
-        --ResidualWeightFile $ResidualWeightFile_PPb
+        --ResidualWeightFile $RWeightFile_PPb
 
     ./system-analysis.sh "pPb_nominal${TAG}" \
         --IsPP false --IsGenZ false --IsData true --UseVZWeight false --IsPPb true \
@@ -143,7 +109,7 @@ if [ "$DOPPB" == "1" ]; then
         --UseTrackWeight true --UseResidualWeight true \
         --yBoost 0 --nMix $nMix \
         --ZWeightFile $ZWeightFile_PPb \
-        --ResidualWeightFile $ResidualWeightFile_PPb
+        --ResidualWeightFile $RWeightFile_PPb
 
     
 fi
@@ -151,7 +117,7 @@ fi
 # PbP
 if [ "$DOPBP" == "1" ]; then
     nMix=0
-    TAG="_ZV6_trkV24_vz20260320_nmix0"
+    TAG="_dataMCComparison_ZV6_trkV24_nmix0"
 
     
     ./system-analysis.sh "pythiaPbPEPOSMC_Gen_nominal${TAG}" \
@@ -202,7 +168,7 @@ if [ "$DOPBP" == "1" ]; then
         --yBoost 0 --nMix $nMix \
         --UseVZWeight true --VZWeightFile $VZWeightFile_PbP \
         --ZWeightFile $ZWeightFile_PbP \
-        --ResidualWeightFile $ResidualWeightFile_PbP
+        --ResidualWeightFile $RWeightFile_PbP
 
     ./system-analysis.sh "PbP_nominal${TAG}" \
         --IsPP false --IsGenZ false --IsData true --UseVZWeight false --IsPPb false \
@@ -220,6 +186,6 @@ if [ "$DOPBP" == "1" ]; then
         --UseTrackWeight true --UseResidualWeight true \
         --yBoost 0 --nMix $nMix \
         --ZWeightFile $ZWeightFile_PbP \
-        --ResidualWeightFile $ResidualWeightFile_PbP
+        --ResidualWeightFile $RWeightFile_PbP
 
 fi
