@@ -4,7 +4,7 @@ make ExecuteCentralCombinedPlot
 
 # input your Z and track selections here
 PP_TAG="ZV6_trkV24_EEV3_nmix10"
-PPB_TAG="ZV6_trkV24_vz20260320_nmix10"
+PPB_TAG="ZV6_trkV24_nmix10"
 
 run_one() {
     local ZPT=$1

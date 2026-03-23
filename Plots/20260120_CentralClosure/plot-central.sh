@@ -11,7 +11,7 @@ do
         echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
         for system in "${PLOT_SYSTEMS[@]}"
         do
-            ./ExecuteClosureTest --collisionType $system --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV6_trkV24_vz20260320_nmix10
+            ./ExecuteClosureTest --collisionType $system --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV6_trkV24_nmix10
         done
     
     done

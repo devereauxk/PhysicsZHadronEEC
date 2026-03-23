@@ -1358,7 +1358,7 @@ bool TrackTreeMessenger::PassZHadron2022CutTight(int index)
       return false;
 
    double RelativeUncertainty = trkPtError[index] / trkPt[index];
-   if(RelativeUncertainty > 0.15)
+   if(RelativeUncertainty > 0.05) // typo: this used to be 0.15
       return false;
 
    // if(trkDxyOverDxyError[index] > 3)

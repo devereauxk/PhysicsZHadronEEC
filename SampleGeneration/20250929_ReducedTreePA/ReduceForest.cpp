@@ -151,27 +151,53 @@ int main(int argc, char *argv[])
          ////////// Event selection //////////
          /////////////////////////////////////
 
-         if(IsData == true)
+         if(IsPP == true)
          {
-            int pprimaryVertexFilter = MSkim.PVFilter;
-            int beamScrapingFilter = MSkim.BeamScrapingFilter;
+            if(IsData == true)
+            {
+               int pprimaryVertexFilter = MSkim.PVFilter;
+               int beamScrapingFilter = MSkim.BeamScrapingFilter;
 
-            // Event selection criteria
-            //    see https://twiki.cern.ch/twiki/bin/viewauth/CMS/HIPhotonJe5TeVpp2017PbPb2018
-            if(pprimaryVertexFilter == 0 || beamScrapingFilter == 0)
-               continue;
+               // Event selection criteria
+               //    see https://twiki.cern.ch/twiki/bin/viewauth/CMS/HIPhotonJe5TeVpp2017PbPb2018
+               if(pprimaryVertexFilter == 0 || beamScrapingFilter == 0)
+                  continue;
 
-            //HLT trigger to select dimuon events, see Kaya's note: AN2019_143_v12, p.5
-            int HLT_HIL2Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL2Mu12");
-            int HLT_HIL3Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL3Mu12");
-            int HLT_HIL3Mu12_2023 = MTrigger.CheckTriggerStartWith("HLT_HIL3SingleMu12");
-            // if(HLT_HIL3Mu12_2018 == 0 && HLT_HIL2Mu12_2018 == 0 && HLT_HIL3Mu12_2023 == 0)
-            //    continue;
+               //HLT trigger to select dimuon events, see Kaya's note: AN2019_143_v12, p.5
+               int HLT_HIL2Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL2Mu12");
+               int HLT_HIL3Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL3Mu12");
+               int HLT_HIL3Mu12_2023 = MTrigger.CheckTriggerStartWith("HLT_HIL3SingleMu12");
+               if(HLT_HIL3Mu12_2018 == 0 && HLT_HIL2Mu12_2018 == 0 && HLT_HIL3Mu12_2023 == 0)
+                  continue;
 
-            MZHadron.NCollWeight = 1;
+               MZHadron.NCollWeight = 1;
+            }
+            else
+               MZHadron.NCollWeight = 1;
          }
          else
-            MZHadron.NCollWeight = 1;
+         {
+            if(IsData == true)
+            {
+               int pprimaryVertexFilter = MSkim.PVFilter;
+               int beamScrapingFilter = MSkim.BeamScrapingFilter;
+               int phfCoincFilter3 = MSkim.HFCoincidenceFilter;
+
+               // Event selection criteria
+               //    see https://twiki.cern.ch/twiki/bin/viewauth/CMS/HIPhotonJe5TeVpp2017PbPb2018
+               if(pprimaryVertexFilter == 0 || beamScrapingFilter == 0 || phfCoincFilter3 == 0)
+                  continue;
+
+               int HLT_PAL2Mu12 = MTrigger.CheckTriggerStartWith("HLT_PAL2Mu12");
+               int HLT_PAL3Mu12 = MTrigger.CheckTriggerStartWith("HLT_PAL3Mu12");
+               if(HLT_PAL2Mu12 == 0 && HLT_PAL3Mu12 == 0)
+                  continue;
+
+               MZHadron.NCollWeight = 1;
+            }
+            else
+               MZHadron.NCollWeight = 1;
+         }
 
          ///////////////////////////
          ////////// Muons //////////

@@ -15,7 +15,7 @@ DOPAMC=$2
 DOAPMC=$3
 
 if [[ "$DODATA" == "1" ]]; then
-   for i in `ls $PWD/Samples/PAData/*/*root | Reformat 25 | sed "s/ /,/g" | sed "s/,[,]*$//"`
+   for i in `ls $PWD/Samples/PAData/000*/HiForestAOD_*.root | sed "s/ /,/g" | sed "s/,[,]*$//"`
    do
       ./local_skim.sh PAData8TeV ${i} $OUTPUTDIR/PAData/Reco$(basename ${i}) Dummy
    done
