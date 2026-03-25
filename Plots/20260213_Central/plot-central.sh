@@ -1,7 +1,7 @@
 make ExecuteCentralPlot
 
 PPB_TAG="ZV6_trkV24_nmix10"
-PP_TAG="ZV6_trkV24_EEV3_nmix10"
+PP_TAG="EEV3_ZV6_trkV24_nmix10"
 
 run_one() {
     local ZPT=$1

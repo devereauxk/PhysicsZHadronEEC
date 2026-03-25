@@ -2,13 +2,9 @@ DOPP=$1
 DOPPB=$2
 DOPBP=$3
 
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
 nMix=10
-VZWeightFile_PPb="${VZ_WEIGHT_FILE_PPB:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pPb.root}"
-VZWeightFile_PbP="${VZ_WEIGHT_FILE_PBP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_PbP.root}"
-ZWeightFile_PPb="${Z_WEIGHT_FILE_PPB:-my_ZWeights/20260321_ZCorrection_V6_PPb_zPt0-500.root}"
-ZWeightFile_PbP="${Z_WEIGHT_FILE_PBP:-my_ZWeights/20260321_ZCorrection_V6_PbP_zPt0-500.root}"
-RWeightFile_PPb="${R_WEIGHT_FILE_PPB:-my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_PPb_zPt}"
-RWeightFile_PbP="${R_WEIGHT_FILE_PBP:-my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_PbP_zPt}"
 
 write_config() {
     local zpt_list="$1"
@@ -54,8 +50,8 @@ export NSLICE_FACTOR=${NSLICE_FACTOR:-1}
 write_config '"5_30" "30_500"' '"0.5_4" "4_500"'
 
 if [ "$DOPP" == "1" ]; then
-    TAG="_noEvtWeight_ZV6_trkV24_nmix10"
-    ./system-analysis.sh "pp_trkResidual${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight false         --Input mergedSample/pp-v11-Zpt0.root         --MixFile mergedSample/pp-v11-Zpt0.root         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile my_ZWeights/20260321_ZCorrection_V6_pp_zPt0-500.root         --ResidualWeightFile my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_pp_zPt
+    TAG="_EEV3_ZV6_trkV24_nmix10"
+    ./system-analysis.sh "pp_trkResidual${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight false         --Input mergedSample/pp-v11-Zpt0.root         --MixFile mergedSample/pp-v11-Zpt0.root         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"
 fi
 
 if [ "$DOPPB" == "1" ]; then

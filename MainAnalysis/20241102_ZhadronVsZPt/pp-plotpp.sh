@@ -6,10 +6,12 @@
 
 set -euo pipefail
 
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
 nMix=10
-VZ_FILE="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pp.root"
-Z_FILE="my_ZWeights/20260321_ZCorrection_V6_pp_zPt0-500.root"
-R_FILE="my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_pp_zPt"
+VZ_FILE="${VZWeightFile_PP}"
+Z_FILE="${ZWeightFile_PP}"
+R_FILE="${RWeightFile_PP}"
 TEMP_CONFIGS=()
 cleanup_configs() {
     rm -f "${TEMP_CONFIGS[@]}"

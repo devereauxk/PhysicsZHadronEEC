@@ -2,8 +2,10 @@ minZpt=$1
 maxZpt=$2
 name=$3
 
-ZWeightFile_pp="my_ZWeights/20260321_ZCorrection_V6_pp_zPt0-500.root"
-VZWeightFile=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pp.root
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
+ZWeightFile_pp="${ZWeightFile_PP}"
+VZWeightFile="${VZWeightFile_PP}"
 
 # pp
 ./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input mergedSample/pythia-v11-Zpt0.root     --IsGen false --IsPP true --IsGenZ false --ZWeightFile $ZWeightFile_pp --UseVZWeight true --VZWeightFile $VZWeightFile

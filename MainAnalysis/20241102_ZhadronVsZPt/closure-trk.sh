@@ -3,6 +3,8 @@ DOPP=$1
 DOPPB=$2
 DOPBP=$3
 
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
 cat > config.sh <<EOF
 ZPT_RANGES=("0_10" "10_20" "20_40" "40_500")
 PT_RANGES=("0.5_500")
@@ -18,18 +20,6 @@ export SKIP_CLEAN=1
 export CUT_PARALLELISM=${CUT_PARALLELISM:-1}
 export NTHREAD=${NTHREAD:-20}
 export NSLICE_FACTOR=${NSLICE_FACTOR:-1}
-
-VZWeightFile_PP="${VZ_WEIGHT_FILE_PP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pp.root}"
-VZWeightFile_PPb="${VZ_WEIGHT_FILE_PPB:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pPb.root}"
-VZWeightFile_PbP="${VZ_WEIGHT_FILE_PBP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_PbP.root}"
-
-ZWeightFile_PP="${Z_WEIGHT_FILE_PP:-my_ZWeights/20260321_ZCorrection_V6_pp_zPt0-500.root}"
-ZWeightFile_PPb="${Z_WEIGHT_FILE_PPB:-my_ZWeights/20260321_ZCorrection_V6_PPb_zPt0-500.root}"
-ZWeightFile_PbP="${Z_WEIGHT_FILE_PBP:-my_ZWeights/20260321_ZCorrection_V6_PbP_zPt0-500.root}"
-
-RWeightFile_PP="${R_WEIGHT_FILE_PP:-my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_pp_zPt}"
-RWeightFile_PPb="${R_WEIGHT_FILE_PPB:-my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_PPb_zPt}"
-RWeightFile_PbP="${R_WEIGHT_FILE_PBP:-my_residualWeights/20260321_ZV6_trkV24_TrackResidualCorrection_PbP_zPt}"
 
 # pp
 if [ "$DOPP" == "1" ]; then

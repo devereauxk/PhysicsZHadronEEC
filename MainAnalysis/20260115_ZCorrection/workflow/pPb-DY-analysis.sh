@@ -3,11 +3,10 @@ minZpt="${1:-0}"
 maxZpt="${2:-500}"
 name="${3:-${NAME_TAG:-20260321_ZCorrection_V6}}"
 
-VZWeightFile_PPb="${VZ_WEIGHT_FILE_PPB:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_pPb.root}"
-VZWeightFile_PbP="${VZ_WEIGHT_FILE_PBP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260321_ZPT0_500_VzReweightFits_PbP.root}"
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 
-ZWeightFile_pPb="${Z_WEIGHT_FILE_PPB:-}"
-ZWeightFile_PbP="${Z_WEIGHT_FILE_PBP:-}"
+ZWeightFile_pPb="${ZWeightFile_PPb:-}"
+ZWeightFile_PbP="${ZWeightFile_PbP:-}"
 
 echo "[pPb-DY-analysis] minZpt=${minZpt} maxZpt=${maxZpt} name=${name}"
 echo "[pPb-DY-analysis] VZWeightFile_PPb=${VZWeightFile_PPb}"

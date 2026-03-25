@@ -3,11 +3,10 @@ DOPP=$1
 DOPPB=$2
 DOPBP=$3
 
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
 nMixPP=0
 nMixPA=0
-VZWeightFile_PP="${VZ_WEIGHT_FILE_PP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260320_skimVZOff_ZPT0_350_VzReweightFits_pp.root}"
-VZWeightFile_PPb="${VZ_WEIGHT_FILE_PPB:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260320_pPbPbpRelabelFix_skimVZOff_ZPT0_500_VzReweightFits_pPb.root}"
-VZWeightFile_PbP="${VZ_WEIGHT_FILE_PBP:-/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260320_pPbPbpRelabelFix_skimVZOff_ZPT0_500_VzReweightFits_PbP.root}"
 
 write_config() {
     local zpt_list="$1"

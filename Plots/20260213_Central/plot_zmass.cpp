@@ -53,11 +53,14 @@ int main(int argc, char *argv[]) {
     string mcTagName = tag;
     if(collisionType == "pp")
     {
-        const string oldFragment = "_EEV3_";
-        const string newFragment = "_vz20260320_";
-        size_t position = mcTagName.find(oldFragment);
+        const string interiorFragment = "_EEV3_";
+        const string prefixFragment = "EEV3_";
+        const string replacementFragment = "vz20260320_";
+        size_t position = mcTagName.find(interiorFragment);
         if(position != string::npos)
-            mcTagName.replace(position, oldFragment.size(), newFragment);
+            mcTagName.replace(position, interiorFragment.size(), "_" + replacementFragment);
+        else if(mcTagName.rfind(prefixFragment, 0) == 0)
+            mcTagName.replace(0, prefixFragment.size(), replacementFragment);
     }
 
     vector<string> dataCandidates = {

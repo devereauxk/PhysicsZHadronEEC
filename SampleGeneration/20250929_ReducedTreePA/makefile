@@ -17,9 +17,38 @@ TestRun: Execute
 		--TrackEfficiencyPath ../Corrections/Tracking/Hijing_8TeV_dataBS.root --DoGenLevel true \
 		--DoTrackResidual false
 
+TestRunTest: ExecuteTest
+	./ExecuteTest --Input Samples/PAMC/HiForestAOD_1.root --Output SkimRecoTest.root --MinZPT 20 --Fraction 0.05 \
+		--TrackEfficiencyPath ../Corrections/Tracking/Hijing_8TeV_dataBS.root \
+		--TrackEfficiencyPathLoose ../Corrections/Tracking/Hijing_8TeV_MB_eff_v3_loose.root \
+		--TrackEfficiencyPathTight ../Corrections/Tracking/Hijing_8TeV_MB_eff_v3_tight.root \
+		--DoGenLevel false --DoTrackResidual false --WriteAllTrackSelectionTrees true
+	./ExecuteTest --Input Samples/PAMC/HiForestAOD_1.root --Output SkimGenTest.root --MinZPT 20 --Fraction 0.05 \
+		--TrackEfficiencyPath ../Corrections/Tracking/Hijing_8TeV_dataBS.root --DoGenLevel true \
+		--DoTrackResidual false
+
+RunValidation: AuditMultitree ExecuteTest
+	./run_multitree_validation.sh
+
+RunHLTEfficiency: PlotHLTEfficiency ExecuteTest
+	./run_hlt_efficiency_study.sh
+
 Execute: ReduceForest.cpp
 	g++ ReduceForest.cpp -o Execute -I./include \
 		`root-config --cflags --glibs` \
 		-I$(ProjectBase)/CommonCode/include $(ProjectBase)/CommonCode/library/Messenger.o
 
+ExecuteTest: ReduceForest_test.cpp
+	g++ ReduceForest_test.cpp -o ExecuteTest -I./include \
+		`root-config --cflags --glibs` \
+		-I$(ProjectBase)/CommonCode/include $(ProjectBase)/CommonCode/library/Messenger.o
 
+AuditMultitree: AuditMultitree.cpp
+	g++ AuditMultitree.cpp -o AuditMultitree -I./include \
+		`root-config --cflags --glibs` \
+		-I$(ProjectBase)/CommonCode/include $(ProjectBase)/CommonCode/library/Messenger.o
+
+PlotHLTEfficiency: PlotHLTEfficiency.cpp
+	g++ PlotHLTEfficiency.cpp -o PlotHLTEfficiency -I./include \
+		`root-config --cflags --glibs` \
+		-I$(ProjectBase)/CommonCode/include $(ProjectBase)/CommonCode/library/Messenger.o

@@ -9,11 +9,11 @@ do
     do
         echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
 
-        ./ExecuteEnergyExtrapolationPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pptag ZV6_trkV24_EEV3_nmix10
+        ./ExecuteEnergyExtrapolationPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pptag EEV3_ZV6_trkV24_nmix10
 
     done
 done
 
-./ExecuteEnergyExtrapolationPlot --zPtRange 5_500 --trkPtRange 0.5_500 --pptag ZV6_trkV24_EEV3_nmix10
+./ExecuteEnergyExtrapolationPlot --zPtRange 5_500 --trkPtRange 0.5_500 --pptag EEV3_ZV6_trkV24_nmix10
 
 exit
