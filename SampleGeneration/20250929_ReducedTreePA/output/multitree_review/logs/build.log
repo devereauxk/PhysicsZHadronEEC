@@ -1,4 +1,0 @@
-make: 'Execute' is up to date.
-g++ ReduceForest_test.cpp -o ExecuteTest -I./include \
-	`root-config --cflags --glibs` \
-	-I/home/kdeverea/PhysicsZHadronEEC/CommonCode/include /home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
