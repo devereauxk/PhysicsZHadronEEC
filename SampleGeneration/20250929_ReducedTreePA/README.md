@@ -2,7 +2,7 @@
 
 ## Scope
 
-- `ReduceForest_test.cpp` now hard-wires `Tree` to nominal track selection when `WriteAllTrackSelectionTrees=false`; there is no user-facing `TrackSelectionMode` flag in the test skimmer path.
+- `ReduceForest.cpp` now hard-wires `Tree` to nominal track selection when `WriteAllTrackSelectionTrees=false`; there is no user-facing `TrackSelectionMode` flag in the shipped skimmer path.
 - Checked-in validation and benchmarking tools now live in `SampleGeneration/20250929_ReducedTreePA/` via `AuditMultitree.cpp` and `run_multitree_validation.sh`.
 - The review below uses the checked-in runners and audit executable.
 
@@ -30,7 +30,7 @@
 
 ## Benchmark setup
 
-- Runner: `SampleGeneration/20250929_ReducedTreePA/run_local_skim_test.sh`
+- Runner: `SampleGeneration/20250929_ReducedTreePA/run_local_skim.sh`
 - Mode: `WRITE_ALL_TRACK_SELECTION_TREES=true`
 - Dataset: first 20 lexicographically matched files from `Samples/PAData/0000/HiForestAOD_*.root`
 - Files used:
@@ -76,13 +76,13 @@
 
 ## Trigger-efficiency workflow
 
-- Added skim-time histogram production in `ReduceForest_test.cpp`:
+- Added skim-time histogram production in `ReduceForest.cpp`:
   - `HltTree/TriggerTurnOn/HLTEffNumerator`
   - `HltTree/TriggerTurnOn/HLTEffDenominator`
-- Added checked-in plotter: `SampleGeneration/20250929_ReducedTreePA/PlotHLTEfficiency.cpp`
-- Added checked-in workflow runner: `SampleGeneration/20250929_ReducedTreePA/run_hlt_efficiency_study.sh`
+- Added checked-in plotter: `Plots/20260326_HLTCurves/PlotHLTEfficiency.cpp`
+- Added checked-in workflow runner: `Plots/20260326_HLTCurves/run_hlt_efficiency_study.sh`
 - Verified local workflow:
-  - processed `~20` PAData files with `run_local_skim_test.sh`
+  - processed `~20` PAData files with `run_local_skim.sh`
   - merged all skim outputs into a single ROOT file: `output/hlt_efficiency_study/merged_all.root`
   - also kept orientation-specific merged files: `merged_AP.root`, `merged_PA.root`
   - produced plots:
@@ -105,6 +105,6 @@
 ## Notes
 
 - `hiBinUp` remains unstable in the original skim and is intentionally only reported.
-- Empty PA/AP splits occur when a file lies outside that run window; parity checks still pass when both original and test outputs are empty.
+- Empty PA/AP splits occur when a file lies outside that run window; parity checks still pass when both direct and batch outputs are empty.
 - Detailed multitree-validation logs are under `/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20250929_ReducedTreePA/output/multitree_review/logs`.
 - HLT workflow outputs are under `/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20250929_ReducedTreePA/output/hlt_efficiency_study`.

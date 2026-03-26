@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 echo Yay
 
 echo Running job with argument = "$@"
@@ -24,7 +26,10 @@ if [[ "$Type" == "PAMC8TeV" ]];
 then
    ./Execute --Input "${InputFile}" \
       --Output "${RecoOutputFile}" \
+      --WriteAllTrackSelectionTrees true \
       --TrackEfficiencyPath $TrackingCorrectionFile \
+      --TrackEfficiencyPathLoose $TrackingCorrectionFileLoose \
+      --TrackEfficiencyPathTight $TrackingCorrectionFileTight \
       --DoGenLevel false \
       --IsData false \
       --IsPP false \
@@ -36,7 +41,6 @@ then
 
    ./Execute --Input "${InputFile}" \
       --Output "${GenOutputFile}" \
-      --TrackEfficiencyPath $TrackingCorrectionFile \
       --DoGenLevel true \
       --IsData false \
       --IsPP false \
@@ -51,7 +55,10 @@ then
    # PPb
    ./Execute --Input "${InputFile}" \
       --Output "${RecoOutputFile/.root}_PA.root" \
+      --WriteAllTrackSelectionTrees true \
       --TrackEfficiencyPath $TrackingCorrectionFile \
+      --TrackEfficiencyPathLoose $TrackingCorrectionFileLoose \
+      --TrackEfficiencyPathTight $TrackingCorrectionFileTight \
       --DoGenLevel false \
       --IsData true \
       --JSONPath $GoldenJSONPPb \
@@ -66,7 +73,10 @@ then
    # PbP
    ./Execute --Input "${InputFile}" \
       --Output "${RecoOutputFile/.root}_AP.root" \
+      --WriteAllTrackSelectionTrees true \
       --TrackEfficiencyPath $TrackingCorrectionFile \
+      --TrackEfficiencyPathLoose $TrackingCorrectionFileLoose \
+      --TrackEfficiencyPathTight $TrackingCorrectionFileTight \
       --DoGenLevel false \
       --IsData true \
       --JSONPath $GoldenJSONPbP \

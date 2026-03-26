@@ -6,7 +6,7 @@ cd /home/kdeverea/PhysicsZHadronEEC
 source SetupAnalysis.sh
 cd /home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20250929_ReducedTreePA
 
-make Execute ExecuteTest AuditMultitree
+make Execute AuditMultitree
 
 REPORT=${REPORT:-/home/kdeverea/PhysicsZHadronEEC/.github/pa_skimmer_multitree_validation_review.md}
 REVIEW_ROOT=${REVIEW_ROOT:-$PWD/output/multitree_review}
@@ -35,10 +35,10 @@ do
    mkdir -p "$SAMPLE_ROOT/original" "$SAMPLE_ROOT/test_true" "$SAMPLE_ROOT/test_false"
 
    INPUT_FILE="$INPUT" OUTPUTDIR="$SAMPLE_ROOT/test_true" WRITE_ALL_TRACK_SELECTION_TREES=true NTHREAD=1 MAX_FILES=1 \
-      ./run_local_skim_test.sh "$DODATA" "$DOPAMC" "$DOAPMC" > "$LOGROOT/${NAME}_test_true.log" 2>&1
+      ./run_local_skim.sh "$DODATA" "$DOPAMC" "$DOAPMC" > "$LOGROOT/${NAME}_test_true.log" 2>&1
 
    INPUT_FILE="$INPUT" OUTPUTDIR="$SAMPLE_ROOT/test_false" WRITE_ALL_TRACK_SELECTION_TREES=false NTHREAD=1 MAX_FILES=1 \
-      ./run_local_skim_test.sh "$DODATA" "$DOPAMC" "$DOAPMC" > "$LOGROOT/${NAME}_test_false.log" 2>&1
+      ./run_local_skim.sh "$DODATA" "$DOPAMC" "$DOAPMC" > "$LOGROOT/${NAME}_test_false.log" 2>&1
 
    if [[ "$KIND" == "data" ]]; then
       ./local_skim.sh "$ORIGINAL_TYPE" "$INPUT" "$SAMPLE_ROOT/original/${BASENAME}.root" Dummy > "$LOGROOT/${NAME}_original.log" 2>&1
@@ -79,7 +79,7 @@ do
    rm -rf "$OUTDIR"
    START=$(date +%s.%N)
    OUTPUTDIR="$OUTDIR" INPUT_FILE="" WRITE_ALL_TRACK_SELECTION_TREES=true NTHREAD="$N" MAX_FILES="$BENCHMARK_MAX_FILES" \
-      ./run_local_skim_test.sh 1 0 0 > "$LOGROOT/benchmark_NTHREAD_${N}.log" 2>&1
+      ./run_local_skim.sh 1 0 0 > "$LOGROOT/benchmark_NTHREAD_${N}.log" 2>&1
    END=$(date +%s.%N)
    ELAPSED=$(python3 - <<PY
 start = float("$START")
@@ -130,7 +130,7 @@ lines.append('# PA skimmer multitree validation review')
 lines.append('')
 lines.append('## Scope')
 lines.append('')
-lines.append('- `ReduceForest_test.cpp` now hard-wires `Tree` to nominal track selection when `WriteAllTrackSelectionTrees=false`; there is no user-facing `TrackSelectionMode` flag in the test skimmer path.')
+lines.append('- `ReduceForest.cpp` can write `Tree`, `TreeLoose`, and `TreeTight` when `WriteAllTrackSelectionTrees=true`; otherwise it keeps the single-tree path.')
 lines.append('- Checked-in validation and benchmarking tools now live in `SampleGeneration/20250929_ReducedTreePA/` via `AuditMultitree.cpp` and `run_multitree_validation.sh`.')
 lines.append('- The review below uses the checked-in runners and audit executable.')
 lines.append('')
@@ -161,7 +161,7 @@ for sample, output, true_key, false_key in mapping:
 lines.append('')
 lines.append('## Benchmark setup')
 lines.append('')
-lines.append('- Runner: `SampleGeneration/20250929_ReducedTreePA/run_local_skim_test.sh`')
+lines.append('- Runner: `SampleGeneration/20250929_ReducedTreePA/run_local_skim.sh`')
 lines.append('- Mode: `WRITE_ALL_TRACK_SELECTION_TREES=true`')
 lines.append('- Dataset: first 20 lexicographically matched files from `Samples/PAData/0000/HiForestAOD_*.root`')
 lines.append('- Files used:')

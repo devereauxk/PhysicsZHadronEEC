@@ -79,8 +79,8 @@
 - Added skim-time histogram production in `ReduceForest_test.cpp`:
   - `HltTree/TriggerTurnOn/HLTEffNumerator`
   - `HltTree/TriggerTurnOn/HLTEffDenominator`
-- Added checked-in plotter: `SampleGeneration/20250929_ReducedTreePA/PlotHLTEfficiency.cpp`
-- Added checked-in workflow runner: `SampleGeneration/20250929_ReducedTreePA/run_hlt_efficiency_study.sh`
+- Added checked-in plotter: `Plots/20260326_HLTCurves/PlotHLTEfficiency.cpp`
+- Added checked-in workflow runner: `Plots/20260326_HLTCurves/run_hlt_efficiency_study.sh`
 - Verified local workflow:
   - processed `~20` PAData files with `run_local_skim_test.sh`
   - merged all skim outputs into a single ROOT file: `output/hlt_efficiency_study/merged_all.root`

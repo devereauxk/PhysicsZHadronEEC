@@ -2,13 +2,16 @@
 using namespace std;
 
 #include "TFile.h"
+#include "TH1D.h"
 #include "TTree.h"
+#include "TDirectory.h"
 #include "TLorentzVector.h"
 
 #include "CommonFunctions.h"
 #include "CommandLine.h"
 #include "ProgressBar.h"
 #include "Messenger.h"
+#include "tnp_weight.h"
 
 #include "TrackEfficiencyCorrector.h"
 #include "JSON_handler.h"
@@ -29,8 +32,6 @@ int main(int argc, char *argv[])
    bool DoGenLevel                    = CL.GetBool("DoGenLevel", true);
    bool IsPP                          = CL.GetBool("IsPP", false);
    bool IsData                        = CL.GetBool("IsData", false);
-   int RunStart                       = IsData ? CL.GetInt("RunStart", -1) : -1;
-   int RunEnd                         = IsData ? CL.GetInt("RunEnd", 999999) : 999999;
    bool Is8TeV                        = CL.GetBool("Is8TeV", false);
    bool IsBackground                  = CL.GetBool("IsBackground", false);
    double Fraction                    = CL.GetDouble("Fraction", 1.00);
@@ -40,36 +41,52 @@ int main(int argc, char *argv[])
    double MuonVeto                    = CL.GetDouble("MuonVeto", 0.01);
    bool CheckZ                        = CL.GetBool("CheckZ", true);
    string TrackEfficiencyPath         = (DoGenLevel == false) ? CL.Get("TrackEfficiencyPath") : "";
-   string TrackSelectionMode          = CL.Get("TrackSelectionMode", "Nominal");
+   string TrackEfficiencyPathLoose    = (DoGenLevel == false) ? CL.Get("TrackEfficiencyPathLoose", TrackEfficiencyPath) : "";
+   string TrackEfficiencyPathTight    = (DoGenLevel == false) ? CL.Get("TrackEfficiencyPathTight", TrackEfficiencyPath) : "";
+   bool WriteAllTrackSelectionTrees   = CL.GetBool("WriteAllTrackSelectionTrees", false);
    bool IgnoreEventWeight             = CL.GetBool("IgnoreEventWeight", false);
    string JSONPath                    = IsData ? CL.Get("JSONPath", "") : "";
    string PFTreeName                  = CL.Get("PFTree", "pfcandAnalyzer/pfTree");
 
-   if (TrackSelectionMode != "Nominal" && TrackSelectionMode != "Loose" && TrackSelectionMode != "Tight")
-   {
-      cerr << "Error: invalid TrackSelectionMode '" << TrackSelectionMode << "'. Use 'Nominal', 'Loose', or 'Tight'." << endl;
-      return 1;
-   }
-   if (RunStart != -1 || RunEnd != 999999)
-   {
-      cerr << "Warning: manual run number selections not supported. Using all events unless JSON supplied." << endl;
-   }
+   if(DoGenLevel == true && WriteAllTrackSelectionTrees == true)
+      cout << "Warning: WriteAllTrackSelectionTrees requested for gen-level skimming. Only Tree will be written." << endl;
 
    JSON_handler *JSONHandler = nullptr;
    if(JSONPath != "")
       JSONHandler = new JSON_handler(JSONPath);
 
    TrackEfficiencyCorrector *TrackEfficiency = nullptr;
+   TrackEfficiencyCorrector *TrackEfficiencyLoose = nullptr;
+   TrackEfficiencyCorrector *TrackEfficiencyTight = nullptr;
    if(DoGenLevel == false)
+   {
       TrackEfficiency = new TrackEfficiencyCorrector(TrackEfficiencyPath);
+      TrackEfficiencyLoose = new TrackEfficiencyCorrector(TrackEfficiencyPathLoose);
+      TrackEfficiencyTight = new TrackEfficiencyCorrector(TrackEfficiencyPathTight);
+   }
    // TrackResidualCentralityCorrector TrackResidual(TrackResidualPath);
 
    TFile OutputFile(OutputFileName.c_str(), "RECREATE");
    TTree Tree("Tree", Form("Tree for ZHadron PA analysis (%s)", VersionString.c_str()));
+   TTree TreeLoose("TreeLoose", Form("Loose track-selection tree for ZHadron PA analysis (%s)", VersionString.c_str()));
+   TTree TreeTight("TreeTight", Form("Tight track-selection tree for ZHadron PA analysis (%s)", VersionString.c_str()));
    TTree InfoTree("InfoTree", "Information");
+   TH1D HLTEffNumerator("HLTEffNumerator", ";Reco Z p_{T};Events", 30, 0, 120);
+   TH1D HLTEffDenominator("HLTEffDenominator", ";Reco Z p_{T};Events", 30, 0, 120);
+   HLTEffNumerator.Sumw2();
+   HLTEffDenominator.Sumw2();
 
    ZHadronMessenger MZHadron;
+   ZHadronMessenger MZHadronLoose;
+   ZHadronMessenger MZHadronTight;
    MZHadron.SetBranch(&Tree);
+   if(DoGenLevel == false && WriteAllTrackSelectionTrees == true)
+   {
+      MZHadronLoose.SetBranch(&TreeLoose);
+      MZHadronTight.SetBranch(&TreeTight);
+   }
+
+   cout << "WriteAllTrackSelectionTrees = " << (WriteAllTrackSelectionTrees ? "true" : "false") << endl;
 
    for(string InputFileName : InputFileNames)
    {
@@ -86,8 +103,6 @@ int main(int argc, char *argv[])
       int EntryCount = MEvent.GetEntries() * Fraction;
       ProgressBar Bar(cout, EntryCount);
       Bar.SetStyle(-1);
-
-      cout<<"Processing " << InputFileName << " with " << EntryCount << " entries (out of " << MEvent.GetEntries() << ")" << endl;
       
       /////////////////////////////////
       //////// Main Event Loop ////////
@@ -95,6 +110,8 @@ int main(int argc, char *argv[])
 
       for(int iE = 0; iE < EntryCount; iE++)
       {
+         bool PassHLTSelection = true;
+
          if(EntryCount < 300 || (iE % (EntryCount / 250)) == 0)
          {
             Bar.Update(iE);
@@ -109,11 +126,12 @@ int main(int argc, char *argv[])
          MSkim.GetEntry(iE);
          MTrigger.GetEntry(iE);
 
-         // Specific run ranges
-         //if(RunStart > int(MEvent.Run))   continue;
-         //if(RunEnd < int(MEvent.Run))     continue;
-
          MZHadron.Clear();
+         if(DoGenLevel == false && WriteAllTrackSelectionTrees == true)
+         {
+            MZHadronLoose.Clear();
+            MZHadronTight.Clear();
+         }
 
          ////////////////////////////////////////
          ////////// Global event stuff //////////
@@ -168,7 +186,7 @@ int main(int argc, char *argv[])
 
          if(IsPP == true)
          {
-            if(IsData == true)
+            if(DoGenLevel == false)
             {
                // JSON selection
                if (JSONHandler != nullptr && !(JSONHandler->isGood(MEvent.Run, MEvent.Lumi)))
@@ -187,8 +205,7 @@ int main(int argc, char *argv[])
                int HLT_HIL2Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL2Mu12");
                int HLT_HIL3Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL3Mu12");
                int HLT_HIL3Mu12_2023 = MTrigger.CheckTriggerStartWith("HLT_HIL3SingleMu12");
-               if(HLT_HIL3Mu12_2018 == 0 && HLT_HIL2Mu12_2018 == 0 && HLT_HIL3Mu12_2023 == 0)
-                  continue;
+               PassHLTSelection = (HLT_HIL3Mu12_2018 != 0 || HLT_HIL2Mu12_2018 != 0 || HLT_HIL3Mu12_2023 != 0);
 
                MZHadron.NCollWeight = 1;
             }
@@ -197,7 +214,7 @@ int main(int argc, char *argv[])
          }
          else
          {
-            if(IsData == true)
+            if(DoGenLevel == false)
             {
                // JSON selection
                if (JSONHandler != nullptr && !(JSONHandler->isGood(MEvent.Run, MEvent.Lumi)))
@@ -215,8 +232,7 @@ int main(int argc, char *argv[])
 
                int HLT_PAL2Mu12 = MTrigger.CheckTriggerStartWith("HLT_PAL2Mu12");
                int HLT_PAL3Mu12 = MTrigger.CheckTriggerStartWith("HLT_PAL3Mu12");
-               if(HLT_PAL2Mu12 == 0 && HLT_PAL3Mu12 == 0)
-                  continue;
+               PassHLTSelection = (HLT_PAL2Mu12 != 0 || HLT_PAL3Mu12 != 0);
 
                MZHadron.NCollWeight = 1;
             }
@@ -347,6 +363,15 @@ int main(int argc, char *argv[])
          
          bool GoodGenZ = MZHadron.genZPt->size() > 0 && (MZHadron.genZPt->at(0) > MinZPT);
          bool GoodRecoZ = MZHadron.zPt->size() > 0 && (MZHadron.zPt->at(0) > MinZPT);
+
+         if(DoGenLevel == false && GoodRecoZ == true)
+         {
+            HLTEffDenominator.Fill(MZHadron.zPt->at(0));
+            if(PassHLTSelection == true)
+               HLTEffNumerator.Fill(MZHadron.zPt->at(0));
+         }
+         if(DoGenLevel == false && PassHLTSelection == false) continue;
+         
          if(CheckZ == true)
          {
             // Yen-Jie: Propose to save the charged hadron information
@@ -358,7 +383,16 @@ int main(int argc, char *argv[])
             }
             if(DoGenLevel == false && GoodRecoZ == false)
             {
-               MZHadron.FillEntry();
+               if(WriteAllTrackSelectionTrees == true)
+               {
+                  MZHadronLoose.CopyNonTrack(MZHadron);
+                  MZHadronTight.CopyNonTrack(MZHadron);
+                  MZHadron.FillEntry();
+                  MZHadronLoose.FillEntry();
+                  MZHadronTight.FillEntry();
+               }
+               else
+                  MZHadron.FillEntry();
                continue;
             }
          }
@@ -384,40 +418,50 @@ int main(int argc, char *argv[])
 
                double Mu1Eta = MZHadron.muEta1->at(0);
                double Mu1PT = MZHadron.muPt1->at(0);
-               double Mu2Eta = MZHadron.muEta1->at(0);
-               double Mu2PT = MZHadron.muPt1->at(0);
+               double Mu2Eta = MZHadron.muEta2->at(0);
+               double Mu2PT = MZHadron.muPt2->at(0);
 
-               /*
-               MZHadron.ExtraZWeight[0] =
-                  tnp_weight_TightID_pp(Mu1Eta, 1)
-                  / tnp_weight_TightID_pp(Mu1Eta, 0)
-                  * tnp_weight_TightID_pp(Mu2Eta, 1)
-                  / tnp_weight_TightID_pp(Mu2Eta, 0);
-               MZHadron.ExtraZWeight[1] =
-                  tnp_weight_TightID_pp(Mu1Eta, -1)
-                  / tnp_weight_TightID_pp(Mu1Eta, 0)
-                  * tnp_weight_TightID_pp(Mu2Eta, -1)
-                  / tnp_weight_TightID_pp(Mu2Eta, 0);
-               // MZHadron.ExtraZWeight[2] =
-               //    tnp_weight_L3Mu12_pp(Mu1Eta, 1)
-               //    / tnp_weight_L3Mu12_pp(Mu1Eta, 0)
-               //    * tnp_weight_L3Mu12_pp(Mu2Eta, 1)
-               //    / tnp_weight_L3Mu12_pp(Mu2Eta, 0);
-               // MZHadron.ExtraZWeight[3] =
-               //    tnp_weight_L3Mu12_pp(Mu1Eta, -1)
-               //    / tnp_weight_L3Mu12_pp(Mu1Eta, 0)
-               //    * tnp_weight_L3Mu12_pp(Mu2Eta, -1)
-               //    / tnp_weight_L3Mu12_pp(Mu2Eta, 0);
-               MZHadron.ExtraZWeight[2] =
-                  tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 1)
-                  / tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0);
-               MZHadron.ExtraZWeight[3] =
-                  tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, -1)
-                  / tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0);
-
-               for(int i = 4; i < 12; i++)
+               for(int i = 0; i < 12; i++)
                   MZHadron.ExtraZWeight[i] = 1;
-               */
+
+               if(IsPP == true)
+               {
+                  MZHadron.ExtraZWeight[0] =
+                     tnp_weight_TightID_pp(Mu1Eta, 1)
+                     / tnp_weight_TightID_pp(Mu1Eta, 0)
+                     * tnp_weight_TightID_pp(Mu2Eta, 1)
+                     / tnp_weight_TightID_pp(Mu2Eta, 0);
+                  MZHadron.ExtraZWeight[1] =
+                     tnp_weight_TightID_pp(Mu1Eta, -1)
+                     / tnp_weight_TightID_pp(Mu1Eta, 0)
+                     * tnp_weight_TightID_pp(Mu2Eta, -1)
+                     / tnp_weight_TightID_pp(Mu2Eta, 0);
+                  MZHadron.ExtraZWeight[2] =
+                     tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 1)
+                     / tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0);
+                  MZHadron.ExtraZWeight[3] =
+                     tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, -1)
+                     / tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0);
+               }
+               else if(Is8TeV == true)
+               {
+                  MZHadron.ExtraZWeight[0] =
+                     tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 1)
+                     / tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 0)
+                     * tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 1)
+                     / tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 0);
+                  MZHadron.ExtraZWeight[1] =
+                     tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, -1)
+                     / tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 0)
+                     * tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, -1)
+                     / tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 0);
+                  MZHadron.ExtraZWeight[2] =
+                     tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 1)
+                     / tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 0);
+                  MZHadron.ExtraZWeight[3] =
+                     tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, -1)
+                     / tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 0);
+               }
             }
          }
 
@@ -425,88 +469,104 @@ int main(int argc, char *argv[])
          ////////// Tracks //////////
          ////////////////////////////
             
-         int NTrack = DoGenLevel ? MGen.Mult : MTrack.nTrk;
-         for(int iT = 0; iT < NTrack; iT++)
+         ZHadronMessenger *CurrentMessenger[3] = {&MZHadron, &MZHadronLoose, &MZHadronTight};
+         TrackEfficiencyCorrector *CurrentTrackEfficiency[3] = {TrackEfficiency, TrackEfficiencyLoose, TrackEfficiencyTight};
+         string CurrentTrackSelectionMode[3] = {"Nominal", "Loose", "Tight"};
+         int ModeCount = 1;
+
+         if(DoGenLevel == false && WriteAllTrackSelectionTrees == true)
          {
-            if(DoGenLevel == true)
-            {
-               if(MGen.DaughterCount->at(iT) > 0)
-                  continue;
-               if(MGen.Charge->at(iT) == 0)
-                  continue;
-            }
-            if(DoGenLevel == false)
-            {
-               if(TrackSelectionMode == "Loose" && MTrack.PassZHadron2022CutLoose(iT) == false)
-                  continue;
-               if(TrackSelectionMode == "Nominal" && MTrack.PassZHadron2022Cut(iT) == false)
-                  continue;
-               if(TrackSelectionMode == "Tight" && MTrack.PassZHadron2022CutTight(iT) == false)
-                  continue;
-            }
-
-            double TrackEta = DoGenLevel ? MGen.Eta->at(iT)                       : (MTrack.trkEta[iT]);
-            double TrackPhi = DoGenLevel ? MGen.Phi->at(iT)                       : (MTrack.trkPhi[iT]);
-            double TrackPT  = DoGenLevel ? MGen.PT->at(iT)                        : (MTrack.trkPt[iT]);
-            int TrackCharge = DoGenLevel ? MGen.Charge->at(iT)                    : (MTrack.trkCharge[iT]);
-            int SubEvent    = DoGenLevel ? (MGen.SubEvent->at(iT) + IsBackground) : 0;
-            
-            if(TrackPT < MinTrackPT)   continue;
-            if(TrackEta < -2.4)        continue;
-            if(TrackEta > +2.4)        continue;
-            
-            TLorentzVector V; 
-            V.SetPtEtaPhiM(TrackPT, TrackEta, TrackPhi, 0.139570);
-
-            if(CheckZ == true && (DoGenLevel ? (GoodGenZ == true) : (GoodRecoZ == true)))
-            {
-               double Mu1Eta = DoGenLevel ? MZHadron.genMuEta1->at(0) : MZHadron.muEta1->at(0);
-               double Mu1Phi = DoGenLevel ? MZHadron.genMuPhi1->at(0) : MZHadron.muPhi1->at(0);
-               double Mu2Eta = DoGenLevel ? MZHadron.genMuEta2->at(0) : MZHadron.muEta2->at(0);
-               double Mu2Phi = DoGenLevel ? MZHadron.genMuPhi2->at(0) : MZHadron.muPhi2->at(0);
-
-               double DeltaEtaMu1 = TrackEta - Mu1Eta;
-               double DeltaEtaMu2 = TrackEta - Mu2Eta;
-               double DeltaPhiMu1 = DeltaPhi(TrackPhi, Mu1Phi);
-               double DeltaPhiMu2 = DeltaPhi(TrackPhi, Mu2Phi);
-
-               double DeltaRMu1 = sqrt(DeltaEtaMu1 * DeltaEtaMu1 + DeltaPhiMu1 * DeltaPhiMu1);
-               double DeltaRMu2 = sqrt(DeltaEtaMu2 * DeltaEtaMu2 + DeltaPhiMu2 * DeltaPhiMu2);
-
-               bool MuTagged = false;
-               if(DeltaRMu1 < MuonVeto)   MuTagged = true;
-               if(DeltaRMu2 < MuonVeto)   MuTagged = true;
-            
-               MZHadron.trackMuTagged->push_back(MuTagged);
-               MZHadron.trackMuDR->push_back(min(DeltaRMu1, DeltaRMu2));
-            }
-            else
-            {
-               MZHadron.trackMuTagged->push_back(false);
-               MZHadron.trackMuDR->push_back(-1);
-            }
-
-            MZHadron.trackPhi->push_back(TrackPhi);
-            MZHadron.trackEta->push_back(TrackEta);
-            MZHadron.trackY->push_back(V.Rapidity());
-            MZHadron.trackPt->push_back(TrackPT);
-            MZHadron.subevent->push_back(SubEvent);
-
-            double TrackCorrection = 1;
-            if(DoGenLevel == false)
-            {
-               if(TrackEfficiency != nullptr)
-                  TrackCorrection = TrackEfficiency->GetCorrection(TrackPT, TrackEta);
-            }
-            double TrackResidualCorrection = 1;
-            // if(DoTrackResidual == true && DoGenLevel == false)
-            //    TrackResidualCorrection = TrackResidual.GetCorrectionFactor(TrackPT, TrackEta, TrackPhi, MZHadron.hiBin);
-            MZHadron.trackWeight->push_back(TrackCorrection * TrackResidualCorrection);
-            MZHadron.trackResidualWeight->push_back(TrackResidualCorrection);
-            // MZHadron.trackResidualWeight->push_back(1);
+            MZHadronLoose.CopyNonTrack(MZHadron);
+            MZHadronTight.CopyNonTrack(MZHadron);
+            ModeCount = 3;
          }
 
-         MZHadron.FillEntry();
+         for(int iM = 0; iM < ModeCount; iM++)
+         {
+            ZHadronMessenger *Current = CurrentMessenger[iM];
+            int NTrack = DoGenLevel ? MGen.Mult : MTrack.nTrk;
+            for(int iT = 0; iT < NTrack; iT++)
+            {
+               if(DoGenLevel == true)
+               {
+                  if(MGen.DaughterCount->at(iT) > 0)
+                     continue;
+                  if(MGen.Charge->at(iT) == 0)
+                     continue;
+               }
+               if(DoGenLevel == false)
+               {
+                  if(CurrentTrackSelectionMode[iM] == "Loose" && MTrack.PassZHadron2022CutLoose(iT) == false)
+                     continue;
+                  if(CurrentTrackSelectionMode[iM] == "Nominal" && MTrack.PassZHadron2022Cut(iT) == false)
+                     continue;
+                  if(CurrentTrackSelectionMode[iM] == "Tight" && MTrack.PassZHadron2022CutTight(iT) == false)
+                     continue;
+               }
+
+               double TrackEta = DoGenLevel ? MGen.Eta->at(iT)                       : (MTrack.trkEta[iT]);
+               double TrackPhi = DoGenLevel ? MGen.Phi->at(iT)                       : (MTrack.trkPhi[iT]);
+               double TrackPT  = DoGenLevel ? MGen.PT->at(iT)                        : (MTrack.trkPt[iT]);
+               int TrackCharge = DoGenLevel ? MGen.Charge->at(iT)                    : (MTrack.trkCharge[iT]);
+               int SubEvent    = DoGenLevel ? (MGen.SubEvent->at(iT) + IsBackground) : 0;
+             
+               if(TrackPT < MinTrackPT)   continue;
+               if(TrackEta < -2.4)        continue;
+               if(TrackEta > +2.4)        continue;
+             
+               TLorentzVector V; 
+               V.SetPtEtaPhiM(TrackPT, TrackEta, TrackPhi, 0.139570);
+
+               if(CheckZ == true && (DoGenLevel ? (GoodGenZ == true) : (GoodRecoZ == true)))
+               {
+                  double Mu1Eta = DoGenLevel ? Current->genMuEta1->at(0) : Current->muEta1->at(0);
+                  double Mu1Phi = DoGenLevel ? Current->genMuPhi1->at(0) : Current->muPhi1->at(0);
+                  double Mu2Eta = DoGenLevel ? Current->genMuEta2->at(0) : Current->muEta2->at(0);
+                  double Mu2Phi = DoGenLevel ? Current->genMuPhi2->at(0) : Current->muPhi2->at(0);
+
+                  double DeltaEtaMu1 = TrackEta - Mu1Eta;
+                  double DeltaEtaMu2 = TrackEta - Mu2Eta;
+                  double DeltaPhiMu1 = DeltaPhi(TrackPhi, Mu1Phi);
+                  double DeltaPhiMu2 = DeltaPhi(TrackPhi, Mu2Phi);
+
+                  double DeltaRMu1 = sqrt(DeltaEtaMu1 * DeltaEtaMu1 + DeltaPhiMu1 * DeltaPhiMu1);
+                  double DeltaRMu2 = sqrt(DeltaEtaMu2 * DeltaEtaMu2 + DeltaPhiMu2 * DeltaPhiMu2);
+
+                  bool MuTagged = false;
+                  if(DeltaRMu1 < MuonVeto)   MuTagged = true;
+                  if(DeltaRMu2 < MuonVeto)   MuTagged = true;
+             
+                  Current->trackMuTagged->push_back(MuTagged);
+                  Current->trackMuDR->push_back(min(DeltaRMu1, DeltaRMu2));
+               }
+               else
+               {
+                  Current->trackMuTagged->push_back(false);
+                  Current->trackMuDR->push_back(-1);
+               }
+
+               Current->trackPhi->push_back(TrackPhi);
+               Current->trackEta->push_back(TrackEta);
+               Current->trackY->push_back(V.Rapidity());
+               Current->trackPt->push_back(TrackPT);
+               Current->subevent->push_back(SubEvent);
+
+               double TrackCorrection = 1;
+               if(DoGenLevel == false)
+               {
+                  if(CurrentTrackEfficiency[iM] != nullptr)
+                     TrackCorrection = CurrentTrackEfficiency[iM]->GetCorrection(TrackPT, TrackEta);
+               }
+               double TrackResidualCorrection = 1;
+               // if(DoTrackResidual == true && DoGenLevel == false)
+               //    TrackResidualCorrection = TrackResidual.GetCorrectionFactor(TrackPT, TrackEta, TrackPhi, MZHadron.hiBin);
+               Current->trackWeight->push_back(TrackCorrection * TrackResidualCorrection);
+               Current->trackResidualWeight->push_back(TrackResidualCorrection);
+               // MZHadron.trackResidualWeight->push_back(1);
+            }
+
+            Current->FillEntry();
+         }
       }
    
       Bar.Update(EntryCount);
@@ -518,9 +578,24 @@ int main(int argc, char *argv[])
 
    OutputFile.cd();
    Tree.Write();
+   if(DoGenLevel == false && WriteAllTrackSelectionTrees == true)
+   {
+      TreeLoose.Write();
+      TreeTight.Write();
+   }
    InfoTree.Write();
+   TDirectory *HltTreeDirectory = OutputFile.mkdir("HltTree");
+   TDirectory *TriggerTurnOnDirectory = HltTreeDirectory->mkdir("TriggerTurnOn");
+   TriggerTurnOnDirectory->cd();
+   HLTEffNumerator.Write();
+   HLTEffDenominator.Write();
 
    OutputFile.Close();
+
+   delete TrackEfficiency;
+   delete TrackEfficiencyLoose;
+   delete TrackEfficiencyTight;
+   delete JSONHandler;
 
    return 0;
 }
@@ -577,4 +652,3 @@ double GetGenHFSum(GenParticleTreeMessenger *M, int SubEvent)
 
    return Sum;
 }
-
