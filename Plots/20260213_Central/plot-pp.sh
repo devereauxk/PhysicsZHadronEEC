@@ -1,12 +1,14 @@
 make ExecutePPPlot
 
-PP_TAG="ppcompare_ZV6_trkV24_nmix10"
+PP_TAG="ppcompare_test"
 
 for trkPtRange in 1_2 2_4 4_10
 do
     echo "Processing tag: ${PP_TAG}, zPtRange: 40_350, trkPtRange: ${trkPtRange}"
     ./ExecutePPPlot --zPtRange 40_350 --trkPtRange "${trkPtRange}" --pptag "${PP_TAG}"
 done
+
+exit
 
 for zPtRange in 20_40 40_60 60_500
 do

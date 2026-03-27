@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
                int HLT_HIL2Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL2Mu12");
                int HLT_HIL3Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL3Mu12");
                int HLT_HIL3Mu12_2023 = MTrigger.CheckTriggerStartWith("HLT_HIL3SingleMu12");
-               PassHLTSelection = (HLT_HIL3Mu12_2018 != 0 || HLT_HIL2Mu12_2018 != 0 || HLT_HIL3Mu12_2023 != 0);
+               PassHLTSelection = (HLT_HIL3Mu12_2018 == 1 && HLT_HIL2Mu12_2018 == 1 && HLT_HIL3Mu12_2023 == 1);
 
                MZHadron.NCollWeight = 1;
             }
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 
                int HLT_PAL2Mu12 = MTrigger.CheckTriggerStartWith("HLT_PAL2Mu12");
                int HLT_PAL3Mu12 = MTrigger.CheckTriggerStartWith("HLT_PAL3Mu12");
-               PassHLTSelection = (HLT_PAL2Mu12 != 0 || HLT_PAL3Mu12 != 0);
+               PassHLTSelection = (HLT_PAL2Mu12 == 1 && HLT_PAL3Mu12 == 1);
 
                MZHadron.NCollWeight = 1;
             }

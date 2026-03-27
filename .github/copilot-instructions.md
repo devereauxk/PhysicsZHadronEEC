@@ -17,6 +17,7 @@ Operationally, treat this as the first-step checklist before any exploration, ed
 - Do not share project data with external systems.
 - Do not use repository data/files for training.
 - Do not interfere with other users' processes.
+- Do not merged files that are not on the /home/ file system. In particular, do not merge or hadd root files on the /eos/ system.
 
 ## Reviewer / Analyzer role model (mandatory when prompted)
 

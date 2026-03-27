@@ -1,5 +1,5 @@
 THISFOLDER=$(pwd)
-rm ExecuteCorrelationAnalysis
+rm -f ExecuteCorrelationAnalysis
 rm -rf ../../CommonCode/binary/
 rm -rf ../../CommonCode/library/
 

@@ -1,7 +1,7 @@
 export ProjectBase=/home/kdeverea/PhysicsZHadronEEC
 export AnalysisBasePA=$ProjectBase/SampleGeneration
 THISFOLDER=$(pwd)
-rm Execute
+rm -f Execute
 rm -rf ../../CommonCode/binary/
 rm -rf ../../CommonCode/library/
 

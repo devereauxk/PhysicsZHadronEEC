@@ -6,6 +6,7 @@
 
 set -euo pipefail
 
+source ./clean.sh
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 
 nMix=10
@@ -57,8 +58,8 @@ run_one_tag() {
 
     ./system-analysis.sh "pythiaMC_trkResidual_${TAG}" \
         --IsPP true --IsGenZ false --IsData false \
-        --Input mergedSample/pythia-v11-Zpt0.root \
-        --MixFile mergedSample/pythia-v11-Zpt0.root \
+        --Input mergedSample/pythia-v6.root \
+        --MixFile mergedSample/pythia-v6.root \
         --UseEventWeight "${USE_EVENT_WEIGHT}" --UseZWeight true \
         --UseTrackWeight true --UseResidualWeight true \
         --UseVZWeight true --VZWeightFile "${VZ_FILE}" \
@@ -68,8 +69,8 @@ run_one_tag() {
 
     ./system-analysis.sh "pythiaMC_Gen_nominal_${TAG}" \
         --IsPP true --IsGenZ true --IsData false \
-        --Input mergedSample/pythia-gen-v11-Zpt0.root \
-        --MixFile mergedSample/pythia-gen-v11-Zpt0.root \
+        --Input mergedSample/pythia-gen-v6.root \
+        --MixFile mergedSample/pythia-gen-v6.root \
         --UseEventWeight "${USE_EVENT_WEIGHT}" --UseZWeight false \
         --UseTrackWeight true --UseResidualWeight false \
         --UseVZWeight true --VZWeightFile "${VZ_FILE}" \
@@ -96,8 +97,8 @@ run_one_tag() {
 
 CONFIG_FILE="$(write_config '"40_350"' '"1_2" "2_4" "4_10"')"
 export CONFIG_FILE
-run_one_tag "ppcompare_ZV6_trkV24_nmix10" true
+run_one_tag "ppcompare_test" true
 
-CONFIG_FILE="$(write_config '"20_40" "40_60" "60_500"' '"2_500"')"
-export CONFIG_FILE
-run_one_tag "ppcompare_ZV6_trkV24_nmix10" true
+#CONFIG_FILE="$(write_config '"20_40" "40_60" "60_500"' '"2_500"')"
+#export CONFIG_FILE
+#run_one_tag "ppcompare_ZV6_trkV24_nmix10" true

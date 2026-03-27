@@ -2,20 +2,31 @@
 
 set -euo pipefail
 
+echo "did you run kinit -5? [y/n]"
+read -r KINIT
+if [[ "$KINIT" != "y" ]]; then
+    echo "Please run 'kinit -5' before proceeding."
+    exit 1
+fi
+
 source clean.sh
 
 OUTPUTDIR=${OUTPUTDIR:-/eos/cms/store/group/phys_heavyions/kdeverea/Run2_2016_pPb_Skim/V0.1}
 
+#runs right thorugh with D status with 10 threads - super tempermental though
+#exact procedure: screen at ~, kinit, cd to skimmer, then skim with NTREAD=10
+#slowed down a bit later though idk ...
+
 INPUT_FILE=${INPUT_FILE:-}
-NTHREAD=${NTHREAD:-20}
+NTHREAD=${NTHREAD:-10}
 MAX_FILES=${MAX_FILES:-0}
 mkdir -p $OUTPUTDIR/PAData
 mkdir -p $OUTPUTDIR/PAMC
 mkdir -p $OUTPUTDIR/APMC
 
-DODATA=$1
-DOPAMC=$2
-DOAPMC=$3
+DODATA=${1:-0}
+DOPAMC=${2:-0}
+DOAPMC=${3:-0}
 PIDS=()
 JOBLABELS=()
 
