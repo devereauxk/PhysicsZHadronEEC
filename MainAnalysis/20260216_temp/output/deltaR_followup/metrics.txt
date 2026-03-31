@@ -1,0 +1,27 @@
+# raw-tree branch/veto diagnostics use the first 20000 tree entries per file
+
+# observed current-study histograms
+ppData observed total=24974 coreBox=24564 coreCircle=19799 boxOutsideCircle=4765
+ppMC_Reco observed total=416176 coreBox=411337 coreCircle=330610 boxOutsideCircle=80727
+pPbData observed total=18004 coreBox=17519 coreCircle=14132 boxOutsideCircle=3387
+pPbMC_Reco observed total=566759 coreBox=555555 coreCircle=448242 boxOutsideCircle=107313
+PbPData observed total=10351 coreBox=10067 coreCircle=8082 boxOutsideCircle=1985
+PbPMC_Reco observed total=551486 coreBox=540615 coreCircle=435928 boxOutsideCircle=104687
+
+# same raw trees with the mu-tag veto applied in the diagnostic loop
+ppData recoMu_withVeto total=0 coreBox=0 coreCircle=0 boxOutsideCircle=0
+ppMC_Reco recoMu_withVeto total=0 coreBox=0 coreCircle=0 boxOutsideCircle=0
+pPbData recoMu_withVeto total=0 coreBox=0 coreCircle=0 boxOutsideCircle=0
+pPbMC_Reco recoMu_withVeto total=3 coreBox=0 coreCircle=0 boxOutsideCircle=0
+PbPData recoMu_withVeto total=0 coreBox=0 coreCircle=0 boxOutsideCircle=0
+PbPMC_Reco recoMu_withVeto total=2 coreBox=0 coreCircle=0 boxOutsideCircle=0
+
+# alternate gen-muon branch tests on reco MC
+ppMC_Reco recoMu total=4537 coreBox=4490 coreCircle=3572 boxOutsideCircle=918 | genMu total=2777 coreBox=2438 coreCircle=2043 boxOutsideCircle=395
+pPbMC_Reco recoMu total=14945 coreBox=14665 coreCircle=11739 boxOutsideCircle=2926 | genMu total=12237 coreBox=10235 coreCircle=8724 boxOutsideCircle=1511
+PbPMC_Reco recoMu total=14864 coreBox=14572 coreCircle=11823 boxOutsideCircle=2749 | genMu total=12147 coreBox=10197 coreCircle=8703 boxOutsideCircle=1494
+
+# gen-level comparisons
+pPbMC_Gen recoMu total=9383 coreBox=9315 coreCircle=9307 boxOutsideCircle=8 | genMu total=9751 coreBox=9750 coreCircle=9750 boxOutsideCircle=0
+PbPMC_Gen recoMu total=9259 coreBox=9195 coreCircle=9184 boxOutsideCircle=11 | genMu total=9646 coreBox=9643 coreCircle=9643 boxOutsideCircle=0
+PbPbDY2023_Gen recoMu total=2701 coreBox=2679 coreCircle=2678 boxOutsideCircle=1 | genMu total=2900 coreBox=2886 coreCircle=2886 boxOutsideCircle=0

@@ -18,8 +18,8 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
    done
 
    # Combine results for the current HiBin and ZPT range
-   hadd -f "plots/${1}_ZPT${min_zpt}_${max_zpt}.root" \
-       $(for pt_range in "${PT_RANGES[@]}"; do
-            echo "output/${1}_ZPT${min_zpt}_${max_zpt}-${pt_range}.root"
-         done)
+    hadd -f "output/${1}_ZPT${min_zpt}_${max_zpt}.root" \
+        $(for pt_range in "${PT_RANGES[@]}"; do
+             echo "output/${1}_ZPT${min_zpt}_${max_zpt}-${pt_range}.root"
+          done)
 done

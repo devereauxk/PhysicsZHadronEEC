@@ -18,6 +18,7 @@ int printHelpMessage(int argc, char *argv[]) {
               << "  --MaxZY <value>        Maximum Z particle rapidity threshold for event selection.\n"
               << "  --MinTrackPT <value>   Minimum track transverse momentum threshold for track selection.\n"
               << "  --MaxTrackPT <value>   Maximum track transverse momentum threshold for track selection.\n"
+              << "  --TrackSelectionMode <Nominal|Loose|Tight>   Select Tree, TreeLoose, or TreeTight from the skim.\n"
               << "  --MinHiBin <value>     Minimum hiBin value for event selection.\n"
               << "  --MaxHiBin <value>     Maximum hiBin value for event selection.\n"
               << "  --Input <path>         Path to the input ROOT file.\n"
@@ -45,5 +46,4 @@ int printHelpMessage(int argc, char *argv[]) {
     }
     return 0;  
 }
-
 

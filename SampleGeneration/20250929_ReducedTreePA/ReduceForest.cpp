@@ -1,3 +1,5 @@
+#include <cmath>
+#include <limits>
 #include <iostream>
 using namespace std;
 
@@ -19,6 +21,37 @@ using namespace std;
 int main(int argc, char *argv[]);
 double GetHFSum(PFTreeMessenger *M);
 double GetGenHFSum(GenParticleTreeMessenger *M, int SubEvent = -1);
+double GetPPDimuonTnPWeight(double Mu1Eta, double Mu2Eta);
+double GetPADimuonTnPWeight(double Mu1PT, double Mu1Eta, double Mu2PT, double Mu2Eta);
+bool UsePADimuonTnPWeights(double Mu1PT, double Mu1Eta, double Mu2PT, double Mu2Eta);
+double GetRelativeWeight(double Numerator, double Denominator);
+
+double GetPPDimuonTnPWeight(double Mu1Eta, double Mu2Eta)
+{
+   return tnp_weight_TightID_pp(Mu1Eta, 0)
+      * tnp_weight_TightID_pp(Mu2Eta, 0)
+      * tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0);
+}
+
+double GetPADimuonTnPWeight(double Mu1PT, double Mu1Eta, double Mu2PT, double Mu2Eta)
+{
+   return tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 0)
+      * tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 0)
+      * tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 0);
+}
+
+bool UsePADimuonTnPWeights(double Mu1PT, double Mu1Eta, double Mu2PT, double Mu2Eta)
+{
+   return tnp_weight_pPb_valid_muon(Mu1PT, Mu1Eta)
+      && tnp_weight_pPb_valid_muon(Mu2PT, Mu2Eta);
+}
+
+double GetRelativeWeight(double Numerator, double Denominator)
+{
+   if(std::isfinite(Numerator) == false || std::isfinite(Denominator) == false || Denominator == 0)
+      return numeric_limits<double>::quiet_NaN();
+   return Numerator / Denominator;
+}
 
 int main(int argc, char *argv[])
 {
@@ -38,7 +71,7 @@ int main(int argc, char *argv[])
    double MinZPT                      = CL.GetDouble("MinZPT", 20);
    double MinTrackPT                  = CL.GetDouble("MinTrackPT", 1);
    bool DoSumET                       = CL.GetBool("DoSumET", false);
-   double MuonVeto                    = CL.GetDouble("MuonVeto", 0.01);
+   double MuonVeto                    = CL.GetDouble("MuonVeto", 0.0025);
    bool CheckZ                        = CL.GetBool("CheckZ", true);
    string TrackEfficiencyPath         = (DoGenLevel == false) ? CL.Get("TrackEfficiencyPath") : "";
    string TrackEfficiencyPathLoose    = (DoGenLevel == false) ? CL.Get("TrackEfficiencyPathLoose", TrackEfficiencyPath) : "";
@@ -204,8 +237,8 @@ int main(int argc, char *argv[])
                //HLT trigger to select dimuon events, see Kaya's note: AN2019_143_v12, p.5
                int HLT_HIL2Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL2Mu12");
                int HLT_HIL3Mu12_2018 = MTrigger.CheckTriggerStartWith("HLT_HIL3Mu12");
-               int HLT_HIL3Mu12_2023 = MTrigger.CheckTriggerStartWith("HLT_HIL3SingleMu12");
-               PassHLTSelection = (HLT_HIL3Mu12_2018 == 1 && HLT_HIL2Mu12_2018 == 1 && HLT_HIL3Mu12_2023 == 1);
+               //int HLT_HIL3Mu12_2023 = MTrigger.CheckTriggerStartWith("HLT_HIL3SingleMu12");
+               PassHLTSelection = (HLT_HIL3Mu12_2018 == 1 && HLT_HIL2Mu12_2018 == 1);
 
                MZHadron.NCollWeight = 1;
             }
@@ -413,9 +446,6 @@ int main(int argc, char *argv[])
                MZHadron.ZWeight = 1;
             else
             {
-               //MZHadron.ZWeight = GetZWeightPA8TeVDataTrigger(Z.Pt(), Z.Rapidity());
-               MZHadron.ZWeight = 1;
-
                double Mu1Eta = MZHadron.muEta1->at(0);
                double Mu1PT = MZHadron.muPt1->at(0);
                double Mu2Eta = MZHadron.muEta2->at(0);
@@ -426,41 +456,38 @@ int main(int argc, char *argv[])
 
                if(IsPP == true)
                {
+                  MZHadron.ZWeight = GetPPDimuonTnPWeight(Mu1Eta, Mu2Eta);
                   MZHadron.ExtraZWeight[0] =
-                     tnp_weight_TightID_pp(Mu1Eta, 1)
-                     / tnp_weight_TightID_pp(Mu1Eta, 0)
-                     * tnp_weight_TightID_pp(Mu2Eta, 1)
-                     / tnp_weight_TightID_pp(Mu2Eta, 0);
+                     GetRelativeWeight(tnp_weight_TightID_pp(Mu1Eta, 1), tnp_weight_TightID_pp(Mu1Eta, 0))
+                     * GetRelativeWeight(tnp_weight_TightID_pp(Mu2Eta, 1), tnp_weight_TightID_pp(Mu2Eta, 0));
                   MZHadron.ExtraZWeight[1] =
-                     tnp_weight_TightID_pp(Mu1Eta, -1)
-                     / tnp_weight_TightID_pp(Mu1Eta, 0)
-                     * tnp_weight_TightID_pp(Mu2Eta, -1)
-                     / tnp_weight_TightID_pp(Mu2Eta, 0);
+                     GetRelativeWeight(tnp_weight_TightID_pp(Mu1Eta, -1), tnp_weight_TightID_pp(Mu1Eta, 0))
+                     * GetRelativeWeight(tnp_weight_TightID_pp(Mu2Eta, -1), tnp_weight_TightID_pp(Mu2Eta, 0));
                   MZHadron.ExtraZWeight[2] =
-                     tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 1)
-                     / tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0);
+                     GetRelativeWeight(tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 1),
+                        tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0));
                   MZHadron.ExtraZWeight[3] =
-                     tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, -1)
-                     / tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0);
+                     GetRelativeWeight(tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, -1),
+                        tnp_weight_L3Mu12_double_pp(Mu1Eta, Mu2Eta, 0));
                }
                else if(Is8TeV == true)
                {
-                  MZHadron.ExtraZWeight[0] =
-                     tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 1)
-                     / tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 0)
-                     * tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 1)
-                     / tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 0);
-                  MZHadron.ExtraZWeight[1] =
-                     tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, -1)
-                     / tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 0)
-                     * tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, -1)
-                     / tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 0);
-                  MZHadron.ExtraZWeight[2] =
-                     tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 1)
-                     / tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 0);
-                  MZHadron.ExtraZWeight[3] =
-                     tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, -1)
-                     / tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 0);
+                  if(UsePADimuonTnPWeights(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta) == true)
+                  {
+                     MZHadron.ZWeight = GetPADimuonTnPWeight(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta);
+                     MZHadron.ExtraZWeight[0] =
+                        GetRelativeWeight(tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 1), tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 0))
+                        * GetRelativeWeight(tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 1), tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 0));
+                     MZHadron.ExtraZWeight[1] =
+                        GetRelativeWeight(tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, -1), tnp_weight_TightID_pPb(Mu1PT, Mu1Eta, 0))
+                        * GetRelativeWeight(tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, -1), tnp_weight_TightID_pPb(Mu2PT, Mu2Eta, 0));
+                     MZHadron.ExtraZWeight[2] =
+                        GetRelativeWeight(tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 1),
+                           tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 0));
+                     MZHadron.ExtraZWeight[3] =
+                        GetRelativeWeight(tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, -1),
+                           tnp_weight_L3Mu12_double_pPb(Mu1PT, Mu1Eta, Mu2PT, Mu2Eta, 0));
+                  }
                }
             }
          }

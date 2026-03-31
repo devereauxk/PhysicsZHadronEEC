@@ -618,7 +618,7 @@ int main(int argc, char *argv[])
                double DeltaEtaMu1 = TrackEta - Mu1Eta;
                double DeltaEtaMu2 = TrackEta - Mu2Eta;
                double DeltaPhiMu1 = DeltaPhi(TrackPhi, Mu1Phi);
-               double DeltaPhiMu2 = DeltaPhi(TrackPhi, Mu2Phi);1
+               double DeltaPhiMu2 = DeltaPhi(TrackPhi, Mu2Phi);
 
                double DeltaRMu1 = sqrt(DeltaEtaMu1 * DeltaEtaMu1 + DeltaPhiMu1 * DeltaPhiMu1);
                double DeltaRMu2 = sqrt(DeltaEtaMu2 * DeltaEtaMu2 + DeltaPhiMu2 * DeltaPhiMu2);

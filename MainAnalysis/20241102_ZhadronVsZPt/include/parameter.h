@@ -42,9 +42,11 @@ public:
    string residualWeightFile; // Residual weight file
    string EnergyExtraFile; // Input file for energy extrapolation
    string VZWeightFile;      // VZ weight file
+   string TrackSelectionMode; // Track selection systematic mode
+   string TrackTreeName;      // Input tree name
    bool isPPb;            // Flag to check if this is a PPb analysis
    float yBoost;          // Rapidity boost for pPb analysis
-    
+   
    void printParameters() const {
       cout << "Input file: " << input << endl;
       cout << "Output file: " << output << endl;
@@ -72,6 +74,8 @@ public:
       cout << "UseResidualWeight: " << (useResidualWeight ? "true" : "false") << endl;
       cout << "ResidualWeightFile: " << residualWeightFile << endl;
       cout << "EnergyExtraFile: " << EnergyExtraFile << endl;
+      cout << "TrackSelectionMode: " << TrackSelectionMode << endl;
+      cout << "TrackTreeName: " << TrackTreeName << endl;
       cout << "Scale factor: " << scaleFactor << endl;
       cout << "SumHF shift: " << shift << endl;
       cout << "Number of Threads: " << nThread << endl;

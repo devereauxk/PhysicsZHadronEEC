@@ -81,7 +81,7 @@ bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
 // MinZPT < zPt < MaxZPT
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
-   if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
+   if (par.isPUReject && b->NVertex != 1) return 0;
 
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size()) == 0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) < 60) return 0;
@@ -311,6 +311,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       // calculate event weights
       //==================================================//
       float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
+      if (par.ExtraZWeight >= 0) ZWeight *= MZSignal->ExtraZWeight[par.ExtraZWeight];
 
       float eventWeightSignal = 1;
       if (par.useEventWeight) eventWeightSignal *= MZSignal->EventWeight;
@@ -349,8 +350,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          float trackEta  = (*MZSignal->trackEta)[j];
          float trackPt   = (*MZSignal->trackPt)[j];
          float residualCorrection = ((par.residualWeightFile=="")||par.isGenZ==1)? 1 : corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
-         float weight = eventWeightSignal;
-         //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
+          float weight = eventWeightSignal;
          weight*= (*MZSignal->trackWeight)[j];
          if (par.useResidualWeight) weight*= residualCorrection;  
          if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight);
@@ -419,6 +419,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             float zPhiMix = (par.isGenZ ? (*MMix->genZPhi)[0] : (*MMix->zPhi)[0]);
             if (zPhiMix < 0) zPhiMix += 2 * M_PI;
             float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, zPhiMix) : 1;
+            if (par.ExtraZWeight >= 0) ZWeightMix *= MMix->ExtraZWeight[par.ExtraZWeight];
             
             float computedMixWeight = 1;
             if (par.useEventWeight) computedMixWeight *= MMix->EventWeight;
@@ -537,17 +538,17 @@ public:
    string title;
    TH3D* hTrkResidualCorrectionPtEtaPhi;
 
-   DataAnalyzer(const char* filename, const char* mixFilename, const char* outFilename, const char* filenameUE, const char* mytitle = "Data", bool useEPOSFile = false) :
+   DataAnalyzer(const char* filename, const char* mixFilename, const char* outFilename, const char* filenameUE, const char* mytitle = "Data", bool useEPOSFile = false, const char* treeName = "Tree") :
       inf(new TFile(filename)),
-      MZHadron(new ZHadronMessenger(*inf, string("Tree"))),
+      MZHadron(new ZHadronMessenger(*inf, string(treeName))),
       mixFile(new TFile(mixFilename)),
       mixFileClone(new TFile(mixFilename)),
-      MMix(new ZHadronMessenger(*mixFile, string("Tree"))),
+      MMix(new ZHadronMessenger(*mixFile, string(treeName))),
       title(mytitle),
       outf(new TFile(outFilename, "recreate")) {
       if (useEPOSFile) {
          infUE = new TFile(filenameUE);
-         MZHadronUE = new ZHadronMessenger(*infUE, string("Tree"));
+         MZHadronUE = new ZHadronMessenger(*infUE, string(treeName));
       }
       outf->cd();
    }
@@ -708,6 +709,10 @@ int main(int argc, char *argv[])
    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
    par.useVZWeight       = CL.GetBool  ("UseVZWeight", false);
    par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
+   par.TrackSelectionMode = CL.Get      ("TrackSelectionMode", "Nominal");
+   par.TrackTreeName   = "Tree";
+   if (par.TrackSelectionMode == "Loose")   par.TrackTreeName = "TreeLoose";
+   if (par.TrackSelectionMode == "Tight")   par.TrackTreeName = "TreeTight";
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.
@@ -727,7 +732,7 @@ int main(int argc, char *argv[])
    if (checkError(par)) return -1;
           
    // Analyze Data
-   DataAnalyzer analyzer(par.input.c_str(), par.mixFile.c_str(), par.output.c_str(), par.EPOSFile.c_str(), "Data", par.useEPOSFile);
+   DataAnalyzer analyzer(par.input.c_str(), par.mixFile.c_str(), par.output.c_str(), par.EPOSFile.c_str(), "Data", par.useEPOSFile, par.TrackTreeName.c_str());
    analyzer.analyze(par);
    analyzer.writeHistograms(analyzer.outf);
    saveParametersToHistograms(par, analyzer.outf);

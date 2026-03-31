@@ -468,7 +468,7 @@ inline double tnp_weight_pPb_nan()
 
 inline bool tnp_weight_pPb_valid_muon(double pt, double eta)
 {
-   return std::fabs(eta) < 2.4 && pt > 20 && pt < 200;
+   return std::fabs(eta) < 2.4 && pt >= 20 && pt < 200;
 }
 
 double tnp_weight_TightID_pPb(double pt, double eta, int idx = 0)

@@ -1,4 +1,54 @@
+#!/bin/bash
+
+set -e
+
 source ./clean.sh
 
-./ExecuteDeltaRMuTrkPlot --collisionType pPb --zPtRange 5_500 --trkPtRange 0.5_500 --tag MCStudies
-./ExecuteDeltaRMuTrkPlot --collisionType PbP --zPtRange 5_500 --trkPtRange 0.5_500 --tag MCStudies
+MODE="${1:-All}"
+TAG="${2:-MCStudies_V01Remake}"
+DOPP="${3:-1}"
+DOPPB="${4:-1}"
+DOPBP="${5:-1}"
+
+plot_case() {
+    local collisionType=$1
+    local sample=$2
+
+    ./ExecuteDeltaRMuTrkPlot \
+        --collisionType "${collisionType}" \
+        --sample "${sample}" \
+        --zPtRange 5_500 \
+        --trkPtRange 0.5_500 \
+        --tag "${TAG}"
+}
+
+plot_requested_samples() {
+    local collisionType=$1
+
+    case "${MODE}" in
+        Data|Reco|Gen)
+            plot_case "${collisionType}" "${MODE}"
+            ;;
+        All)
+            for sample in Data Reco Gen; do
+                plot_case "${collisionType}" "${sample}"
+            done
+            ;;
+        *)
+            echo "Unsupported mode '${MODE}'. Use Data, Reco, Gen, or All." >&2
+            exit 1
+            ;;
+    esac
+}
+
+if [ "${DOPP}" = "1" ]; then
+    plot_requested_samples pp
+fi
+
+if [ "${DOPPB}" = "1" ]; then
+    plot_requested_samples pPb
+fi
+
+if [ "${DOPBP}" = "1" ]; then
+    plot_requested_samples PbP
+fi

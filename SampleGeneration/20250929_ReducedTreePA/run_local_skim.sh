@@ -11,7 +11,7 @@ fi
 
 source clean.sh
 
-OUTPUTDIR=${OUTPUTDIR:-/eos/cms/store/group/phys_heavyions/kdeverea/Run2_2016_pPb_Skim/V0.1}
+OUTPUTDIR=${OUTPUTDIR:-/eos/cms/store/group/phys_heavyions/kdeverea/Run2_2016_pPb_Skim/V0.2}
 
 #runs right thorugh with D status with 10 threads - super tempermental though
 #exact procedure: screen at ~, kinit, cd to skimmer, then skim with NTREAD=10
@@ -20,6 +20,7 @@ OUTPUTDIR=${OUTPUTDIR:-/eos/cms/store/group/phys_heavyions/kdeverea/Run2_2016_pP
 INPUT_FILE=${INPUT_FILE:-}
 NTHREAD=${NTHREAD:-10}
 MAX_FILES=${MAX_FILES:-0}
+mkdir -p $OUTPUTDIR
 mkdir -p $OUTPUTDIR/PAData
 mkdir -p $OUTPUTDIR/PAMC
 mkdir -p $OUTPUTDIR/APMC

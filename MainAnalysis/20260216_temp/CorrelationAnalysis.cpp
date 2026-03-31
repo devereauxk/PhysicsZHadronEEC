@@ -302,15 +302,15 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
       nZ += eventWeightSignal;
 
-      if ((*MZSignal->muEta1).size() == 0) continue;
+      if ((par.isGenZ ? (*MZSignal->genMuEta1).size() : (*MZSignal->muEta1).size()) == 0) continue;
 
-      float muEta1 = (*MZSignal->muEta1)[0];
-      float muPhi1 = (*MZSignal->muPhi1)[0];
-      float muPt1 = (*MZSignal->muPt1)[0];
+      float muEta1 = (par.isGenZ ? (*MZSignal->genMuEta1)[0] : (*MZSignal->muEta1)[0]);
+      float muPhi1 = (par.isGenZ ? (*MZSignal->genMuPhi1)[0] : (*MZSignal->muPhi1)[0]);
+      float muPt1 = (par.isGenZ ? (*MZSignal->genMuPt1)[0] : (*MZSignal->muPt1)[0]);
 
-      float muEta2 = (*MZSignal->muEta2)[0];
-      float muPhi2 = (*MZSignal->muPhi2)[0];
-      float muPt2 = (*MZSignal->muPt2)[0];
+      float muEta2 = (par.isGenZ ? (*MZSignal->genMuEta2)[0] : (*MZSignal->muEta2)[0]);
+      float muPhi2 = (par.isGenZ ? (*MZSignal->genMuPhi2)[0] : (*MZSignal->muPhi2)[0]);
+      float muPt2 = (par.isGenZ ? (*MZSignal->genMuPt2)[0] : (*MZSignal->muPt2)[0]);
 
       //==================================================//
       // loop over tracks
