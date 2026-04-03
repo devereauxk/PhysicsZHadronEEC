@@ -30,6 +30,7 @@ int printHelpMessage(int argc, char *argv[]) {
               << "  --IsJewel              Flag for Jewel analysis.\n"
               << "  --IsMuTagged           Flag for doing Z decay muon matching.\n"
               << "  --IsPUReject           Flag to reject PU sample for systematics.\n"
+              << "  --UseVZWindow          Apply the analysis |vz| < 15 selection window.\n"
               << "  --Fraction <value>     Fraction of event to be processed.\n"
               << "  --nThread <value>      Number of threads for parallel processing.\n"
               << "  --nChunk <value>       Specifies which chunk of the data to process.\n"
@@ -44,5 +45,4 @@ int printHelpMessage(int argc, char *argv[]) {
     }
     return 0;  
 }
-
 

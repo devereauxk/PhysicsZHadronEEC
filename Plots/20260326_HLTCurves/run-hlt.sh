@@ -10,8 +10,8 @@ source "$REPO_ROOT/SetupAnalysis.sh"
 cd "$SCRIPT_DIR"
 make
 
-INPUT_BASE="${INPUT_BASE:-/eos/cms/store/group/phys_heavyions/kdeverea/Run2_2016_pPb_Skim/V0.1}"
-OUTPUTBASE="${OUTPUTBASE:-$SCRIPT_DIR/output/hlt_efficiency_study}"
+INPUT_BASE="${INPUT_BASE:-/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20250929_ReducedTreePA/V0.2}"
+OUTPUTBASE="${OUTPUTBASE:-$SCRIPT_DIR/output/20260331_hlt_efficiency_study}"
 
 mkdir -p "$OUTPUTBASE"
 

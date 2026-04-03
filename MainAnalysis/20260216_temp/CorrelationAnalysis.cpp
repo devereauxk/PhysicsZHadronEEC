@@ -91,12 +91,6 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 }
 
 
-// ======= Check if PPb event is PPb or PbP, returns true if PPb
-bool isPPbEvent(ZHadronMessenger *b) {
-   if (b->Run < 285922) return true;
-   return false;
-}
-
 // ====== add UE event from EPOS to hard event
 vector<int>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
    // returns a mask vector hard event = 0, UE event = 1
@@ -516,7 +510,7 @@ int main(int argc, char *argv[])
    par.output        = CL.Get      ("Output",  "output.root");                               // Output file
    par.isSelfMixing  = CL.GetBool  ("IsSelfMixing", true);   // Determine if the analysis is self-mixing
    par.isGenZ        = CL.GetBool  ("IsGenZ", false);        // Determine if the analysis is using Gen level Z     
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);     // Flag to reject PU sample for systemaitcs.
+   par.isPUReject    = CL.GetBool  ("IsPUReject", false);    // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
    par.useEventWeight   = CL.GetBool  ("UseEventWeight", false);     // Default is false

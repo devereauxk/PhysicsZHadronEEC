@@ -28,24 +28,13 @@ bool checkError(const Parameters& par) {
       return true;  // Return true indicates an error was found
    }
 
-   if (par.isData) {
-      if (par.useVZWeight) {
-         std::cout << "Error! Data stages must run with UseVZWeight=false." << std::endl;
-         return true;
-      }
-      if (par.VZWeightFile != "") {
-         std::cout << "Error! Data stages must not receive VZWeightFile." << std::endl;
-         return true;
-      }
-   }
-
    if (par.useVZWeight && par.VZWeightFile == "") {
-      std::cout << "Error! UseVZWeight=true requires an explicit external VZWeightFile for MC stages." << std::endl;
+      std::cout << "Error! UseVZWeight=true requires an explicit external VZWeightFile." << std::endl;
       return true;
    }
 
    if (!par.useVZWeight && par.VZWeightFile != "") {
-      std::cout << "Error! VZWeightFile was provided but UseVZWeight=false. Pass both explicitly for MC VZ weighting." << std::endl;
+      std::cout << "Error! VZWeightFile was provided but UseVZWeight=false. Pass both explicitly for VZ weighting." << std::endl;
       return true;
    }
 
@@ -81,7 +70,8 @@ bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
 // MinZPT < zPt < MaxZPT
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
-   if (par.isPUReject && b->NVertex != 1) return 0;
+   if (par.isPUReject && par.isData && b->NVertex != 1) return 0;
+   if (par.useVZWindow && fabs(b->VZ) >= 15) return 0;
 
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size()) == 0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) < 60) return 0;
@@ -111,12 +101,6 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
    return 0;
 }
 
-
-// ======= Check if PPb event is PPb or PbP, returns true if PPb
-bool isPPbEvent(ZHadronMessenger *b) {
-   if (b->Run < 285922) return true;
-   return false;
-}
 
 // ====== add UE event from EPOS to hard event
 vector<int>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
@@ -252,20 +236,17 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    // Optional fast-mixing metadata cache:
    // keep event-matching logic the same but avoid repeated eventSelection scans in the inner loop.
    vector<char> mixEventPass;
-   vector<char> mixEventIsPPb;
    vector<char> mixEventZPtBin;
    bool useFastMixingCache = (par.mix && par.useFastMixing && !par.useEPOSFile);
    if (useFastMixingCache) {
       unsigned long nMixEntry = MMix->GetEntries();
       mixEventPass.assign(nMixEntry, 0);
-      mixEventIsPPb.assign(nMixEntry, 0);
       mixEventZPtBin.assign(nMixEntry, -1);
       for (unsigned long m = 0; m < nMixEntry; m++) {
          MMix->GetEntry(m);
          if (!eventSelection(MMix, par)) continue;
          float mixZPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
          mixEventPass[m] = 1;
-         mixEventIsPPb[m] = isPPbEvent(MMix) ? 1 : 0;
          mixEventZPtBin[m] = getZpTBin(mixZPt);
       }
    }
@@ -299,7 +280,6 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       float zMass = (par.isGenZ ? (*MZSignal->genZMass)[0] : (*MZSignal->zMass)[0]);
       int zPtBin = getZpTBin(zPt);
-      bool signalIsPPb = isPPbEvent(MZSignal);
 
       if (zPt < 10) corrector = corrector_0_10;
       else if (zPt >= 10 && zPt < 20) corrector = corrector_10_20;
@@ -372,12 +352,11 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                if (mix_i >= MMix->GetEntries()) mix_i = 0;
                if (mixstart_i == mix_i) break;
 
-               if (useFastMixingCache) {
-                  if (mixEventPass[mix_i] == 0) continue;
-                  if (!par.isPP && par.isData && (signalIsPPb != (mixEventIsPPb[mix_i] == 1))) continue;
-                  if (mixEventZPtBin[mix_i] != zPtBin) continue;
-                  if (i != mix_i) foundMix = true;
-                  continue;
+                if (useFastMixingCache) {
+                   if (mixEventPass[mix_i] == 0) continue;
+                   if (mixEventZPtBin[mix_i] != zPtBin) continue;
+                   if (i != mix_i) foundMix = true;
+                   continue;
                }
 
                MMix->GetEntry(mix_i);
@@ -390,9 +369,6 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
                // event selection
                if (!eventSelection(MMix, par)) continue;
-
-               // only mix PPb with PPb and PbP with PbP
-               if (!par.isPP && par.isData && isPPbEvent(MZSignal) != isPPbEvent(MMix)) continue;
 
                // only mix with Z events of similar Z pT
                float mix_zPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]); 
@@ -483,6 +459,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                } else {
                   this_trackWeight *= (*MZSignal->trackWeight)[j];
                }
+               this_trackWeight *= par.TrackExtraWeight;
             }
             
             // track residual weight
@@ -697,9 +674,10 @@ int main(int argc, char *argv[])
    par.output        = CL.Get      ("Output",  "output.root");                               // Output file
    par.isSelfMixing  = CL.GetBool  ("IsSelfMixing", true);   // Determine if the analysis is self-mixing
    par.isGenZ        = CL.GetBool  ("IsGenZ", false);        // Determine if the analysis is using Gen level Z     
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);     // Flag to reject PU sample for systemaitcs.
+   par.isPUReject    = CL.GetBool  ("IsPUReject", false);    // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
+   par.TrackExtraWeight = CL.GetDouble("TrackExtraWeight", 1.0);
    par.useEventWeight   = CL.GetBool  ("UseEventWeight", false);     // Default is false
    par.useZWeight       = CL.GetBool  ("UseZWeight", false);         // Default is false
    par.ZWeightFile     = CL.Get      ("ZWeightFile", "");           // Z weight file
@@ -708,6 +686,7 @@ int main(int argc, char *argv[])
    par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
    par.useVZWeight       = CL.GetBool  ("UseVZWeight", false);
+   par.useVZWindow       = CL.GetBool  ("UseVZWindow", true);
    par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
    par.TrackSelectionMode = CL.Get      ("TrackSelectionMode", "Nominal");
    par.TrackTreeName   = "Tree";

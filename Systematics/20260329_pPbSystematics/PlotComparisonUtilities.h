@@ -9,8 +9,11 @@
 
 #include "TFile.h"
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TLatex.h"
 #include "TPad.h"
+
+#include "ResultCombinationUtilities.h"
 
 inline std::pair<std::string, std::string> SplitRange(const std::string &range)
 {
@@ -37,7 +40,7 @@ inline std::string GetObservableLabel(const std::string &observable)
 
 inline std::string GetResultAxisLabel(const std::string &observable)
 {
-   return "Result d#LT#DeltaN_{ch}#GT/d" + GetObservableLabel(observable);
+   return "d#LT#DeltaN_{ch}#GT/d" + GetObservableLabel(observable);
 }
 
 inline std::pair<double, double> GetObservableRange(const std::string &observable)
@@ -49,22 +52,13 @@ inline std::pair<double, double> GetObservableRange(const std::string &observabl
 
 inline std::string GetCollisionEnergy(const std::string &collision)
 {
-   return (collision == "pp") ? "5.02 TeV" : "8.16 TeV";
+   return (collision == "pp") ? "8 TeV" : "8.16 TeV";
 }
 
 inline TH1D *LoadResultHistogram(TFile &file, const std::string &observable,
    const std::string &trackRange, const std::string &name)
 {
-   constexpr double ResultNormalization = 0.5;
-
-   TH1D *histogram = (TH1D *)file.Get((observable + "_Result" + trackRange).c_str());
-   if(histogram == nullptr)
-      return nullptr;
-
-   histogram = (TH1D *)histogram->Clone(name.c_str());
-   histogram->SetDirectory(nullptr);
-   histogram->Scale(ResultNormalization);
-   return histogram;
+   return LoadSingleResultHistogram(file, observable, trackRange, name);
 }
 
 inline TH1D *BuildDifferenceHistogram(TH1D *variation, TH1D *reference,
@@ -106,26 +100,43 @@ inline std::pair<double, double> GetRatioRange(const std::vector<TH1 *> &histogr
 
 inline std::pair<double, double> GetDifferenceRange(const std::vector<TH1 *> &histograms, int baseline = 0)
 {
-   double maxDifference = 0;
+   return {-0.2, 0.2};
+}
 
-   for(size_t i = 0; i < histograms.size(); i++)
+inline std::pair<double, double> GetComparisonYRange(const std::vector<TH1 *> &histograms,
+   const std::string &observable)
+{
+   if(observable != "DeltaPhi")
+      return {-1, -1};
+
+   double minimum = 1e30;
+   double maximum = -1e30;
+
+   for(TH1 *histogram : histograms)
    {
-      if((int)i == baseline)
+      if(histogram == nullptr)
          continue;
 
-      TH1 *histogram = histograms[i];
-      TH1 *reference = histograms[baseline];
       for(int bin = 1; bin <= histogram->GetNbinsX(); bin++)
-         maxDifference = std::max(maxDifference,
-            std::fabs(histogram->GetBinContent(bin) - reference->GetBinContent(bin)));
+      {
+         minimum = std::min(minimum, histogram->GetBinContent(bin));
+         maximum = std::max(maximum, histogram->GetBinContent(bin));
+      }
    }
 
-   if(maxDifference <= 0)
-      maxDifference = 0.05;
-   else
-      maxDifference = maxDifference * 1.25;
+   if(maximum < minimum)
+      return {-1, -1};
 
-   return {-maxDifference, maxDifference};
+   double range = maximum - minimum;
+   if(range <= 0)
+      range = std::max(std::fabs(maximum), 1.0);
+
+   double ymin = minimum - range * 0.10;
+   if(minimum >= 0)
+      ymin = std::max(0.0, minimum - range * 0.15);
+   double ymax = maximum + range * 0.40;
+
+   return {ymin, ymax};
 }
 
 inline void DrawKinematicLabels(TPad *pad, const std::string &title,

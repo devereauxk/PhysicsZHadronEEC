@@ -1,10 +1,14 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 make
 
-TAG="${1:-ZV6_trkV24_nmix10}"
-ZPT_RANGES=("0_10" "10_20" "20_40" "40_500")
+TAG="${1:-${OFFICIAL_TAG_PPB}}"
 PLOT_SYSTEMS=(${PLOT_SYSTEMS:-pp pPb PbP})
 
-for zPtRange in "${ZPT_RANGES[@]}"
+for zPtRange in "0_10" "10_20" "20_40" "40_500"
 do
     echo "Processing zPtRange: $zPtRange"
     for system in "${PLOT_SYSTEMS[@]}"

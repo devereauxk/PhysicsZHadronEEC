@@ -17,9 +17,9 @@ TrackingCorrectionFile=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Correct
 TrackingCorrectionFileLoose=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Corrections/Tracking/Hijing_8TeV_MB_eff_v3_loose.root
 TrackingCorrectionFileTight=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Corrections/Tracking/Hijing_8TeV_MB_eff_v3_tight.root
 
-TrackingCorrectionFilePP=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Corrections/Tracking/20240807_TrackResidualCorrection_V13_pp.root
-TrackingCorrectionFilePPLoose=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Corrections/Tracking/20240807_TrackResidualCorrection_V13_pp.root
-TrackingCorrectionFilePPTight=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Corrections/Tracking/20240807_TrackResidualCorrection_V13_pp.root
+TrackingCorrectionFilePP=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Corrections/Tracking/2017pp_TrkCorr_Sept25_Final.root
+TrackingCorrectionFilePPLoose=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Corrections/Tracking/2017pp_TrkCorr_Sept25_Final.root
+TrackingCorrectionFilePPTight=/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/Corrections/Tracking/2017pp_TrkCorr_Sept25_Final.root
 
 # PbP is the FIRST block of runs in 2016 PbPb, pPb is the SECOND block of runs in 2016 PbPb
 GoldenJSONPbP=/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions16/HI/Cert_285479-285832_HI8TeV_PromptReco_pPb_Collisions16_JSON_NoL1T.txt

@@ -22,17 +22,30 @@ int main(int argc, char *argv[])
    SetThesisStyle();
    gStyle->SetOptStat(0);
 
-   string nominalFileName = CL.Get("Nominal");
-   string variationFileName = CL.Get("Variation");
+   string nominalFileName = CL.Get("Nominal", "");
+   string nominalPPbFileName = CL.Get("NominalPPb", "");
+   string nominalPBPFileName = CL.Get("NominalPBP", "");
+   string variationFileName = CL.Get("Variation", "");
+   string variationPPbFileName = CL.Get("VariationPPb", "");
+   string variationPBPFileName = CL.Get("VariationPBP", "");
    string outputBase = CL.Get("OutputBase", "plots/pu/systematic");
    string collision = CL.Get("Collision", "pPb");
    string zptRange = CL.Get("ZPTRange", "40_350");
    string trackRange = CL.Get("TrackPTRange", "2_500");
 
-   TFile nominalFile(nominalFileName.c_str());
-   TFile variationFile(variationFileName.c_str());
+   TFile *nominalFile = (nominalFileName != "") ? TFile::Open(nominalFileName.c_str()) : nullptr;
+   TFile *variationFile = (variationFileName != "") ? TFile::Open(variationFileName.c_str()) : nullptr;
+   TFile *nominalPPbFile = (nominalPPbFileName != "") ? TFile::Open(nominalPPbFileName.c_str()) : nullptr;
+   TFile *nominalPBPFile = (nominalPBPFileName != "") ? TFile::Open(nominalPBPFileName.c_str()) : nullptr;
+   TFile *variationPPbFile = (variationPPbFileName != "") ? TFile::Open(variationPPbFileName.c_str()) : nullptr;
+   TFile *variationPBPFile = (variationPBPFileName != "") ? TFile::Open(variationPBPFileName.c_str()) : nullptr;
 
-   if(nominalFile.IsZombie() || variationFile.IsZombie())
+   if((nominalFile != nullptr && nominalFile->IsZombie())
+      || (variationFile != nullptr && variationFile->IsZombie())
+      || (nominalPPbFile != nullptr && nominalPPbFile->IsZombie())
+      || (nominalPBPFile != nullptr && nominalPBPFile->IsZombie())
+      || (variationPPbFile != nullptr && variationPPbFile->IsZombie())
+      || (variationPBPFile != nullptr && variationPBPFile->IsZombie()))
    {
       cerr << "Unable to open PU comparison inputs" << endl;
       return 1;
@@ -41,8 +54,16 @@ int main(int argc, char *argv[])
    vector<string> observables = {"DeltaEta", "DeltaPhi"};
    for(const string &observable : observables)
    {
-      TH1D *nominal = LoadResultHistogram(nominalFile, observable, trackRange, observable + "_Nominal");
-      TH1D *variation = LoadResultHistogram(variationFile, observable, trackRange, observable + "_PU");
+      TH1D *nominal = nullptr;
+      TH1D *variation = nullptr;
+      if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
+         nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, observable + "_Nominal");
+      else if(nominalFile != nullptr)
+         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal");
+      if(variationPPbFile != nullptr && variationPBPFile != nullptr)
+         variation = BuildCombinedResultHistogram(*variationPPbFile, *variationPBPFile, observable, trackRange, observable + "_PU");
+      else if(variationFile != nullptr)
+         variation = LoadResultHistogram(*variationFile, observable, trackRange, observable + "_PU");
 
       if(nominal == nullptr || variation == nullptr)
       {
@@ -54,24 +75,25 @@ int main(int argc, char *argv[])
 
       vector<TH1 *> histograms = {nominal, variation};
       pair<double, double> xRange = GetObservableRange(observable);
+      pair<double, double> yRange = GetComparisonYRange(histograms, observable);
       pair<double, double> differenceRange = GetDifferenceRange(histograms);
 
       TCanvas canvas(("CanvasPU" + observable).c_str(), "", 600, 600);
       TPad *pad = (TPad *)plotCMSDiff(
-         histograms, ("PUComparison_" + observable).c_str(), {"Nominal", "PU=1"},
-          {cmsBlue, cmsRed}, {0, 0},
-          {cmsBlue, cmsRed}, {20, 21},
-          GetObservableLabel(observable).c_str(), xRange.first, xRange.second,
-          GetResultAxisLabel(observable).c_str(), -1, -1,
-          "PU=1 - nominal", differenceRange.first, differenceRange.second,
+          histograms, ("PUComparison_" + observable).c_str(), {"Nominal", "PU reject"},
+           {cmsBlue, cmsRed}, {0, 0},
+           {cmsBlue, cmsRed}, {20, 21},
+           GetObservableLabel(observable).c_str(), xRange.first, xRange.second,
+           GetResultAxisLabel(observable).c_str(), yRange.first, yRange.second,
+           "PU reject - nominal", differenceRange.first, differenceRange.second,
           0,
           false, false, true,
           0.62
       );
 
       AddCMSHeader(pad, "Internal", false);
-      AddUPCHeader(pad, GetCollisionEnergy(collision).c_str(), collision.c_str());
-      DrawKinematicLabels(pad, "Nominal vs PU=1", zptRange, trackRange);
+      AddUPCHeader(pad, GetCollisionEnergy(collision).c_str(), GetCollisionLabel(collision).c_str());
+        DrawKinematicLabels(pad, "Nominal vs PU reject", zptRange, trackRange);
 
       canvas.Update();
       canvas.SaveAs((outputBase + "-" + observable + ".pdf").c_str());
@@ -80,7 +102,11 @@ int main(int argc, char *argv[])
       delete variation;
    }
 
-   nominalFile.Close();
-   variationFile.Close();
+   if(nominalFile != nullptr) { nominalFile->Close(); delete nominalFile; }
+   if(variationFile != nullptr) { variationFile->Close(); delete variationFile; }
+   if(nominalPPbFile != nullptr) { nominalPPbFile->Close(); delete nominalPPbFile; }
+   if(nominalPBPFile != nullptr) { nominalPBPFile->Close(); delete nominalPBPFile; }
+   if(variationPPbFile != nullptr) { variationPPbFile->Close(); delete variationPPbFile; }
+   if(variationPBPFile != nullptr) { variationPBPFile->Close(); delete variationPBPFile; }
    return 0;
 }

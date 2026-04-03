@@ -30,8 +30,9 @@ public:
      bool isPP;             // Flag to check if this is a PP analysis
      bool isData;           // Flag to check if this is a Data analysis
      bool isJewel;             // Flag to check if this is a Jewel analysis
-    bool useVZWeight;       // Flag to check if VZ reweighting should be applied
-    int ExtraZWeight;
+     bool useVZWeight;       // Flag to check if VZ reweighting should be applied
+     bool useVZWindow;       // Apply the analysis |vz| < 15 requirement
+     int ExtraZWeight;
     string VZWeightFile;
     bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
 
@@ -49,10 +50,11 @@ public:
        cout << "isGen: " << (isGen ? "true" : "false") << endl;
         cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
         cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
-        cout << "isPP: " << (isPP ? "true" : "false") << endl;
-        cout << "isData: " << (isData ? "true" : "false") << endl;
-        cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
-        cout << "Scale factor: " << scaleFactor << endl;
+         cout << "isPP: " << (isPP ? "true" : "false") << endl;
+         cout << "isData: " << (isData ? "true" : "false") << endl;
+         cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
+         cout << "UseVZWindow: " << (useVZWindow ? "true" : "false") << endl;
+         cout << "Scale factor: " << scaleFactor << endl;
         cout << "SumHF shift: " << shift << endl;
        cout << "Number of Threads: " << nThread << endl;
        cout << "Process the Nth chunk: " << nChunk << endl;

@@ -11,7 +11,7 @@ This directory is the compiled harvesting and plotting workspace for the note-fa
 - Systematic variations from the rewritten `MainAnalysis/20241102_ZhadronVsZPt/systematics.sh` runner:
   - `Loose`, `Tight`
   - `IsMuTaggedFalse`
-  - `IsPURejectFalse`
+  - `IsPURejectTrue`
   - `MuVar0..3`
 
 ## Main files
@@ -19,11 +19,13 @@ This directory is the compiled harvesting and plotting workspace for the note-fa
 - `legacy_systematics.C`: copied reference macro from `MainAnalysis/20241102_ZhadronVsZPt/systematics.C`
 - `CalculateSystematics.cpp`: compiled bin-by-bin uncertainty calculator
 - `PlotSystematics.cpp`: compiled plotter for absolute/relative uncertainty overlays and central-value plots with systematic error bars
-- `PlotPUComparison.cpp`: dedicated corrected-data nominal vs `IsPURejectFalse` plotter with the nominal/PU overlay on top and a subtraction panel (`PU=1 - nominal`) below
+- `PlotPUComparison.cpp`: dedicated corrected-data nominal vs `IsPURejectTrue` plotter with the nominal/PU overlay on top and a subtraction panel (`PU reject - nominal`) below
 - `PlotTrackSelectionDiff.cpp`: dedicated corrected-data nominal/loose/tight overlay plotter with a subtraction lower panel relative to nominal
+- `PlotTrackCorrectionDiff.cpp`: dedicated corrected-data nominal/0.976/1.024 overlay plotter with a subtraction lower panel relative to nominal
 - `run.sh`: runner for calculation and plotting over selected systems and kinematic bins
 - `run-pu.sh`: runner for standalone PU comparison PDFs
 - `run-track-selection.sh`: runner for standalone loose/nominal/tight PDFs
+- `run-track-correction.sh`: runner for standalone track-correction comparison PDFs
 - `makefile`: local build rules
 
 ## Output content
@@ -38,11 +40,11 @@ For each nominal result file and requested track-pt selection, `CalculateSystema
 - `ScaleFactor_{DeltaPhi,DeltaEta}`
 - `Total_{DeltaPhi,DeltaEta}`
 
-The tracking-correction term is implemented as a flat 2.1% absolute contribution per bin, and `Total` is formed by quadrature over the families selected through the runner.
+The tracking-correction term is harvested from the dedicated corrected-data `TrackCorrection0p976` / `TrackCorrection1p024` variation family, taking the maximum absolute difference with respect to nominal in each bin. `Total` is formed by quadrature over the families selected through the runner.
 
 `run.sh` now applies the PU family collision-by-collision by default:
 
-- `pp`: `PUpp` only
+- `pp`: `PUpp` only, with `TrackSelection` omitted because the official pp skim has no loose/tight trees
 - `pPb`: `PUpPb` only
 - `PbP`: `PUpPb` only
 
@@ -58,9 +60,10 @@ The dedicated comparison runners read the corrected-data result ROOT files direc
 
 - `run-pu.sh` writes `plots/pu/<system>_<official-tag>_ZPT<range>_trkPT<range>-PU-Delta{Phi,Eta}.pdf`
 - `run-track-selection.sh` writes `plots/trackSelection/<system>_<official-tag>_ZPT<range>_trkPT<range>-TrackSelection-Delta{Phi,Eta}.pdf`
+- `run-track-correction.sh` writes `plots/trackCorrection/<system>_<official-tag>_ZPT<range>_trkPT<range>-TrackCorrection-Delta{Phi,Eta}.pdf`
 
 Both standalone plotters apply the note-facing quoted normalization `0.5 * Delta{Phi,Eta}_Result<trkPT>` before drawing, matching the compiled `CalculateSystematics.cpp` convention for harvested systematics and the compiled `PlotSystematics.cpp` treatment of nominal central values.
-For PU, the lower panel is the subtraction `0.5 * (IsPURejectFalse - nominal)`; for track selection, the output uses the same two-pad layout with `0.5`-normalized nominal/loose/tight overlaid above and `0.5 * (Loose - nominal)` / `0.5 * (Tight - nominal)` below.
+For PU, the lower panel is the subtraction `0.5 * (IsPURejectTrue - nominal)`; for track selection, the output uses the same two-pad layout with `0.5`-normalized nominal/loose/tight overlaid above and `0.5 * (Loose - nominal)` / `0.5 * (Tight - nominal)` below. The dedicated track-correction comparison does the analogous `0.5`-normalized nominal/0.976/1.024 overlay with lower panels showing `variation - nominal`.
 
 ## Typical usage
 
@@ -69,9 +72,10 @@ cd /home/kdeverea/PhysicsZHadronEEC
 source SetupAnalysis.sh
 cd Systematics/20260329_pPbSystematics
 make
-SYSTEMS=pPb ZPT_RANGES=40_350 TRACK_RANGES=2_500 INCLUDE_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,ScaleFactor PLOT_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,ScaleFactor ./run.sh
+SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 INCLUDE_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,ScaleFactor PLOT_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,ScaleFactor ./run.sh
 SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-pu.sh
-SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-track-selection.sh
+SYSTEMS=pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-track-selection.sh
+SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-track-correction.sh
 ```
 
 Use `SYSTEMS`, `ZPT_RANGES`, and `TRACK_RANGES` to narrow the standalone comparison runners without changing the code. For `run.sh`, `INCLUDE_FAMILIES`, `PLOT_FAMILIES`, `DO_CALC`, and `DO_PLOT` remain available; if `INCLUDE_FAMILIES` / `PLOT_FAMILIES` are left unset, `run.sh` picks the collision-specific default PU family listed above.

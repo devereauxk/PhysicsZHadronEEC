@@ -1,7 +1,20 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 source clean.sh
 
-./ExecuteZMassPlot --collisionType pPb --zPtRange 0_500 --trkPtRange 0.5_500 --tag ZV6_trkV24_nmix10
-./ExecuteZMassPlot --collisionType PbP --zPtRange 0_500 --trkPtRange 0.5_500 --tag ZV6_trkV24_nmix10
-./ExecuteZMassPlot --collisionType pp --zPtRange 5_500 --trkPtRange 0.5_500 --tag EEV3_ZV6_trkV24_nmix10
+PLOT_SYSTEMS=(${PLOT_SYSTEMS:-pPb PbP})
+for system in "${PLOT_SYSTEMS[@]}"; do
+    case "$system" in
+        pPb|PbP)
+            ./ExecuteZMassPlot --collisionType "$system" --zPtRange 0_500 --trkPtRange 0.5_500 --tag "$OFFICIAL_TAG_PPB"
+            ;;
+        pp)
+            ./ExecuteZMassPlot --collisionType pp --zPtRange 5_500 --trkPtRange 0.5_500 --tag "$OFFICIAL_TAG_PP"
+            ;;
+    esac
+done
 
 exit

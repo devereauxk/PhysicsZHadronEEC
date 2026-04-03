@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
    Latex.SetNDC();
    Latex.SetTextFont(42);
    Latex.SetTextSize(0.035);
-   Latex.DrawLatex(0.15, 0.92, ("HLT efficiency from V0.1 " + Orientation + " inputs").c_str());
+    Latex.DrawLatex(0.15, 0.92, ("HLT efficiency from V0.2 " + Orientation + " inputs").c_str());
 
    Canvas.SaveAs(OutputFileName.c_str());
 

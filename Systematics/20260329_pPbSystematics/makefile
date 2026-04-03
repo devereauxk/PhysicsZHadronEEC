@@ -1,4 +1,4 @@
-default: ExecuteCalculateSystematics ExecutePlotSystematics ExecutePlotPUComparison ExecutePlotTrackSelectionDiff
+default: ExecuteCalculateSystematics ExecutePlotSystematics ExecutePlotPUComparison ExecutePlotTrackSelectionDiff ExecutePlotTrackCorrectionDiff
 
 ExecuteCalculateSystematics: CalculateSystematics.cpp
 	g++ CalculateSystematics.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecuteCalculateSystematics `root-config --cflags --glibs`
@@ -11,3 +11,6 @@ ExecutePlotPUComparison: PlotPUComparison.cpp PlotComparisonUtilities.h
 
 ExecutePlotTrackSelectionDiff: PlotTrackSelectionDiff.cpp PlotComparisonUtilities.h
 	g++ PlotTrackSelectionDiff.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecutePlotTrackSelectionDiff `root-config --cflags --glibs`
+
+ExecutePlotTrackCorrectionDiff: PlotTrackCorrectionDiff.cpp PlotComparisonUtilities.h
+	g++ PlotTrackCorrectionDiff.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecutePlotTrackCorrectionDiff `root-config --cflags --glibs`

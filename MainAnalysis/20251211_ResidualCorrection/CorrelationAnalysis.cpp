@@ -50,7 +50,8 @@ bool validateVZConfiguration(const Parameters& par) {
 // MinZPT < zPt < MaxZPT
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
-   if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
+   if (par.isPUReject && par.isData && b->NVertex!=1) return 0;
+   if (par.useVZWindow && fabs(b->VZ) >= 15) return 0;
 
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size())==0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0])<60) return 0;
@@ -180,6 +181,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
          float weight = this_eventWeight;
          //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
          weight*= (*MZSignal->trackWeight)[j];
+         weight*= par.TrackExtraWeight;
          weight*= residualCorrection;     
          h->Fill( trackPt, trackEta, trackPhi, weight);
       }
@@ -194,6 +196,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
             float weight = this_eventWeight; // / MZSignal->VZWeight; // scale by UE VZ weight
             //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
             weight*= (*MZUE->trackWeight)[j];
+            weight*= par.TrackExtraWeight;
             weight*= residualCorrection;    
             h->Fill( trackPt, trackEta, trackPhi, weight);
          }
@@ -208,9 +211,9 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
 
 class DataAnalyzer {
 public:
-  DataAnalyzer(const char* filename, const char* filenameUE, const char* residualFilename, const char* outFilename, const char *mytitle = "Data", bool doUE = false) :
+  DataAnalyzer(const char* filename, const char* filenameUE, const char* residualFilename, const char* outFilename, const char *mytitle = "Data", bool doUE = false, const char *trackTreeName = "Tree") :
      inf(new TFile(filename)),  
-     MZHadron(new ZHadronMessenger(*inf,string("Tree"))), 
+     MZHadron(new ZHadronMessenger(*inf,string(trackTreeName))), 
      title(mytitle), outf(new TFile(outFilename, "recreate"))  {
      if (doUE) {
         infUE = new TFile(filenameUE);
@@ -301,12 +304,13 @@ int main(int argc, char *argv[])
    par.residualFile  = CL.Get      ("residualFile", "");            // Input Mix file
     par.VZWeightFile   = CL.Get      ("VZWeightFile", "");           // Input VZ weight file
     par.useVZWeight    = CL.GetBool  ("UseVZWeight", false);
+   par.useVZWindow    = CL.GetBool  ("UseVZWindow", true);
    par.output        = CL.Get      ("Output",  "output.root");                             	// Output file
    par.isGen         = CL.GetBool  ("IsGen", false); // Determine if the analysis is gen level
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     
    par.isData        = IsData;
    par.isOO          = CL.GetBool  ("IsOO", false);        // Flag to check if this is an OO analysis 
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);  // Flag to reject PU sample for systemaitcs.
+   par.isPUReject    = CL.GetBool  ("IsPUReject", false); // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
    par.ZWeightFile   = CL.Get      ("ZWeightFile", "");           // Z weight file
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);     // Fraction of event processed in the sample
@@ -317,6 +321,12 @@ int main(int argc, char *argv[])
    par.MinZY         = CL.GetDouble("MinZY", 0);           // Minimum Z particle rapidity threshold for event selection.
    par.MaxZY         = CL.GetDouble("MaxZY", 200);         // Maximum Z particle rapidity threshold for event selection.
    par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);    // Do Muon systematics, -1 means no extraweight.
+   par.TrackExtraWeight = CL.GetDouble("TrackExtraWeight", 1.0);
+   par.TrackSelectionMode = CL.Get      ("TrackSelectionMode", "Nominal");
+   par.TrackTreeName = "Tree";
+   if (par.TrackSelectionMode == "Loose")   par.TrackTreeName = "TreeLoose";
+   if (par.TrackSelectionMode == "Tight")   par.TrackTreeName = "TreeTight";
+   if (par.isGen) par.TrackTreeName = "Tree";
    par.includeHole   = CL.GetBool  ("includeHole",true);   // Include hole particle or not
    par.mix = 0;
    par.isPP = IsPP;
@@ -326,7 +336,7 @@ int main(int argc, char *argv[])
     if (!validateVZConfiguration(par)) return -1;
           
    // Analyze Data
-   DataAnalyzer analyzer(par.input.c_str(), par.inputUE.c_str(), par.residualFile.c_str(), par.output.c_str(), "Data", par.isAddUE);
+   DataAnalyzer analyzer(par.input.c_str(), par.inputUE.c_str(), par.residualFile.c_str(), par.output.c_str(), "Data", par.isAddUE, par.TrackTreeName.c_str());
    analyzer.analyze(par);
    analyzer.writeHistograms(analyzer.outf);
    saveParametersToHistograms(par, analyzer.outf);

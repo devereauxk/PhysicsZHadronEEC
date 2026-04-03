@@ -1,13 +1,23 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 make
 
-TAG="${1:-ZV6_trkV24_nmix0}"
+TAG="${1:-${OFFICIAL_TAG_PPB/nmix10/nmix0}}"
 PLOT_SYSTEMS=(${PLOT_SYSTEMS:-pp pPb PbP})
 
-for system in "${PLOT_SYSTEMS[@]}"
+for zPtRange in "0_500"
 do
-    for zPtRange in "0_500"
+    for trkPtRange in "0.5_500"
     do
-        echo "Processing $system zPtRange: $zPtRange"
-        ./ExecuteClosureTest --collisionType "$system" --zPtRange "$zPtRange" --trkPtRange 0.5_500 --tag "$TAG"
+        echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
+        for system in "${PLOT_SYSTEMS[@]}"
+        do
+            ./ExecuteClosureTest --collisionType "$system" --zPtRange "$zPtRange" --trkPtRange "$trkPtRange" --tag "$TAG"
+        done
     done
 done
+
+exit

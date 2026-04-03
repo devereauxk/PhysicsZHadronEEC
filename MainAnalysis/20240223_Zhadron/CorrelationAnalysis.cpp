@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
    par.residualCor   = CL.Get      ("ResidualCor",  "residualCor");                      	// Output file
    par.isSelfMixing  = CL.GetBool  ("IsSelfMixing", true);   // Determine if the analysis is self-mixing
    par.isGenZ        = CL.GetBool  ("IsGenZ", false);        // Determine if the analysis is using Gen level Z     
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);     // Flag to reject PU sample for systemaitcs.
+   par.isPUReject    = CL.GetBool  ("IsPUReject", false);    // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
    par.isHiBinUp     = CL.GetBool  ("IsHiBinUp", false);     // Default is false
    par.isHiBinDown   = CL.GetBool  ("IsHiBinDown", false);   // Default is false

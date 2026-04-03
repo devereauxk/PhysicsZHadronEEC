@@ -1,13 +1,15 @@
-make ExecuteCentralPlot
+#!/bin/bash
 
-PPB_TAG="ZV6_trkV24_nmix10"
-PP_TAG="EEV3_ZV6_trkV24_nmix10"
+set -euo pipefail
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+make ExecuteCentralPlot
 
 run_one() {
     local ZPT=$1
     local TRKPT=$2
-    ./ExecuteCentralPlot --collisionType pPb --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG"
-    ./ExecuteCentralPlot --collisionType PbP --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG"
+    ./ExecuteCentralPlot --collisionType pPb --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$OFFICIAL_TAG_PPB" --pptag "$OFFICIAL_TAG_PP"
+    ./ExecuteCentralPlot --collisionType PbP --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$OFFICIAL_TAG_PPB" --pptag "$OFFICIAL_TAG_PP"
 }
 
 run_one "5_30" "0.5_4"

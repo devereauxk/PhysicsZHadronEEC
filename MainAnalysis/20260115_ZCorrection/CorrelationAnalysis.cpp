@@ -50,7 +50,8 @@ bool validateVZConfiguration(const Parameters& par) {
 // MinZPT < zPt < MaxZPT
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
-   if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
+   if (par.isPUReject && par.isData && b->NVertex!=1) return 0;
+   if (par.useVZWindow && fabs(b->VZ) >= 15) return 0;
 
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size())==0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0])<60) return 0;
@@ -269,11 +270,12 @@ int main(int argc, char *argv[])
    par.residualFile  = CL.Get      ("residualFile", "");            // Input Mix file
     par.VZWeightFile   = CL.Get      ("VZWeightFile", "");           // Input VZ weight file
     par.useVZWeight    = CL.GetBool  ("UseVZWeight", false);
+   par.useVZWindow    = CL.GetBool  ("UseVZWindow", true);
    par.output        = CL.Get      ("Output",  "output.root");                             	// Output file
    par.isGen         = CL.GetBool  ("IsGen", false); // Determine if the analysis is gen level
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     
    par.isData        = IsData;
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);  // Flag to reject PU sample for systemaitcs.
+   par.isPUReject    = CL.GetBool  ("IsPUReject", false); // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);     // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);         // The number of threads to be used for parallel processing.

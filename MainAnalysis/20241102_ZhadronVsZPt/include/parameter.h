@@ -33,9 +33,11 @@ public:
    int ExtraZWeight;
    bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
    bool useTrackWeight;      // Flag to see if we use track efficiency correction
+   float TrackExtraWeight;   // Extra multiplicative factor for per-track efficiency weights
    bool useEventWeight;      // Flag to see if we use event efficiency correction
    bool useZWeight;          // Flag to see if we use Z efficiency correction
    bool useVZWeight;          // Flag to see if we use VZ efficiency correction
+   bool useVZWindow;          // Apply the analysis |vz| < 15 requirement
    bool useFastMixing;        // Use precomputed mixing metadata to reduce candidate scanning
    string ZWeightFile;      // Z weight file
    bool useResidualWeight;   // Flag to see if we use residual correction
@@ -65,12 +67,14 @@ public:
       cout << "isPP: " << (isPP ? "true" : "false") << endl;
       cout << "isData: " << (isData ? "true" : "false") << endl;
       cout << "isPPb: " << (isPPb ? "true" : "false") << endl;
-      cout << "UseEventWeight: " << (useEventWeight ? "true" : "false") << endl;
-      cout << "UseZWeight: " << (useZWeight ? "true" : "false") << endl;
-      cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
-      cout << "UseFastMixing: " << (useFastMixing ? "true" : "false") << endl;
+       cout << "UseEventWeight: " << (useEventWeight ? "true" : "false") << endl;
+       cout << "UseZWeight: " << (useZWeight ? "true" : "false") << endl;
+       cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
+       cout << "UseVZWindow: " << (useVZWindow ? "true" : "false") << endl;
+       cout << "UseFastMixing: " << (useFastMixing ? "true" : "false") << endl;
       cout << "ZWeightFile: " << ZWeightFile << endl;
       cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
+      cout << "TrackExtraWeight: " << TrackExtraWeight << endl;
       cout << "UseResidualWeight: " << (useResidualWeight ? "true" : "false") << endl;
       cout << "ResidualWeightFile: " << residualWeightFile << endl;
       cout << "EnergyExtraFile: " << EnergyExtraFile << endl;

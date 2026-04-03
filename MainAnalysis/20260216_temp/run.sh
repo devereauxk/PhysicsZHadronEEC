@@ -3,6 +3,7 @@
 set -e
 
 nMix=1
+ISMUTAGGED=${ISMUTAGGED:-false}
 
 DOPP=${1:-1}
 DOPPB=${2:-1}
@@ -37,7 +38,7 @@ run_case() {
         --Input "${inputFile}" --MixFile "${mixFile}"
         --UseEventWeight "${useEventWeight}" --UseZWeight false
         --UseTrackWeight true --UseResidualWeight false
-        --yBoost 0 --nMix "${nMix}"
+        --yBoost 0 --nMix "${nMix}" --IsMuTagged "${ISMUTAGGED}"
     )
 
     if [ "${isPP}" = "false" ]; then
