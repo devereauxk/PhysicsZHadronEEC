@@ -52,7 +52,7 @@ inline std::pair<double, double> GetObservableRange(const std::string &observabl
 
 inline std::string GetCollisionEnergy(const std::string &collision)
 {
-   return (collision == "pp") ? "8 TeV" : "8.16 TeV";
+   return "8.16 TeV";
 }
 
 inline TH1D *LoadResultHistogram(TFile &file, const std::string &observable,

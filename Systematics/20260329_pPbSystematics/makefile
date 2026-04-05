@@ -1,4 +1,4 @@
-default: ExecuteCalculateSystematics ExecutePlotSystematics ExecutePlotPUComparison ExecutePlotTrackSelectionDiff ExecutePlotTrackCorrectionDiff
+default: ExecuteCalculateSystematics ExecutePlotSystematics ExecutePlotPUComparison ExecutePlotTrackSelectionDiff ExecutePlotTrackCorrectionDiff ExecutePlotMuonTrackComparison ExecutePlotEnergyExtrapolationComparison
 
 ExecuteCalculateSystematics: CalculateSystematics.cpp
 	g++ CalculateSystematics.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecuteCalculateSystematics `root-config --cflags --glibs`
@@ -14,3 +14,9 @@ ExecutePlotTrackSelectionDiff: PlotTrackSelectionDiff.cpp PlotComparisonUtilitie
 
 ExecutePlotTrackCorrectionDiff: PlotTrackCorrectionDiff.cpp PlotComparisonUtilities.h
 	g++ PlotTrackCorrectionDiff.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecutePlotTrackCorrectionDiff `root-config --cflags --glibs`
+
+ExecutePlotMuonTrackComparison: PlotMuonTrackComparison.cpp PlotComparisonUtilities.h
+	g++ PlotMuonTrackComparison.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecutePlotMuonTrackComparison `root-config --cflags --glibs`
+
+ExecutePlotEnergyExtrapolationComparison: PlotEnergyExtrapolationComparison.cpp PlotComparisonUtilities.h
+	g++ PlotEnergyExtrapolationComparison.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecutePlotEnergyExtrapolationComparison `root-config --cflags --glibs`

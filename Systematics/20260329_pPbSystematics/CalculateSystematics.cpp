@@ -106,10 +106,10 @@ int main(int argc, char *argv[])
    string nominalFileName = CL.Get("Nominal", "");
    string nominalPPbFileName = CL.Get("NominalPPb", "");
    string nominalPBPFileName = CL.Get("NominalPBP", "");
-   string outputFileName = CL.Get("Output", "systematics.root");
-   string trackTag = CL.Get("TrackTag", "2_500");
-   vector<string> includeFamilies = ParseCSV(CL.Get("IncludeFamilies",
-      "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor"));
+    string outputFileName = CL.Get("Output", "systematics.root");
+    string trackTag = CL.Get("TrackTag", "2_500");
+    vector<string> includeFamilies = ParseCSV(CL.Get("IncludeFamilies",
+       "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
    set<string> included(includeFamilies.begin(), includeFamilies.end());
 
    bool doCombined = (nominalPPbFileName != "" && nominalPBPFileName != "");
@@ -118,9 +118,10 @@ int main(int argc, char *argv[])
    familyFiles["TrackSelection"] = ParseCSV(CL.Get("TrackSelectionFiles", ""));
    familyFiles["TrackCorrection"] = ParseCSV(CL.Get("TrackCorrectionFiles", ""));
    familyFiles["MuonRejection"] = ParseCSV(CL.Get("MuonRejectionFiles", ""));
-   familyFiles["PUpp"] = ParseCSV(CL.Get("PUppFiles", ""));
-   familyFiles["PUpPb"] = ParseCSV(CL.Get("PUpPbFiles", ""));
-   familyFiles["ScaleFactor"] = ParseCSV(CL.Get("ScaleFactorFiles", ""));
+    familyFiles["PUpp"] = ParseCSV(CL.Get("PUppFiles", ""));
+    familyFiles["PUpPb"] = ParseCSV(CL.Get("PUpPbFiles", ""));
+    familyFiles["ScaleFactor"] = ParseCSV(CL.Get("ScaleFactorFiles", ""));
+    familyFiles["EnergyExtrapolation"] = ParseCSV(CL.Get("EnergyExtrapolationFiles", ""));
 
    map<string, vector<pair<string, string>>> familyFilePairs;
    familyFilePairs["TrackSelection"] = ZipFiles(
@@ -132,17 +133,20 @@ int main(int argc, char *argv[])
    familyFilePairs["MuonRejection"] = ZipFiles(
       ParseCSV(CL.Get("MuonRejectionFilesPPb", "")),
       ParseCSV(CL.Get("MuonRejectionFilesPBP", "")));
-   familyFilePairs["PUpp"] = ZipFiles(
-      ParseCSV(CL.Get("PUppFilesPPb", "")),
-      ParseCSV(CL.Get("PUppFilesPBP", "")));
-   familyFilePairs["PUpPb"] = ZipFiles(
-      ParseCSV(CL.Get("PUpPbFilesPPb", "")),
-      ParseCSV(CL.Get("PUpPbFilesPBP", "")));
-   familyFilePairs["ScaleFactor"] = ZipFiles(
-      ParseCSV(CL.Get("ScaleFactorFilesPPb", "")),
-      ParseCSV(CL.Get("ScaleFactorFilesPBP", "")));
+    familyFilePairs["PUpp"] = ZipFiles(
+       ParseCSV(CL.Get("PUppFilesPPb", "")),
+       ParseCSV(CL.Get("PUppFilesPBP", "")));
+    familyFilePairs["PUpPb"] = ZipFiles(
+       ParseCSV(CL.Get("PUpPbFilesPPb", "")),
+       ParseCSV(CL.Get("PUpPbFilesPBP", "")));
+    familyFilePairs["ScaleFactor"] = ZipFiles(
+       ParseCSV(CL.Get("ScaleFactorFilesPPb", "")),
+       ParseCSV(CL.Get("ScaleFactorFilesPBP", "")));
+    familyFilePairs["EnergyExtrapolation"] = ZipFiles(
+       ParseCSV(CL.Get("EnergyExtrapolationFilesPPb", "")),
+       ParseCSV(CL.Get("EnergyExtrapolationFilesPBP", "")));
 
-   vector<string> families = {"TrackSelection", "TrackCorrection", "MuonRejection", "PUpp", "PUpPb", "ScaleFactor"};
+    vector<string> families = {"TrackSelection", "TrackCorrection", "MuonRejection", "PUpp", "PUpPb", "ScaleFactor", "EnergyExtrapolation"};
    vector<string> observables = {"DeltaPhi", "DeltaEta"};
 
    TFile *nominalFile = (nominalFileName != "") ? TFile::Open(nominalFileName.c_str()) : nullptr;

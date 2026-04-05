@@ -12,8 +12,10 @@ cd "$THISDIR"
 SYSTEMS_CSV=${SYSTEMS:-pp,pPb,PbP,pPbPbp}
 ZPT_RANGES_CSV=${ZPT_RANGES:-5_500}
 TRACK_RANGES_CSV=${TRACK_RANGES:-0.5_500}
-DEFAULT_PP_FAMILIES=TrackCorrection,MuonRejection,PUpp,ScaleFactor
-DEFAULT_PA_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpPb,ScaleFactor
+DEFAULT_PP_FAMILIES=TrackCorrection,PUpp,ScaleFactor,EnergyExtrapolation
+DEFAULT_PP_PLOT_FAMILIES=TrackCorrection,PUpp,ScaleFactor,EnergyExtrapolation
+DEFAULT_PA_FAMILIES=TrackSelection,TrackCorrection,PUpPb,ScaleFactor
+DEFAULT_COMBINED_PLOT_FAMILIES=TrackSelection,TrackCorrection,PUpPb,ScaleFactor
 USER_INCLUDE_FAMILIES=${INCLUDE_FAMILIES:-}
 USER_PLOT_FAMILIES=${PLOT_FAMILIES:-}
 DO_CALC=${DO_CALC:-1}
@@ -32,6 +34,7 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
       PU_PP_FILE="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_IsPURejectTrue"
       PU_PPB_FILE=""
       DEFAULT_FAMILIES="$DEFAULT_PP_FAMILIES"
+      DEFAULT_PLOT_FAMILIES="$DEFAULT_PP_PLOT_FAMILIES"
       NOMINAL_FILE_BASE="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}"
       TRACK_SELECTION_FILES_PPB=""
       TRACK_SELECTION_FILES_PBP=""
@@ -42,20 +45,32 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
       PU_PPB_FILE_PBP=""
       SCALE_FACTOR_FILES_PPB=""
       SCALE_FACTOR_FILES_PBP=""
-   elif [ "$SYSTEM" = "pPbPbp" ]; then
+      ENERGY_EXTRAPOLATION_FILES_PPB=""
+      ENERGY_EXTRAPOLATION_FILES_PBP=""
+    elif [ "$SYSTEM" = "pPbPbp" ]; then
       PREFIX="$SYSTEM"
       OFFICIAL_TAG="$OFFICIAL_TAG_PPB"
       DEFAULT_FAMILIES="$DEFAULT_PA_FAMILIES"
-   else
+      DEFAULT_PLOT_FAMILIES="$DEFAULT_COMBINED_PLOT_FAMILIES"
+      ENERGY_EXTRAPOLATION_FILES=""
+    else
       PREFIX="$SYSTEM"
       OFFICIAL_TAG="$OFFICIAL_TAG_PPB"
       PU_PP_FILE=""
       PU_PPB_FILE="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_IsPURejectTrue"
       DEFAULT_FAMILIES="$DEFAULT_PA_FAMILIES"
-   fi
+      DEFAULT_PLOT_FAMILIES="$DEFAULT_FAMILIES"
+      ENERGY_EXTRAPOLATION_FILES=""
+    fi
 
-   INCLUDE_FAMILIES="${USER_INCLUDE_FAMILIES:-$DEFAULT_FAMILIES}"
-   PLOT_FAMILIES="${USER_PLOT_FAMILIES:-$INCLUDE_FAMILIES}"
+    INCLUDE_FAMILIES="${USER_INCLUDE_FAMILIES:-$DEFAULT_FAMILIES}"
+    if [ -n "$USER_PLOT_FAMILIES" ]; then
+       PLOT_FAMILIES="$USER_PLOT_FAMILIES"
+    elif [ -n "$USER_INCLUDE_FAMILIES" ]; then
+       PLOT_FAMILIES="$INCLUDE_FAMILIES"
+    else
+       PLOT_FAMILIES="$DEFAULT_PLOT_FAMILIES"
+    fi
 
    for ZPT in "${ZPT_ARRAY[@]}"; do
       if [ "$SYSTEM" = "pPbPbp" ]; then
@@ -71,19 +86,21 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
          PU_PPB_FILE_PBP="$ANALYSISDIR/PbP_trkResidual_${OFFICIAL_TAG}_IsPURejectTrue"
          SCALE_FACTOR_FILES_PPB="$ANALYSISDIR/pPb_trkResidual_${OFFICIAL_TAG}_MuVar0_ZPT${ZPT}-nosub.root,$ANALYSISDIR/pPb_trkResidual_${OFFICIAL_TAG}_MuVar1_ZPT${ZPT}-nosub.root,$ANALYSISDIR/pPb_trkResidual_${OFFICIAL_TAG}_MuVar2_ZPT${ZPT}-nosub.root,$ANALYSISDIR/pPb_trkResidual_${OFFICIAL_TAG}_MuVar3_ZPT${ZPT}-nosub.root"
          SCALE_FACTOR_FILES_PBP="$ANALYSISDIR/PbP_trkResidual_${OFFICIAL_TAG}_MuVar0_ZPT${ZPT}-nosub.root,$ANALYSISDIR/PbP_trkResidual_${OFFICIAL_TAG}_MuVar1_ZPT${ZPT}-nosub.root,$ANALYSISDIR/PbP_trkResidual_${OFFICIAL_TAG}_MuVar2_ZPT${ZPT}-nosub.root,$ANALYSISDIR/PbP_trkResidual_${OFFICIAL_TAG}_MuVar3_ZPT${ZPT}-nosub.root"
-      else
-         NOMINAL_FILE="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_ZPT${ZPT}-result.root"
-      fi
+       else
+          NOMINAL_FILE="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_ZPT${ZPT}-result.root"
+       fi
       TRACK_SELECTION_FILES=""
+      ENERGY_EXTRAPOLATION_FILES=""
       if [ "$SYSTEM" != "pp" ] && [ "$SYSTEM" != "pPbPbp" ]; then
-          TRACK_SELECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_Loose_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_Tight_ZPT${ZPT}-result.root"
-         TRACK_CORRECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_TrackCorrection0p976_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_TrackCorrection1p024_ZPT${ZPT}-result.root"
-         MUON_REJECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_IsMuTaggedFalse_ZPT${ZPT}-result.root"
-         SCALE_FACTOR_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar0_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar1_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar2_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar3_ZPT${ZPT}-result.root"
+           TRACK_SELECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_Loose_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_Tight_ZPT${ZPT}-result.root"
+          TRACK_CORRECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_TrackCorrection0p976_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_TrackCorrection1p024_ZPT${ZPT}-result.root"
+          MUON_REJECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_IsMuTaggedFalse_ZPT${ZPT}-result.root"
+          SCALE_FACTOR_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar0_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar1_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar2_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar3_ZPT${ZPT}-result.root"
       elif [ "$SYSTEM" = "pp" ]; then
-         TRACK_CORRECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_TrackCorrection0p976_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_TrackCorrection1p024_ZPT${ZPT}-result.root"
-         MUON_REJECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_IsMuTaggedFalse_ZPT${ZPT}-result.root"
-         SCALE_FACTOR_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar0_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar1_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar2_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar3_ZPT${ZPT}-result.root"
+          TRACK_CORRECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_TrackCorrection0p976_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_TrackCorrection1p024_ZPT${ZPT}-result.root"
+          MUON_REJECTION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_IsMuTaggedFalse_ZPT${ZPT}-result.root"
+          SCALE_FACTOR_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar0_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar1_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar2_ZPT${ZPT}-result.root,$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_MuVar3_ZPT${ZPT}-result.root"
+          ENERGY_EXTRAPOLATION_FILES="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_EEPrivate_ZPT${ZPT}-result.root"
       fi
 
       for TRACK in "${TRACK_ARRAY[@]}"; do
@@ -119,9 +136,10 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
                   --MuonRejectionFiles "$MUON_REJECTION_FILES" \
                   ${PU_PP_FILE:+--PUppFiles ${PU_PP_FILE}_ZPT${ZPT}-result.root} \
                   ${PU_PPB_FILE:+--PUpPbFiles ${PU_PPB_FILE}_ZPT${ZPT}-result.root} \
-                  --ScaleFactorFiles "$SCALE_FACTOR_FILES"
-            fi
-         fi
+                  --ScaleFactorFiles "$SCALE_FACTOR_FILES" \
+                  --EnergyExtrapolationFiles "$ENERGY_EXTRAPOLATION_FILES"
+             fi
+          fi
 
          if [ "$DO_PLOT" = "1" ]; then
             if [ "$SYSTEM" = "pPbPbp" ]; then

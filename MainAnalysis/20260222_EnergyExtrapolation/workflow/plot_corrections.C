@@ -6,12 +6,13 @@
 #include <iostream>
 #include <TROOT.h>
 
-void plot_corrections() {
+void plot_corrections(const char* inputFileName = "correction.root",
+                      const char* outputFileName = "corrections.pdf") {
     gROOT->SetBatch(kTRUE);
     gStyle->SetTitleY(1.01);
     gStyle->SetTitleSize(0.8);
     // Open the correction files
-    TFile *fCorr1 = TFile::Open("correction.root");
+    TFile *fCorr1 = TFile::Open(inputFileName);
 
     // Retrieve the histograms
     TH1D *hPtCorr1 = (TH1D*)fCorr1->Get("hPtCorrTotal");
@@ -35,7 +36,7 @@ void plot_corrections() {
     hPtCorr1->Draw("HIST");
 
     // Save the canvas as an image
-    c->SaveAs("corrections.pdf");
+    c->SaveAs(outputFileName);
 
 }
 

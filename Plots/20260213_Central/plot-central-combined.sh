@@ -1,10 +1,19 @@
+#!/bin/bash
+
+set -e
+
+THISDIR=$(cd "$(dirname "$0")" && pwd)
+cd "$THISDIR"
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
 #source ./clean.sh
 make ExecuteCentralCombinedPlot
 
 
 # input your Z and track selections here
-PP_TAG="EEV3_ZV6_trkV24_nmix10"
-PPB_TAG="ZV6_trkV24_nmix10"
+PP_TAG="$OFFICIAL_TAG_PP"
+PPB_TAG="$OFFICIAL_TAG_PPB"
 
 run_one() {
     local ZPT=$1

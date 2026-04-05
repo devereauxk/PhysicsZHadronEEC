@@ -15,6 +15,11 @@ ExecuteDeltaRZGenRecoPlot: plot_deltaR_ZGenReco.cpp
 		-o ExecuteDeltaRZGenRecoPlot `root-config --cflags --glibs` \
 		$(ProjectBase)/CommonCode/library/Messenger.o
 
+ExecuteMuonTrackRectangleScan: scan_muon_track_rectangle.cpp
+	g++ scan_muon_track_rectangle.cpp -O3 -I. -I$(ProjectBase)/CommonCode/include -I./include \
+		-o ExecuteMuonTrackRectangleScan `root-config --cflags --glibs` \
+		$(ProjectBase)/CommonCode/library/Messenger.o
+
 
 TestRun: ExecuteCorrelationAnalysis
 	./ExecuteCorrelationAnalysis --Input XXX1.root,XXX2.root --Output output.root

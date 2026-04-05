@@ -98,6 +98,7 @@ if [ "$DOPP" == "1" ]; then
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar1" --ExtraZWeight 1
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar2" --ExtraZWeight 2
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar3" --ExtraZWeight 3
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP_PRIVATE}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_EEPrivate"
 fi
 
 if [ "$DOPPB" == "1" ]; then
@@ -136,6 +137,7 @@ if [ "$DOPP" == "1" ]; then
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar1" --ExtraZWeight 1
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar2" --ExtraZWeight 2
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar3" --ExtraZWeight 3
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP_PRIVATE}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_EEPrivate"
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_TrackCorrection0p976}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_TrackCorrection0p976" --TrackExtraWeight 0.976
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_TrackCorrection1p024}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_TrackCorrection1p024" --TrackExtraWeight 1.024
 fi

@@ -112,4 +112,30 @@ then
       --MinZPT $MinZPT \
       --MinTrackPT $MinTrackPT
 
+elif [[ "$Type" == "PPMC5TeV" ]];
+then
+   ./Execute --Input "${InputFile}" \
+      --Output "${RecoOutputFile}" \
+      --WriteAllTrackSelectionTrees true \
+      --TrackEfficiencyPath $TrackingCorrectionFilePP \
+      --TrackEfficiencyPathLoose $TrackingCorrectionFilePPLoose \
+      --TrackEfficiencyPathTight $TrackingCorrectionFilePPTight \
+      --DoGenLevel false \
+      --IsData false \
+      --IsPP true \
+      --IsBackground false \
+      --CheckZ true \
+      --MinZPT $MinZPT \
+      --MinTrackPT $MinTrackPT
+
+   ./Execute --Input "${InputFile}" \
+      --Output "${GenOutputFile}" \
+      --DoGenLevel true \
+      --IsData false \
+      --IsPP true \
+      --IsBackground false \
+      --CheckZ true \
+      --MinZPT $MinZPT \
+      --MinTrackPT $MinTrackPT
+
 fi

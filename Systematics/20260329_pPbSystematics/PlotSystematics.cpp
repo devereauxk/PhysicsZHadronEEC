@@ -66,9 +66,11 @@ string GetResultAxisLabel(const string &observable)
 
 string GetLegendLabel(const string &family)
 {
-   if(family == "PUpp" || family == "PUpPb")
-      return "PU";
-   return family;
+    if(family == "PUpp" || family == "PUpPb")
+       return "PU";
+    if(family == "EnergyExtrapolation")
+       return "EnergyExtrapolation";
+    return family;
 }
 
 string FormatPTRange(const string &range, const string &symbol)
@@ -124,11 +126,12 @@ map<string, int> GetColors()
    colors["TrackSelection"] = kBlue + 1;
    colors["TrackCorrection"] = kMagenta + 1;
    colors["MuonRejection"] = kGreen + 2;
-   colors["PUpp"] = kOrange + 7;
-   colors["PUpPb"] = kAzure + 2;
-   colors["ScaleFactor"] = kRed + 1;
-   colors["Total"] = kBlack;
-   return colors;
+    colors["PUpp"] = kOrange + 7;
+    colors["PUpPb"] = kAzure + 2;
+    colors["ScaleFactor"] = kRed + 1;
+    colors["EnergyExtrapolation"] = kViolet + 1;
+    colors["Total"] = kBlack;
+    return colors;
 }
 
 vector<pair<string, TH1D *>> LoadFamilyHistograms(TFile &file, const string &observable, const vector<string> &families)
@@ -300,7 +303,7 @@ int main(int argc, char *argv[])
    string collision = CL.Get("Collision", "pPb");
    string zptRange = CL.Get("ZPTRange", "40_350");
    string trackRange = CL.Get("TrackPTRange", "2_500");
-   vector<string> families = ParseCSV(CL.Get("Families", "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor"));
+    vector<string> families = ParseCSV(CL.Get("Families", "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
 
    TFile systematicsFile(inputFileName.c_str());
    TFile *nominalFile = (nominalFileName != "") ? TFile::Open(nominalFileName.c_str()) : nullptr;

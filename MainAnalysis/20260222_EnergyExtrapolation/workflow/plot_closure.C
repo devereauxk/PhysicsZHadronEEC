@@ -9,7 +9,16 @@
 #include <vector>
 #include <string>
 
-void plot_closure(const char* output = "output/closure.pdf") {
+void plot_closure(const char* output = "output/closure.pdf",
+                  const char* baselineFile = "output/pPb-PbP-816.root",
+                  const char* referenceFile = "output/pp-502.root",
+                  const char* extrapolatedFile = "output/pp-816.root",
+                  const char* baselineLabel = "pPb 8.16 TeV",
+                  const char* referenceLabel = "pp 5.02 TeV",
+                  const char* extrapolatedLabel = "pp extrapolated 8.16 TeV",
+                  const char* ratioLabel = "Ratio to pPb",
+                  const char* energyLabel = "8 TeV",
+                  const char* systemLabel = "pPb (pp)") {
 
     // The first input file is considered the baseline (Gen+EPOS)
     // currently using a certain ZPT and track PT range
@@ -18,14 +27,14 @@ void plot_closure(const char* output = "output/closure.pdf") {
 
     //PbP
     vector<string> input_ZPT_files = {
-        "output/pPb-PbP-816.root",
-        "output/pp-502.root",
-        "output/pp-816.root"
+        baselineFile,
+        referenceFile,
+        extrapolatedFile
     };
     vector<string> labels = {
-        "pPb 8.16 TeV",
-        "pp 5.02 TeV",
-        "pp extrapolated 8.16 TeV"
+        baselineLabel,
+        referenceLabel,
+        extrapolatedLabel
     };
 
     vector<TH1*> hZPt;
@@ -66,7 +75,7 @@ void plot_closure(const char* output = "output/closure.pdf") {
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
         "p_{T}^{Z}", 0, 500,
         "(1/N_{Z}) dN_{Z}/dp_{T}^{Z}", -1, -1,
-        "Ratio to pPb", 0.9, 1.1,
+        ratioLabel, 0.9, 1.1,
         0,
         true, false, false
     );
@@ -77,7 +86,7 @@ void plot_closure(const char* output = "output/closure.pdf") {
         false
     );
 
-    AddUPCHeader(pZ1, "8 TeV", "pPb (pp)");
+    AddUPCHeader(pZ1, energyLabel, systemLabel);
 
     cZ1->Update();
     cZ1->SaveAs(Form("%s", output));
