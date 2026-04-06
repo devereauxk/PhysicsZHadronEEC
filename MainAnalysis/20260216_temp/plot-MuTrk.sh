@@ -9,6 +9,17 @@ TAG="${2:-MCStudies_V01Remake}"
 DOPP="${3:-1}"
 DOPPB="${4:-1}"
 DOPBP="${5:-1}"
+INPUT_SUBDIR="${INPUT_SUBDIR:-${OUTPUT_SUBDIR:-}}"
+OUTPUT_SUBDIR="${OUTPUT_SUBDIR:-}"
+
+INPUT_SUBDIR="${INPUT_SUBDIR#/}"
+INPUT_SUBDIR="${INPUT_SUBDIR%/}"
+OUTPUT_SUBDIR="${OUTPUT_SUBDIR#/}"
+OUTPUT_SUBDIR="${OUTPUT_SUBDIR%/}"
+
+if [ -n "${OUTPUT_SUBDIR}" ]; then
+    mkdir -p "plots/${OUTPUT_SUBDIR}"
+fi
 
 plot_case() {
     local collisionType=$1
@@ -19,7 +30,9 @@ plot_case() {
         --sample "${sample}" \
         --zPtRange 5_500 \
         --trkPtRange 0.5_500 \
-        --tag "${TAG}"
+        --tag "${TAG}" \
+        --inputSubdir "${INPUT_SUBDIR}" \
+        --outputSubdir "${OUTPUT_SUBDIR}"
 }
 
 plot_requested_samples() {

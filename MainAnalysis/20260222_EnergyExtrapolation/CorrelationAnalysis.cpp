@@ -8,6 +8,7 @@
 #include <TNtuple.h>
 #include <TFile.h>
 
+#include <cmath>
 #include <iostream>
 
 using namespace std;
@@ -154,8 +155,9 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
       float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, zPhi);
 
       // fill histograms
-      // hard coded since SIM should have event weights of 1, for pp pythia+MADGRAPH for some reason they aren't
-      float this_eventWeight = 1; // MZSignal->EventWeight;
+      float this_eventWeight = MZSignal->EventWeight;
+      if (std::isfinite(this_eventWeight) == false)
+         this_eventWeight = 1;
       if (par.useVZWeight)
          this_eventWeight *= vzCorrector->GetCorrectionFactor(MZSignal->VZ);
       this_eventWeight *= residualCorrection;

@@ -60,7 +60,10 @@ namespace
 
    struct RawForestSummary
    {
+      long long ScannedEvents = 0;
       long long ProcessedEvents = 0;
+      long long EventsPassingTriggerAND = 0;
+      long long EventsFailingTriggerAND = 0;
       long long EventsWithTracks = 0;
       long long EventsNGlbEQ2 = 0;
       long long EventsNDiEQ1 = 0;
@@ -449,13 +452,49 @@ namespace
       return Result;
    }
 
-   void PrintRawForestSummary(const string &Label, const string &RawMuonSource, const RawForestSummary &Summary)
+   int GetPbPbTrackCount(const PbPbTrackTreeMessenger &MTrack)
+   {
+      if(MTrack.TrackPT == nullptr || MTrack.TrackEta == nullptr || MTrack.TrackPhi == nullptr)
+         return 0;
+
+      return min({(int)MTrack.TrackPT->size(), (int)MTrack.TrackEta->size(), (int)MTrack.TrackPhi->size()});
+   }
+
+   bool HasTriggerPrefix(const TriggerTreeMessenger &MTrigger, const string &TriggerPrefix)
+   {
+      for(int i = 0; i < (int)MTrigger.Name.size(); i++)
+      {
+         if(MTrigger.Exist[i] == false || MTrigger.Name[i].find(TriggerPrefix) != 0)
+            continue;
+
+         return true;
+      }
+
+      return false;
+   }
+
+   void PrintRawForestSummary(const string &Label, const string &RawMuonSource,
+      const vector<string> &RawTriggerAND, const vector<long long> &TriggerPresentEvents,
+      const vector<long long> &TriggerNonZeroEvents, const RawForestSummary &Summary)
    {
       cout << "============================================" << endl;
       cout << Label << endl;
       cout << "mode=forest reco/raw muon-track study" << endl;
       cout << "raw_muon_source=" << RawMuonSource << endl;
+      cout << "scanned_events=" << Summary.ScannedEvents << endl;
       cout << "processed_events=" << Summary.ProcessedEvents << endl;
+      cout << "raw_trigger_and_count=" << RawTriggerAND.size() << endl;
+      if(RawTriggerAND.size() > 0)
+      {
+         cout << "events_passing_trigger_and=" << Summary.EventsPassingTriggerAND << endl;
+         cout << "events_failing_trigger_and=" << Summary.EventsFailingTriggerAND << endl;
+      }
+      for(int i = 0; i < (int)RawTriggerAND.size(); i++)
+      {
+         cout << "raw_trigger_and_" << i << "=" << RawTriggerAND[i] << endl;
+         cout << "trigger_prefix_present_events_" << i << "=" << TriggerPresentEvents[i] << endl;
+         cout << "trigger_prefix_nonzero_events_" << i << "=" << TriggerNonZeroEvents[i] << endl;
+      }
       cout << "events_with_tracks=" << Summary.EventsWithTracks << endl;
       cout << "events_nglb_eq_2=" << Summary.EventsNGlbEQ2 << endl;
       cout << "events_ndi_eq_1=" << Summary.EventsNDiEQ1 << endl;
@@ -487,13 +526,16 @@ namespace
    }
 
    int RunRawForestRecoStudy(const vector<string> &InputFileNames, const string &Output,
-      const string &Label, int MaxEvents, const string &RawMuonSource)
+      const string &Label, int MaxEvents, const string &RawMuonSource,
+      const vector<string> &RawTriggerAND)
    {
       TH2D HAllPairs("hAllRawPairs", "", 200, -0.01, 0.01, 200, -0.01, 0.01);
       TH2D HClosestOnly("hClosestRawPairs", "", 200, -0.01, 0.01, 200, -0.01, 0.01);
       TH2D HExcludingClosest("hExcludingClosestRawPairs", "", 200, -0.01, 0.01, 200, -0.01, 0.01);
 
       RawForestSummary Summary;
+      vector<long long> TriggerPresentEvents(RawTriggerAND.size(), 0);
+      vector<long long> TriggerNonZeroEvents(RawTriggerAND.size(), 0);
 
       for(string InputFileName : InputFileNames)
       {
@@ -505,21 +547,69 @@ namespace
          }
 
          TrackTreeMessenger MTrack(&InputFile, "ppTrack/trackTree");
+         PbPbTrackTreeMessenger MPbPbTrack(&InputFile, "PbPbTracks/trackTree");
+         TriggerTreeMessenger MTrigger(&InputFile);
          MuTreeMessenger MMu(&InputFile);
+         bool UsePPTrackTree = (MTrack.Tree != nullptr);
+         bool UsePbPbTrackTree = (UsePPTrackTree == false && MPbPbTrack.Tree != nullptr);
 
-         if(MTrack.Tree == nullptr || MMu.Tree == nullptr)
+         if((UsePPTrackTree == false && UsePbPbTrackTree == false) || MMu.Tree == nullptr)
          {
             cerr << "Missing required forest tree in " << InputFileName << endl;
             return 1;
          }
+         if(RawTriggerAND.size() > 0 && MTrigger.Tree == nullptr)
+         {
+            cerr << "Missing required trigger tree in " << InputFileName << endl;
+            return 1;
+         }
 
-         int EntryCount = min((int)MTrack.Tree->GetEntries(), (int)MMu.Tree->GetEntries());
+         int EntryCount = min(UsePPTrackTree ? (int)MTrack.Tree->GetEntries() : (int)MPbPbTrack.Tree->GetEntries(),
+            (int)MMu.Tree->GetEntries());
+         if(RawTriggerAND.size() > 0)
+            EntryCount = min(EntryCount, (int)MTrigger.Tree->GetEntries());
          for(int iE = 0; iE < EntryCount; iE++)
          {
             if(MaxEvents >= 0 && Summary.ProcessedEvents >= MaxEvents)
                break;
 
-            MTrack.GetEntry(iE);
+            Summary.ScannedEvents++;
+
+            if(RawTriggerAND.size() > 0)
+            {
+               MTrigger.GetEntry(iE);
+
+               bool PassTriggerAND = true;
+               for(int i = 0; i < (int)RawTriggerAND.size(); i++)
+               {
+                  if(HasTriggerPrefix(MTrigger, RawTriggerAND[i]) == false)
+                  {
+                     cerr << "Missing required trigger prefix " << RawTriggerAND[i]
+                        << " in " << InputFileName << endl;
+                     return 1;
+                  }
+
+                  int Decision = MTrigger.CheckTriggerStartWith(RawTriggerAND[i]);
+                  TriggerPresentEvents[i]++;
+                  if(Decision != 0)
+                     TriggerNonZeroEvents[i]++;
+                  if(Decision == 0)
+                     PassTriggerAND = false;
+               }
+
+               if(PassTriggerAND == false)
+               {
+                  Summary.EventsFailingTriggerAND++;
+                  continue;
+               }
+
+               Summary.EventsPassingTriggerAND++;
+            }
+
+            if(UsePPTrackTree == true)
+               MTrack.GetEntry(iE);
+            else
+               MPbPbTrack.GetEntry(iE);
             MMu.GetEntry(iE);
             Summary.ProcessedEvents++;
 
@@ -533,8 +623,9 @@ namespace
 
             Summary.TotalNGlbMuons += MMu.NGlb;
             Summary.TotalDimuonLegMuons += MMu.NDi * 2;
-            Summary.TotalRawTracks += MTrack.nTrk;
-            if(MTrack.nTrk > 0)
+            int TrackCount = (UsePPTrackTree == true) ? MTrack.nTrk : GetPbPbTrackCount(MPbPbTrack);
+            Summary.TotalRawTracks += TrackCount;
+            if(TrackCount > 0)
                Summary.EventsWithTracks++;
 
             vector<RawMuon> Muons = GetRawMuons(MMu, RawMuonSource);
@@ -544,17 +635,19 @@ namespace
             vector<double> ClosestDeltaEta(Muons.size(), 0);
             vector<double> ClosestDeltaPhi(Muons.size(), 0);
             vector<double> ClosestDeltaR(Muons.size(), numeric_limits<double>::infinity());
-            vector<bool> TrackExcluded(max(MTrack.nTrk, 0), false);
+            vector<bool> TrackExcluded(max(TrackCount, 0), false);
 
             for(int iM = 0; iM < (int)Muons.size(); iM++)
             {
                double MuEta = Muons[iM].Eta;
                double MuPhi = Muons[iM].Phi;
 
-               for(int iT = 0; iT < MTrack.nTrk; iT++)
+               for(int iT = 0; iT < TrackCount; iT++)
                {
-                  double DeltaEta = MTrack.trkEta[iT] - MuEta;
-                  double DeltaPhi = WrapDeltaPhi(MTrack.trkPhi[iT], MuPhi);
+                  double TrackEta = (UsePPTrackTree == true) ? MTrack.trkEta[iT] : MPbPbTrack.TrackEta->at(iT);
+                  double TrackPhi = (UsePPTrackTree == true) ? MTrack.trkPhi[iT] : MPbPbTrack.TrackPhi->at(iT);
+                  double DeltaEta = TrackEta - MuEta;
+                  double DeltaPhi = WrapDeltaPhi(TrackPhi, MuPhi);
                   double DeltaR = sqrt(DeltaEta * DeltaEta + DeltaPhi * DeltaPhi);
 
                   HAllPairs.Fill(DeltaEta, DeltaPhi);
@@ -587,15 +680,17 @@ namespace
 
             Summary.UniqueClosestTracksExcluded += count(TrackExcluded.begin(), TrackExcluded.end(), true);
 
-            for(int iT = 0; iT < MTrack.nTrk; iT++)
+            for(int iT = 0; iT < TrackCount; iT++)
             {
                if(TrackExcluded[iT] == true)
                   continue;
 
                for(int iM = 0; iM < (int)Muons.size(); iM++)
                {
-                  double DeltaEta = MTrack.trkEta[iT] - Muons[iM].Eta;
-                  double DeltaPhi = WrapDeltaPhi(MTrack.trkPhi[iT], Muons[iM].Phi);
+                  double TrackEta = (UsePPTrackTree == true) ? MTrack.trkEta[iT] : MPbPbTrack.TrackEta->at(iT);
+                  double TrackPhi = (UsePPTrackTree == true) ? MTrack.trkPhi[iT] : MPbPbTrack.TrackPhi->at(iT);
+                  double DeltaEta = TrackEta - Muons[iM].Eta;
+                  double DeltaPhi = WrapDeltaPhi(TrackPhi, Muons[iM].Phi);
 
                   HExcludingClosest.Fill(DeltaEta, DeltaPhi);
                   Summary.ExcludingClosestPairs++;
@@ -609,7 +704,8 @@ namespace
             break;
       }
 
-      PrintRawForestSummary(Label, RawMuonSource, Summary);
+      PrintRawForestSummary(Label, RawMuonSource, RawTriggerAND,
+         TriggerPresentEvents, TriggerNonZeroEvents, Summary);
 
       if(Output != "")
          SaveRawForestPlots(Output, Label, HAllPairs, HClosestOnly, HExcludingClosest);
@@ -651,6 +747,7 @@ int main(int argc, char *argv[])
    string Label = CL.Get("Label", "muon-track rectangle scan");
    string ForestRecoMode = CL.Get("ForestRecoMode", "selected");
    string RawMuonSource = CL.Get("RawMuonSource", "single");
+   vector<string> RawTriggerAND = CL.GetStringVector("RawTriggerAND", vector<string>{});
    double MinTrackPT = CL.GetDouble("MinTrackPT", 0.5);
    int MaxEvents = CL.GetInt("MaxEvents", -1);
    vector<string> InputFileNames = CL.GetStringVector("Input");
@@ -692,7 +789,7 @@ int main(int argc, char *argv[])
       return 1;
    }
    if(Mode == "forest" && TrackType == "reco" && MuonType == "reco" && ForestRecoMode == "raw")
-      return RunRawForestRecoStudy(InputFileNames, Output, Label, MaxEvents, RawMuonSource);
+      return RunRawForestRecoStudy(InputFileNames, Output, Label, MaxEvents, RawMuonSource, RawTriggerAND);
 
    TH2D HAll("hAll", "", 200, -0.01, 0.01, 200, -0.01, 0.01);
    TH2D HTagged("hTagged", "", 200, -0.01, 0.01, 200, -0.01, 0.01);

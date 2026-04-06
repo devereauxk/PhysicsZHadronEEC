@@ -30,6 +30,8 @@ int printHelpMessage(int argc, char *argv[]) {
               << "  --IsPP                 Flag for Proton-Proton collision data.\n"
               << "  --IsJewel              Flag for Jewel analysis.\n"
               << "  --IsMuTagged           Flag for doing Z decay muon matching.\n"
+              << "  --TrackMuDR <value>    Reject tracks with trackMuDR below this value; -1 keeps the nominal muon-tagged logic.\n"
+              << "  --TrackMuClosest       Reject the two tracks with the smallest trackMuDR values in the event.\n"
               << "  --IsPUReject           Flag to reject PU sample for systematics.\n"
               << "  --TrackExtraWeight     Extra multiplicative factor applied to per-track efficiency weights.\n"
               << "  --UseVZWindow          Apply the analysis |vz| < 15 selection window.\n"

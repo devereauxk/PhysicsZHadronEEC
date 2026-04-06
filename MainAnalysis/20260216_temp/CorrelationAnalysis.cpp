@@ -8,7 +8,9 @@
 #include <TNtuple.h>
 #include <TFile.h>
 
+#include <cmath>
 #include <iostream>
+#include <utility>
 
 using namespace std;
 #include "utilities.h"              // Yen-Jie's random utility functions
@@ -31,11 +33,115 @@ bool checkError(const Parameters& par) {
    return false;    // No errors found
 }
 
+bool hasTrackMuDRBranch(ZHadronMessenger *b) {
+   return (b != nullptr && b->Tree != nullptr && b->Tree->GetBranch("trackMuDR") != nullptr
+      && b->trackMuDR != nullptr);
+}
+
+double GetRawDeltaPhi(double phi1, double phi2) {
+   double deltaPhi = phi1 - phi2;
+   while (deltaPhi < -M_PI) deltaPhi += 2 * M_PI;
+   while (deltaPhi > M_PI) deltaPhi -= 2 * M_PI;
+   return deltaPhi;
+}
+
+float getTrackMuonDR(ZHadronMessenger *b, const Parameters &par, int trackIndex) {
+   if (hasTrackMuDRBranch(b) && trackIndex < (int)b->trackMuDR->size())
+      return (*b->trackMuDR)[trackIndex];
+
+   if (trackIndex >= (int)b->trackEta->size() || trackIndex >= (int)b->trackPhi->size())
+      return -1;
+
+   vector<float> muEta;
+   vector<float> muPhi;
+
+   if (par.isGenZ) {
+      if (b->genMuEta1 != nullptr && b->genMuEta1->size() > 0 && b->genMuPhi1 != nullptr && b->genMuPhi1->size() > 0) {
+         muEta.push_back((*b->genMuEta1)[0]);
+         muPhi.push_back((*b->genMuPhi1)[0]);
+      }
+      if (b->genMuEta2 != nullptr && b->genMuEta2->size() > 0 && b->genMuPhi2 != nullptr && b->genMuPhi2->size() > 0) {
+         muEta.push_back((*b->genMuEta2)[0]);
+         muPhi.push_back((*b->genMuPhi2)[0]);
+      }
+   }
+   else {
+      if (b->muEta1 != nullptr && b->muEta1->size() > 0 && b->muPhi1 != nullptr && b->muPhi1->size() > 0) {
+         muEta.push_back((*b->muEta1)[0]);
+         muPhi.push_back((*b->muPhi1)[0]);
+      }
+      if (b->muEta2 != nullptr && b->muEta2->size() > 0 && b->muPhi2 != nullptr && b->muPhi2->size() > 0) {
+         muEta.push_back((*b->muEta2)[0]);
+         muPhi.push_back((*b->muPhi2)[0]);
+      }
+   }
+
+   if (muEta.size() == 0)
+      return -1;
+
+   float trackEta = (*b->trackEta)[trackIndex];
+   float trackPhi = (*b->trackPhi)[trackIndex];
+   float minDR = -1;
+
+   for (int i = 0; i < (int)muEta.size(); i++) {
+      double deltaEta = trackEta - muEta[i];
+      double deltaPhi = GetRawDeltaPhi(trackPhi, muPhi[i]);
+      float deltaR = sqrt(deltaEta * deltaEta + deltaPhi * deltaPhi);
+      if (minDR < 0 || deltaR < minDR)
+         minDR = deltaR;
+   }
+
+   return minDR;
+}
+
+pair<int, int> findClosestMuonTracks(ZHadronMessenger *b, const Parameters &par) {
+   if (!par.TrackMuClosest)
+      return {-1, -1};
+
+   int closestTrack = -1;
+   int secondClosestTrack = -1;
+   float closestDR = -1;
+   float secondClosestDR = -1;
+
+   for (unsigned int i = 0; i < b->trackPt->size(); i++) {
+      float trackMuDR = getTrackMuonDR(b, par, i);
+      if (trackMuDR < 0)
+         continue;
+
+      if (closestTrack < 0 || trackMuDR < closestDR) {
+         secondClosestTrack = closestTrack;
+         secondClosestDR = closestDR;
+         closestTrack = i;
+         closestDR = trackMuDR;
+      }
+      else if (secondClosestTrack < 0 || trackMuDR < secondClosestDR) {
+         secondClosestTrack = i;
+         secondClosestDR = trackMuDR;
+      }
+   }
+
+   return {closestTrack, secondClosestTrack};
+}
+
+bool rejectMuonMatchedTrack(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+   if (par.TrackMuDR >= 0) {
+      float trackMuDR = getTrackMuonDR(b, par, j);
+      return (trackMuDR >= 0 && trackMuDR < par.TrackMuDR);
+   }
+
+   if (par.TrackMuClosest)
+      return (j == closestMuonTracks.first || j == closestMuonTracks.second);
+
+   return (par.isMuTagged && (*b->trackMuTagged)[j]);
+}
+
 //======= trackSelection =====================================//
 // Check if the track pass selection criteria
 //============================================================//
-bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
-   if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
+bool trackSelection(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+   if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((*b->trackPt)[j] > par.MaxTrackPT) return false;  
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
@@ -47,9 +153,20 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
 //======= trackSelection =====================================//
 // Check if the track pass selection criteria
 //============================================================//
-bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
-   if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
+bool trackSelectionNoPt(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+   if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
+   if ((*b->trackEta)[j] > 2.4) return false;
+   if ((*b->trackEta)[j] < -2.4) return false;
+   return true;
+}
+
+bool trackStudySelection(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+   if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
+   if ((*b->trackPt)[j] > par.MaxTrackPT) return false;
+   if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((*b->trackEta)[j] > 2.4) return false;
    if ((*b->trackEta)[j] < -2.4) return false;
    return true;
@@ -102,7 +219,16 @@ vector<int>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
       hard->trackEta->push_back(ue->trackEta->at(i));
       hard->trackY->push_back(ue->trackY->at(i));
       hard->trackPhi->push_back(ue->trackPhi->at(i));
-      hard->trackMuTagged->push_back(ue->trackMuTagged->at(i));
+      if (hard->trackMuTagged != nullptr) {
+         bool muTagged = (ue->trackMuTagged != nullptr && i < ue->trackMuTagged->size())
+            ? ue->trackMuTagged->at(i) : false;
+         hard->trackMuTagged->push_back(muTagged);
+      }
+      if (hard->trackMuDR != nullptr) {
+         float trackMuDR = (ue->trackMuDR != nullptr && i < ue->trackMuDR->size())
+            ? ue->trackMuDR->at(i) : -1;
+         hard->trackMuDR->push_back(trackMuDR);
+      }
       hard->trackWeight->push_back(ue->trackWeight->at(i));
       hard->trackResidualWeight->push_back(ue->trackResidualWeight->at(i));
       UEmask->push_back(1);
@@ -123,8 +249,9 @@ bool isSameZpTBin(float zPt_sig, float zPt_bkg) {
 
 float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector *corrector) {
    float mult = 0;
+   pair<int, int> closestMuonTracks = findClosestMuonTracks(b, par);
    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
-      if (!trackSelection(b, par, j)) continue;
+      if (!trackSelection(b, par, j, closestMuonTracks)) continue;
       float trackWeight = (*b->trackWeight)[j];
       mult += trackWeight;
    }
@@ -280,8 +407,9 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       //==================================================//
       // get track residual corrector
       // correcting MMix or MSignal particles here, we force both Zs in mixed events to be in the same track residual correction Z bin though, so we just use the sig Z here
+      pair<int, int> closestMuonTracks = findClosestMuonTracks(MZSignal, par);
       for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
-         if (!trackSelection(MZSignal, par, j)) continue;
+         if (!trackSelection(MZSignal, par, j, closestMuonTracks)) continue;
          float trackPhi  = (*MZSignal->trackPhi)[j];
          if (trackPhi<0) trackPhi+= 2 * M_PI;
          float trackEta  = (*MZSignal->trackEta)[j];
@@ -310,12 +438,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       // loop over tracks
       //==================================================//
       for (unsigned long k = 0; k < MZSignal->trackPhi->size(); k++) {
-
-         // track selection without delta R cut
-         if ((*MZSignal->trackPt)[k] > par.MaxTrackPT) continue;  
-         if ((*MZSignal->trackPt)[k] < par.MinTrackPT) continue;
-         if ((*MZSignal->trackEta)[k] > 2.4) continue;
-         if ((*MZSignal->trackEta)[k] < -2.4) continue;
+         if (!trackStudySelection(MZSignal, par, k, closestMuonTracks)) continue;
 
          float trackEta = (*MZSignal->trackEta)[k];
          float trackPhi = (*MZSignal->trackPhi)[k];
@@ -512,6 +635,8 @@ int main(int argc, char *argv[])
    par.isGenZ        = CL.GetBool  ("IsGenZ", false);        // Determine if the analysis is using Gen level Z     
    par.isPUReject    = CL.GetBool  ("IsPUReject", false);    // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
+   par.TrackMuDR     = CL.GetDouble("TrackMuDR", -1);
+   par.TrackMuClosest = CL.GetBool ("TrackMuClosest", false);
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
    par.useEventWeight   = CL.GetBool  ("UseEventWeight", false);     // Default is false
    par.useZWeight       = CL.GetBool  ("UseZWeight", false);         // Default is false

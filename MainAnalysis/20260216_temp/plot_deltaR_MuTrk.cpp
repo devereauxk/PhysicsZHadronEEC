@@ -59,7 +59,16 @@ int main(int argc, char *argv[]) {
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
     string sample = CL.Get("sample", "Gen");
+    string inputSubdir = CL.Get("inputSubdir", "");
+    string outputSubdir = CL.Get("outputSubdir", "");
     string inputPrefix = GetInputPrefix(collisionType, sample);
+    string inputBase = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260216_temp/output";
+    string outputBase = "plots";
+
+    if(inputSubdir != "")
+        inputBase = inputBase + "/" + inputSubdir;
+    if(outputSubdir != "")
+        outputBase = outputBase + "/" + outputSubdir;
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -74,12 +83,12 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260216_temp/output/%s_%s_ZPT%s", inputPrefix.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("%s/%s_%s_ZPT%s", inputBase.c_str(), inputPrefix.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         GetSampleLabel(collisionType, sample)
     };
-    string output = Form("plots/%s_ZPT%s_%s", inputPrefix.c_str(), zPtRange.c_str(), tag.c_str());
+    string output = Form("%s/%s_ZPT%s_%s", outputBase.c_str(), inputPrefix.c_str(), zPtRange.c_str(), tag.c_str());
 
     vector<TH2D*> hDeltaRMuTrk;
 
@@ -97,6 +106,11 @@ int main(int argc, char *argv[]) {
 
         // muon-track deltaR distribution
         TH2D* this_hDeltaRMuTrk = (TH2D*)fin->Get("hDeltaRMuTrkData");
+        if(this_hDeltaRMuTrk == nullptr)
+        {
+            std::cerr << "Error: hDeltaRMuTrkData not found in " << input_ZPT << std::endl;
+            return 1;
+        }
         this_hDeltaRMuTrk->SetName(Form("hDeltaRMuTrk_%d", i));
         hDeltaRMuTrk.push_back(this_hDeltaRMuTrk);
 
@@ -123,23 +137,14 @@ int main(int argc, char *argv[]) {
     gPad->SetLogz();
     hDeltaRMuTrk[0]->Draw("COLZ");
     
-    TEllipse* circle = new TEllipse(0, 0, 0.0025, 0.0025);
-    circle->SetLineColor(kBlack);
-    circle->SetLineWidth(3);
-    circle->SetFillStyle(0);
-    circle->Draw();
-    
-    TEllipse* circle2 = new TEllipse(0, 0, 0.01, 0.01);
-    circle2->SetLineColor(kBlack);
-    circle2->SetLineWidth(3);
-    circle2->SetFillStyle(0);
-    circle2->Draw();
-
-    TEllipse* circle3 = new TEllipse(0, 0, 0.004, 0.004);
-    circle3->SetLineColor(kBlack);
-    circle3->SetLineWidth(3);
-    circle3->SetFillStyle(0);
-    circle3->Draw();
+    for(double radius : {0.001, 0.0025, 0.0035})
+    {
+        TEllipse *circle = new TEllipse(0, 0, radius, radius);
+        circle->SetLineColor(kBlack);
+        circle->SetLineWidth(3);
+        circle->SetFillStyle(0);
+        circle->Draw();
+    }
     
     c2D->Update();
 

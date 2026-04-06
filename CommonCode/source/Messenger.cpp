@@ -1615,15 +1615,19 @@ bool PbPbTrackTreeMessenger::Initialize()
    Tree->SetBranchAddress("trkEta", &TrackEta);
    Tree->SetBranchAddress("trkPhi", &TrackPhi);
    Tree->SetBranchAddress("trkCharge", &TrackCharge);
-   Tree->SetBranchAddress("trkPDFId", &TrackPDFID);
+   if(Tree->GetBranch("trkPDFId") != nullptr)
+      Tree->SetBranchAddress("trkPDFId", &TrackPDFID);
    Tree->SetBranchAddress("trkNHits", &TrackNHits);
    Tree->SetBranchAddress("trkNPixHits", &TrackNPixHits);
    Tree->SetBranchAddress("trkNLayers", &TrackNLayers);
    Tree->SetBranchAddress("trkNormChi2", &TrackNormChi2);
    Tree->SetBranchAddress("highPurity", &TrackHighPurity);
-   Tree->SetBranchAddress("pfEnergy", &PFEnergy);
-   Tree->SetBranchAddress("pfEcal", &PFEcal);
-   Tree->SetBranchAddress("pfHcal", &PFHcal);
+   if(Tree->GetBranch("pfEnergy") != nullptr)
+      Tree->SetBranchAddress("pfEnergy", &PFEnergy);
+   if(Tree->GetBranch("pfEcal") != nullptr)
+      Tree->SetBranchAddress("pfEcal", &PFEcal);
+   if(Tree->GetBranch("pfHcal") != nullptr)
+      Tree->SetBranchAddress("pfHcal", &PFHcal);
    Tree->SetBranchAddress("trkAssociatedVtxIndx", &TrackAssociatedVertexIndex);
    Tree->SetBranchAddress("trkAssociatedVtxQuality", &TrackAssociatedVertexQuality);
    Tree->SetBranchAddress("trkDzAssociatedVtx", &TrackAssociatedVertexDz);

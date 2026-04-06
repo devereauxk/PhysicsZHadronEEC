@@ -9,6 +9,7 @@
 #include <TFile.h>
 
 #include <iostream>
+#include <utility>
 
 using namespace std;
 #include "utilities.h"              // Yen-Jie's random utility functions
@@ -41,11 +42,57 @@ bool checkError(const Parameters& par) {
    return false;    // No errors found
 }
 
+pair<int, int> findClosestMuonTracks(ZHadronMessenger *b, const Parameters &par)
+{
+   if(!par.TrackMuClosest)
+      return {-1, -1};
+
+   int closestTrack = -1;
+   int secondClosestTrack = -1;
+   float closestDR = -1;
+   float secondClosestDR = -1;
+
+   for(unsigned int i = 0; i < b->trackMuDR->size(); i++)
+   {
+      float trackMuDR = (*b->trackMuDR)[i];
+      if(trackMuDR < 0)
+         continue;
+
+      if(closestTrack < 0 || trackMuDR < closestDR)
+      {
+         secondClosestTrack = closestTrack;
+         secondClosestDR = closestDR;
+         closestTrack = i;
+         closestDR = trackMuDR;
+      }
+      else if(secondClosestTrack < 0 || trackMuDR < secondClosestDR)
+      {
+         secondClosestTrack = i;
+         secondClosestDR = trackMuDR;
+      }
+   }
+
+   return {closestTrack, secondClosestTrack};
+}
+
+bool rejectMuonMatchedTrack(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1})
+{
+   if(par.TrackMuDR >= 0)
+      return ((*b->trackMuDR)[j] >= 0 && (*b->trackMuDR)[j] < par.TrackMuDR);
+
+   if(par.TrackMuClosest)
+      return (j == closestMuonTracks.first || j == closestMuonTracks.second);
+
+   return (par.isMuTagged && (*b->trackMuTagged)[j]);
+}
+
 //======= trackSelection =====================================//
 // Check if the track pass selection criteria
 //============================================================//
-bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
-   if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
+bool trackSelection(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+   if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((*b->trackPt)[j] > par.MaxTrackPT) return false;  
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
@@ -57,8 +104,9 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
 //======= trackSelection =====================================//
 // Check if the track pass selection criteria
 //============================================================//
-bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
-   if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
+bool trackSelectionNoPt(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+   if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
    if ((*b->trackEta)[j] > 2.4) return false;
    if ((*b->trackEta)[j] < -2.4) return false;
@@ -114,6 +162,7 @@ vector<int>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
       hard->trackY->push_back(ue->trackY->at(i));
       hard->trackPhi->push_back(ue->trackPhi->at(i));
       hard->trackMuTagged->push_back(ue->trackMuTagged->at(i));
+      hard->trackMuDR->push_back(ue->trackMuDR->at(i));
       hard->trackWeight->push_back(ue->trackWeight->at(i));
       hard->trackResidualWeight->push_back(ue->trackResidualWeight->at(i));
       UEmask->push_back(1);
@@ -141,8 +190,9 @@ int getZpTBin(float zPt) {
 
 float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector *corrector) {
    float mult = 0;
+   pair<int, int> closestMuonTracks = findClosestMuonTracks(b, par);
    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
-      if (!trackSelection(b, par, j)) continue;
+      if (!trackSelection(b, par, j, closestMuonTracks)) continue;
       float trackWeight = (*b->trackWeight)[j];
       mult += trackWeight;
    }
@@ -323,8 +373,9 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       //==================================================//
       // get track residual corrector
       // correcting MMix or MSignal particles here, we force both Zs in mixed events to be in the same track residual correction Z bin though, so we just use the sig Z here
+      pair<int, int> signalClosestMuonTracks = findClosestMuonTracks(MZSignal, par);
       for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
-         if (!trackSelection(MZSignal, par, j)) continue;
+         if (!trackSelection(MZSignal, par, j, signalClosestMuonTracks)) continue;
          float trackPhi  = (*MZSignal->trackPhi)[j];
          if (trackPhi<0) trackPhi+= 2 * M_PI;
          float trackEta  = (*MZSignal->trackEta)[j];
@@ -417,10 +468,12 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          //==================================================//
          // loop over tracks
          //==================================================//
+         ZHadronMessenger *currentEvent = (par.mix ? MMix : MZSignal);
+         pair<int, int> currentClosestMuonTracks = findClosestMuonTracks(currentEvent, par);
          for (unsigned long j = 0; j < (par.mix ? MMix->trackPhi->size() : MZSignal->trackPhi->size()); j++) {
 
             // Check if the event passes the selection criteria
-            if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
+            if (!trackSelection(currentEvent, par, j, currentClosestMuonTracks)) continue;
             
             float trackDphi  = par.mix ? DeltaPhi((*MMix->trackPhi)[j], zPhi)
                                        : DeltaPhi((*MZSignal->trackPhi)[j], zPhi);
@@ -676,6 +729,8 @@ int main(int argc, char *argv[])
    par.isGenZ        = CL.GetBool  ("IsGenZ", false);        // Determine if the analysis is using Gen level Z     
    par.isPUReject    = CL.GetBool  ("IsPUReject", false);    // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
+   par.TrackMuDR     = CL.GetDouble("TrackMuDR", -1);
+   par.TrackMuClosest = CL.GetBool ("TrackMuClosest", false);
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
    par.TrackExtraWeight = CL.GetDouble("TrackExtraWeight", 1.0);
    par.useEventWeight   = CL.GetBool  ("UseEventWeight", false);     // Default is false

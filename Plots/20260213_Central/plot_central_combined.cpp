@@ -14,6 +14,7 @@ using namespace std;
 
 #include <vector>
 #include <string>
+#include <cmath>
 
 
 int main(int argc, char *argv[]) {
@@ -25,7 +26,9 @@ int main(int argc, char *argv[]) {
     string tag = CL.Get("pPbtag", "V16_nmix5");
     string tag_pp = CL.Get("pptag", "V16_nmix5");
     bool doCombine = CL.GetBool("doCombine", false);
+    bool includeMC = CL.GetBool("includeMC", true);
     string collisionType = CL.Get("collisionType", "pPb");
+    string outputBase = CL.Get("outputBase", "plots/central_combined");
 
     cout<<"=================================================="<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -36,23 +39,24 @@ int main(int argc, char *argv[]) {
     // files to load
     string input_ZPT_files_pp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str());
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     vector<string> input_ZPT_files_pbp = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
+    if (includeMC) {
+        input_ZPT_files.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()));
+        input_ZPT_files_pbp.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()));
+    }
     vector<string> labels = {
         "pp",
-        Form("%s", collisionType.c_str()),
-        //"  & Z correction",
-        //"  & Z + track correction",
-        "Powheg+EPOS"
+        Form("%s", collisionType.c_str())
     };
+    if (includeMC)
+        labels.push_back("Powheg+EPOS");
     string file_tag = (doCombine) ? "all" : collisionType;
-    gSystem->mkdir(Form("plots/central_combined/%s", tag_pp.c_str()), true);
-    string output = Form("plots/central_combined/%s/%s_ZPT%s_trkPT%s_%s", tag_pp.c_str(), file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
+    gSystem->mkdir(Form("%s/%s", outputBase.c_str(), tag_pp.c_str()), true);
+    string output = Form("%s/%s/%s_ZPT%s_trkPT%s_%s", outputBase.c_str(), tag_pp.c_str(), file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     // plotted histograms
     vector<TH1*> hDeltaEta_combined;
@@ -236,8 +240,24 @@ int main(int argc, char *argv[]) {
     vector<int> lineColors = {cmsBlue, cmsRed, kSpring-8, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
     vector<int> lineStyles = {0, 0, 1};
 
-    float diffMin = (trkPtRange == "4_500") ? -0.1 : -0.35;
-    float diffMax = (trkPtRange == "4_500") ? 0.1 : 0.35;
+    auto GetSymmetricDiffRange = [](TH1 *baseline, TH1 *comparison, double xmin, double xmax) {
+        const double fallback = 1e-3;
+        if (baseline == nullptr || comparison == nullptr)
+            return 1.2 * fallback;
+
+        int binMin = baseline->GetXaxis()->FindBin(xmin);
+        int binMax = baseline->GetXaxis()->FindBin(xmax);
+        binMin = max(1, binMin);
+        binMax = min(baseline->GetNbinsX(), binMax);
+
+        double maxAbsDiff = 0;
+        for (int i = binMin; i <= binMax; ++i) {
+            double diff = comparison->GetBinContent(i) - baseline->GetBinContent(i);
+            maxAbsDiff = max(maxAbsDiff, abs(diff));
+        }
+
+        return 1.2 * max(maxAbsDiff, fallback);
+    };
 
     // ===========================================
     // results
@@ -251,6 +271,8 @@ int main(int argc, char *argv[]) {
 
     pair<string, string> zRange = ParseRange(zPtRange);
     pair<string, string> trkRange = ParseRange(trkPtRange);
+    double diffEtaRange = GetSymmetricDiffRange(hDeltaEta_combined[0], hDeltaEta_combined.size() > 1 ? hDeltaEta_combined[1] : nullptr, -4, 4);
+    double diffPhiRange = GetSymmetricDiffRange(hDeltaPhi_combined[0], hDeltaPhi_combined.size() > 1 ? hDeltaPhi_combined[1] : nullptr, -1.5707, 4.7123);
 
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
     TPad* pResult1 = (TPad*) plotCMSDiff(
@@ -259,7 +281,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "pPb - pp", diffMin, diffMax,
+        "pPb - pp", -diffEtaRange, diffEtaRange,
         0,
         false, false, true,
         0.2
@@ -292,7 +314,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#varphi_{ch,Z}", -1.5707, 4.7123,
         "d#LT#DeltaN_{ch}#GT/d#Delta#varphi_{ch,Z}", -1, -1,
-        "pPb - pp", diffMin, diffMax,
+        "pPb - pp", -diffPhiRange, diffPhiRange,
         0,
         false, false, true,
         0.2
