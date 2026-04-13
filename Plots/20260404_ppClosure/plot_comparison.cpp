@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -158,10 +159,15 @@ int main(int argc, char *argv[])
 
    CommandLine CL(argc, argv);
 
-    string OfficialInputFileName = CL.Get("OfficialInput",
-      "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/mergedSample/pythia-gen-v11-Zpt0.root");
-   string PrivateInputFileName = CL.Get("PrivateInput",
-      "/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20260403_PythiaMadgraph/output/ZMuMu_5020_validation.root");
+   const char *DefaultOfficialInput = getenv("OFFICIAL_MCGENINPUT_PP");
+   if(DefaultOfficialInput == nullptr || DefaultOfficialInput[0] == '\0')
+      DefaultOfficialInput = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/mergedSample/pythia-gen-v11-Zpt0.root";
+   const char *DefaultPrivateInput = getenv("PRIVATE_PP_5020_INPUT");
+   if(DefaultPrivateInput == nullptr || DefaultPrivateInput[0] == '\0')
+      DefaultPrivateInput = "/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20260403_PythiaMadgraph/output/ZMuMu_5020_validation.root";
+
+   string OfficialInputFileName = CL.Get("OfficialInput", DefaultOfficialInput);
+   string PrivateInputFileName = CL.Get("PrivateInput", DefaultPrivateInput);
    string OutputDirectory = CL.Get("OutputDir", "plots/compare");
    string OfficialLabel = CL.Get("OfficialLabel", "Official pp gen MC");
    string PrivateLabel = CL.Get("PrivateLabel", "Private MadGraph+Pythia");

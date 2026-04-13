@@ -1,19 +1,32 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 make ExecuteEnergyExtrapolationPlot
 
-ZPT_RANGES=("5_30" "30_500")
-PT_RANGES=("0.5_4" "4_500")
+run_one() {
+    local zPtRange=$1
+    local trkPtRange=$2
+    echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
+    ./ExecuteEnergyExtrapolationPlot --zPtRange "$zPtRange" --trkPtRange "$trkPtRange" --pptag "$OFFICIAL_TAG_PP"
+}
 
-for zPtRange in "${ZPT_RANGES[@]}"
-do
-    for trkPtRange in "${PT_RANGES[@]}"
-    do
-        echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
-
-        ./ExecuteEnergyExtrapolationPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pptag EEV3_ZV6_trkV24_nmix10
-
+if [ -n "${CONFIG_FILE:-}" ]; then
+    source "$CONFIG_FILE"
+    for zPtRange in "${ZPT_RANGES[@]}"; do
+        for trkPtRange in "${PT_RANGES[@]}"; do
+            run_one "$zPtRange" "$trkPtRange"
+        done
     done
-done
-
-./ExecuteEnergyExtrapolationPlot --zPtRange 5_500 --trkPtRange 0.5_500 --pptag EEV3_ZV6_trkV24_nmix10
+else
+    run_one 0_30 0.5_2
+    run_one 0_30 2_4
+    run_one 0_30 4_15
+    run_one 30_500 0.5_2
+    run_one 30_500 2_4
+    run_one 30_500 4_15
+    run_one 0_500 0.5_15
+fi
 
 exit

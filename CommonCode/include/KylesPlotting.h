@@ -755,6 +755,224 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
     return pad1; // Return the main pad for further customization if needed
 }
 
+TGraphAsymmErrors *BuildSystematicBand(TH1 *central, TH1 *uncertainty,
+    const char *name, Int_t color, float alpha = 0.25)
+{
+    if (central == nullptr || uncertainty == nullptr)
+        return nullptr;
+
+    TGraphAsymmErrors *band = new TGraphAsymmErrors(central->GetNbinsX());
+    band->SetName(name);
+    band->SetFillColorAlpha(color, alpha);
+    band->SetLineColorAlpha(color, alpha);
+    band->SetLineWidth(0);
+    band->SetMarkerSize(0);
+
+    for (int i = 1; i <= central->GetNbinsX(); i++) {
+        double x = central->GetBinCenter(i);
+        double y = central->GetBinContent(i);
+        double ex = central->GetBinWidth(i) / 2;
+        double ey = fabs(uncertainty->GetBinContent(i));
+        band->SetPoint(i - 1, x, y);
+        band->SetPointError(i - 1, ex, ex, ey, ey);
+    }
+
+    return band;
+}
+
+void updateDiffRange(double value, double uncertainty, double &minimum, double &maximum)
+{
+    minimum = min(minimum, value - uncertainty);
+    maximum = max(maximum, value + uncertainty);
+}
+
+TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<TH1*> bottomSystematics,
+    const char* title, vector<string> labels, vector<Int_t> linecolors, vector<Int_t> linestyles,
+    vector<Int_t> markercolors, vector<Int_t> markerstyles, const char* xTitle, double xmin, double xmax,
+    const char* yTitle, double ymin, double ymax, const char* rTitle, double rmin, double rmax,
+    int baseline = 0, bool logx = false, bool logy = false, bool errorBars = true, float xLegend = 0.55)
+{
+    double border = 0.06;
+    TPad *pad1 = new TPad(title, title, border, 0.25 + border, 1.0 - border, 1.0 - border);
+    pad1->SetBottomMargin(0);
+    logy ? pad1->SetLogy() : pad1->SetLogy(0);
+    logx ? pad1->SetLogx() : pad1->SetLogx(0);
+    pad1->Draw();
+    TPad *pad2 = new TPad(title, title, border, border, 1.0 - border, 0.25 + border);
+    pad2->SetTopMargin(0);
+    pad2->SetBottomMargin(0.2);
+    logx ? pad2->SetLogx() : pad2->SetLogx(0);
+    pad2->Draw();
+
+    SetTDRStyle();
+
+    TLegend* leg = new TLegend(xLegend, 0.7, xLegend+0.23, 0.85);
+    leg->SetBorderSize(0);
+    leg->SetFillStyle(0);
+    leg->SetTextFont(42);
+    leg->SetTextSize(0.035);
+
+    double global_min = 1e30, global_max = -1e30;
+    for (size_t ih = 0; ih < hists.size(); ++ih) {
+        TH1* hist = hists[ih];
+        TH1* syst = (ih < topSystematics.size()) ? topSystematics[ih] : nullptr;
+        double x1 = (xmin < xmax) ? xmin : hist->GetXaxis()->GetXmin();
+        double x2 = (xmin < xmax) ? xmax : hist->GetXaxis()->GetXmax();
+        int binmin = hist->GetXaxis()->FindBin(x1);
+        int binmax = hist->GetXaxis()->FindBin(x2);
+        for (int i = binmin; i <= binmax; ++i) {
+            double value = hist->GetBinContent(i);
+            double stat = errorBars ? hist->GetBinError(i) : 0;
+            double systError = (syst != nullptr) ? fabs(syst->GetBinContent(i)) : 0;
+            global_min = min(global_min, value - max(stat, systError));
+            global_max = max(global_max, value + max(stat, systError));
+        }
+    }
+    double margin;
+    if (logy) {
+        margin = exp((log(global_max) - log((global_min > 0) ? global_min : 1)) * 1.2);
+    } else {
+        margin = 0.2 * (global_max - global_min);
+    }
+
+    double diff_min = 1e30, diff_max = -1e30;
+    bool hasDifference = false;
+    for (int i = 0; i < hists.size(); i++) {
+        if (i == baseline)
+            continue;
+        TH1 *hist = hists[i];
+        TH1 *syst = (i < bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
+        TH1 *diff = (TH1 *)hist->Clone(Form("range_%s_%d", title, i));
+        diff->Add(hists[baseline], -1);
+        for (int bin = 1; bin <= diff->GetNbinsX(); bin++) {
+            double value = diff->GetBinContent(bin);
+            double stat = errorBars ? diff->GetBinError(bin) : 0;
+            double systError = (syst != nullptr) ? fabs(syst->GetBinContent(bin)) : 0;
+            updateDiffRange(value, max(stat, systError), diff_min, diff_max);
+            hasDifference = true;
+        }
+        delete diff;
+    }
+    if (hasDifference == false) {
+        diff_min = -1;
+        diff_max = 1;
+    }
+    double diff_margin = 0.15 * (diff_max - diff_min);
+    if (diff_margin <= 0)
+        diff_margin = max(fabs(diff_max), 1.0) * 0.15;
+
+    bool firstDifference = true;
+    for (int i = 0; i < hists.size(); i++) {
+        pad1->cd();
+
+        TH1* hist = hists[i];
+        TH1* topSyst = (i < topSystematics.size()) ? topSystematics[i] : nullptr;
+
+        if (linestyles[i] == -1) hist->SetLineColorAlpha(0, 0);
+        else hist->SetLineColor(linecolors[i]);
+        if (linestyles[i] == 0) hist->SetLineStyle(1);
+        else if (linestyles[i] > 0) hist->SetLineStyle(linestyles[i]);
+        hist->SetMarkerColor(markercolors[i]);
+        hist->SetMarkerStyle(markerstyles[i]);
+        hist->SetStats(0);
+        if (linestyles[i] == 0) hist->SetLineWidth(3);
+        else if (linestyles[i] > 0) hist->SetLineWidth(2);
+
+        hist->GetXaxis()->SetTitle(xTitle);
+        hist->GetXaxis()->SetRangeUser(xmin, xmax);
+        hist->GetYaxis()->SetTitle(yTitle);
+        hist->GetYaxis()->SetTitleSize(0.05);
+        hist->GetYaxis()->SetTitleOffset(0.7);
+
+        if (ymin < ymax) {
+            if (logy && ymin <= 0)
+                hist->GetYaxis()->SetRangeUser(1, ymax);
+            else
+                hist->GetYaxis()->SetRangeUser(ymin, ymax);
+        } else {
+            if (logy && global_min - margin <= 0)
+                hist->GetYaxis()->SetRangeUser(1, global_max + margin);
+            else
+                hist->GetYaxis()->SetRangeUser(global_min - margin, global_max + margin);
+        }
+
+        if (linestyles[i] == 0) hist->Draw("SAME");
+        else if (linestyles[i] == -1) hist->Draw("P SAME");
+        else hist->Draw("HIST SAME");
+
+        if (topSyst != nullptr) {
+            TGraphAsymmErrors *band = BuildSystematicBand(hist, topSyst,
+                Form("top_band_%s_%d", title, i), linecolors[i]);
+            if (band != nullptr)
+                band->Draw("2 SAME");
+            if (linestyles[i] == 0) hist->Draw("SAME");
+            else if (linestyles[i] == -1) hist->Draw("P SAME");
+            else hist->Draw("HIST SAME");
+        }
+
+        if (errorBars == true)
+            hist->Draw("E1 SAME");
+
+        if (linestyles[i] == 0) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "pl");
+        else if (linestyles[i] == -1) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "p");
+        else leg->AddEntry(hist, Form("%s", labels[i].c_str()), "l");
+
+        pad2->cd();
+        if (i != baseline) {
+            TH1* hDiff = (TH1*)hist->Clone(Form("diff_%s_%d", title, i));
+            hDiff->Add(hists[baseline], -1);
+            TH1 *bottomSyst = (i < bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
+            hDiff->GetXaxis()->SetTitle(xTitle);
+            hDiff->GetXaxis()->SetTitleSize(0.1);
+            hDiff->GetXaxis()->SetLabelSize(0.08);
+            hDiff->GetXaxis()->SetTitleOffset(1);
+            hDiff->GetYaxis()->SetTitle(rTitle);
+            if (rmin < rmax)
+                hDiff->GetYaxis()->SetRangeUser(rmin, rmax);
+            else
+                hDiff->GetYaxis()->SetRangeUser(diff_min - diff_margin, diff_max + diff_margin);
+            hDiff->GetYaxis()->SetTitleSize(0.08);
+            hDiff->GetYaxis()->SetLabelSize(0.06);
+            hDiff->GetYaxis()->SetTitleOffset(0.5);
+            hDiff->SetLineColor(linecolors[i]);
+            hDiff->SetLineStyle(linestyles[i] == 0 ? 1 : linestyles[i]);
+            hDiff->SetMarkerColor(markercolors[i]);
+            hDiff->SetMarkerStyle(markerstyles[i]);
+            hDiff->SetLineWidth(2);
+
+            TString diffDrawOption = errorBars ? "E1" : "P";
+            if (firstDifference == false)
+                diffDrawOption += " SAME";
+            hDiff->Draw(diffDrawOption);
+
+            if (bottomSyst != nullptr) {
+                TGraphAsymmErrors *band = BuildSystematicBand(hDiff, bottomSyst,
+                    Form("bottom_band_%s_%d", title, i), linecolors[i]);
+                if (band != nullptr)
+                    band->Draw("2 SAME");
+            }
+
+            if (errorBars == true)
+                hDiff->Draw("E1 SAME");
+            else
+                hDiff->Draw("P SAME");
+
+            double xlow = hDiff->GetXaxis()->GetBinLowEdge(hDiff->GetXaxis()->GetFirst());
+            double xhigh = hDiff->GetXaxis()->GetBinUpEdge(hDiff->GetXaxis()->GetLast());
+            TLine *line = new TLine(xlow, 0, xhigh, 0);
+            line->SetLineColor(kGray+2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+            firstDifference = false;
+        }
+    }
+    pad1->cd();
+    leg->Draw("SAME");
+    AddCMSHeader(pad1, "Preliminary", false);
+
+    return pad1;
+}
+
 TPad* plotCMSSimple2D(TCanvas* c, TH2* hist, const char* title,
     const char* xTitle, double xmin, double xmax,
     const char* yTitle, double ymin, double ymax,

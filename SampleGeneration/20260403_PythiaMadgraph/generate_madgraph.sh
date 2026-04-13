@@ -10,6 +10,7 @@ Seed=12345
 ProcessDir=""
 OutputLHE=""
 ForceProcess=0
+LHAID=303600
 
 while [[ $# -gt 0 ]]; do
    case "$1" in
@@ -36,61 +37,86 @@ esac
 
 ProcessDir=${ProcessDir:-${PYTHIA_LOCAL_BASE}/processes/ZMuMu_${Energy}}
 OutputLHE=${OutputLHE:-${ScriptDir}/output/ZMuMu_${Energy}.lhe}
+ProcessCard="$ScriptDir/work/process_${Energy}.mg5"
+LaunchCard="$ScriptDir/work/launch_${Energy}.mg5"
 
 mkdir -p "$ScriptDir/output" "$ScriptDir/work"
 
+NeedProcess=0
 if [[ ! -d "$ProcessDir" || "$ForceProcess" == "1" ]]; then
-   cat > "$ScriptDir/work/process_${Energy}.mg5" <<MG5
-import model sm
-generate p p > z, z > mu+ mu-
-output ${ProcessDir} -f
-MG5
-   "$MG5AMC_PYTHON" "$MG5AMC_BASE/bin/mg5_aMC" "$ScriptDir/work/process_${Energy}.mg5"
+   NeedProcess=1
+elif [[ ! -f "$ProcessDir/Cards/proc_card_mg5.dat" ]]; then
+   NeedProcess=1
+elif ! grep -Fq 'import model loop_sm' "$ProcessDir/Cards/proc_card_mg5.dat"; then
+   NeedProcess=1
+elif ! grep -Fq 'generate p p > z [QCD]' "$ProcessDir/Cards/proc_card_mg5.dat"; then
+   NeedProcess=1
 fi
 
-PROCESS_DIR="$ProcessDir" EBEAM="$EBeam" EVENTS="$Events" SEED="$Seed" \
-LHAPDF6_BASE="$LHAPDF6_BASE" \
-"$MG5AMC_PYTHON" - <<'PY'
-import os
-import re
+if [[ "$NeedProcess" == "1" ]]; then
+   cat > "$ProcessCard" <<MG5
+set automatic_html_opening False --no_save
+set lhapdf ${LHAPDF6_BASE}/bin/lhapdf-config --no_save
+import model loop_sm
+generate p p > z [QCD]
+output ${ProcessDir} -f
+quit
+MG5
+   "$MG5AMC_PYTHON" "$MG5AMC_BASE/bin/mg5_aMC" "$ProcessCard"
+fi
+
+cat > "$ProcessDir/Cards/madspin_card.dat" <<'MADSPIN'
+decay z > mu+ mu-
+launch
+MADSPIN
+
+cat > "$LaunchCard" <<MG5
+set automatic_html_opening False --no_save
+set lhapdf ${LHAPDF6_BASE}/bin/lhapdf-config --no_save
+launch ${ProcessDir}
+madspin=ON
+shower=OFF
+set nevents ${Events}
+set iseed ${Seed}
+set ebeam1 ${EBeam}
+set ebeam2 ${EBeam}
+set pdlabel lhapdf
+set lhaid ${LHAID}
+set parton_shower PYTHIA8
+set event_norm average
+set reweight_scale False
+set reweight_PDF False
+set store_rwgt_info False
+done
+quit
+MG5
+
+"$MG5AMC_PYTHON" "$MG5AMC_BASE/bin/mg5_aMC" "$LaunchCard"
+
+mapfile -t LatestPaths < <("$MG5AMC_PYTHON" - <<'PY' "$ProcessDir"
 from pathlib import Path
+import sys
 
-run_card = Path(os.environ["PROCESS_DIR"]) / "Cards" / "run_card.dat"
-run_replacements = {
-    "nevents": os.environ["EVENTS"],
-    "iseed": os.environ["SEED"],
-    "ebeam1": os.environ["EBEAM"],
-    "ebeam2": os.environ["EBEAM"],
-    "mmll": "60.0",
-    "cut_decays": "False",
-    "use_syst": "False",
-}
-config_card = Path(os.environ["PROCESS_DIR"]) / "Cards" / "me5_configuration.txt"
-config_replacements = {
-    "automatic_html_opening": "False",
-    "eps_viewer": "None",
-    "web_browser": "None",
-    "lhapdf": f"{os.environ['LHAPDF6_BASE']}/bin/lhapdf-config",
-}
-pattern = re.compile(r'^(\s*)([^=!#]+?)(\s*=\s*)([A-Za-z0-9_]+)(.*)$')
-
-for path, replacements in ((run_card, run_replacements), (config_card, config_replacements)):
-    lines = []
-    for line in path.read_text().splitlines():
-        match = pattern.match(line)
-        if match and match.group(4) in replacements:
-            name = match.group(4)
-            line = f"{match.group(1)}{replacements[name]}{match.group(3)}{name}{match.group(5)}"
-        lines.append(line)
-    path.write_text("\n".join(lines) + "\n")
-PY
-
-(
-   cd "$ProcessDir"
-   "$MG5AMC_PYTHON" ./bin/generate_events -f
+base = Path(sys.argv[1]) / "Events"
+runs = sorted(
+    p for p in base.iterdir()
+    if p.is_dir() and p.name.startswith("run_") and "_decayed_" not in p.name
 )
-
-LatestRun=$(ls -dt "$ProcessDir"/Events/run_* | head -n 1)
-gzip -dc "$LatestRun/unweighted_events.lhe.gz" > "$OutputLHE"
+if not runs:
+    raise SystemExit(1)
+latest = runs[-1]
+decayed = sorted(
+    p for p in base.iterdir()
+    if p.is_dir() and p.name.startswith(latest.name + "_decayed_")
+)
+if not decayed:
+    raise SystemExit(1)
+print(latest)
+print(decayed[-1])
+PY
+)
+LatestRun=${LatestPaths[0]}
+LatestDecayedRun=${LatestPaths[1]}
+gzip -dc "$LatestDecayedRun/events.lhe.gz" > "$OutputLHE"
 
 echo "$OutputLHE"

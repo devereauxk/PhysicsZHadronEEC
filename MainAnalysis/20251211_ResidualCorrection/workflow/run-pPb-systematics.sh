@@ -17,9 +17,9 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 )
 (
     cd "$SCRIPT_DIR"
-    NAME_TAG="${NAME_TAG:-20260401_ZV7_trkV25_TrackResidualCorrection}" TRACK_EXTRA_WEIGHT=0.976 VARIANT_TAG=TrackCorrection0p976 ./run-pPb.sh "$@"
+    NAME_TAG="${NAME_TAG:-20260412_ZV8_trkV26_TrackResidualCorrection}" TRACK_EXTRA_WEIGHT=0.976 VARIANT_TAG=TrackCorrection0p976 ./run-pPb.sh "$@"
 )
 (
     cd "$SCRIPT_DIR"
-    NAME_TAG="${NAME_TAG:-20260401_ZV7_trkV25_TrackResidualCorrection}" TRACK_EXTRA_WEIGHT=1.024 VARIANT_TAG=TrackCorrection1p024 ./run-pPb.sh "$@"
+    NAME_TAG="${NAME_TAG:-20260412_ZV8_trkV26_TrackResidualCorrection}" TRACK_EXTRA_WEIGHT=1.024 VARIANT_TAG=TrackCorrection1p024 ./run-pPb.sh "$@"
 )

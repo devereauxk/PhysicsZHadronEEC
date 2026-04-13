@@ -88,17 +88,21 @@ export CUT_PARALLELISM=${CUT_PARALLELISM:-1}
 export NTHREAD=${NTHREAD:-20}
 export NSLICE_FACTOR=${NSLICE_FACTOR:-1}
 
-write_config '"5_30" "30_500"' '"0.5_4" "4_500"'
+write_config '"0_30" "30_500"' '"0.5_2" "2_4" "4_15"'
 activate_config
 
 if [ "$DOPP" == "1" ]; then
-    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_IsMuTaggedFalse" --IsMuTagged false
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_Loose}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_Loose" --TrackSelectionMode Loose
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_Tight}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_Tight" --TrackSelectionMode Tight
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_IsMuTaggedFalse}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_IsMuTaggedFalse" --IsMuTagged false
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP_IsPURejectTrue}" "${RWeightFile_PP_IsPURejectTrue}" "${EEWeightFile_PP}" "${VZWeightFile_PP_IsPURejectTrue}" "${OFFICIAL_TAG_PP}_IsPURejectTrue" --IsPUReject true
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar0" --ExtraZWeight 0
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar1" --ExtraZWeight 1
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar2" --ExtraZWeight 2
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar3" --ExtraZWeight 3
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP_PRIVATE}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_EEPrivate"
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_TrackCorrection0p976}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_TrackCorrection0p976" --TrackExtraWeight 0.976
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_TrackCorrection1p024}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_TrackCorrection1p024" --TrackExtraWeight 1.024
 fi
 
 if [ "$DOPPB" == "1" ]; then
@@ -110,6 +114,8 @@ if [ "$DOPPB" == "1" ]; then
     run_pa_data_chain "pPb" true "${PPB_DATAINPUT}" "${ZWeightFile_PPb}" "${RWeightFile_PPb}" "${VZWeightFile_PPb}" "${OFFICIAL_TAG_PPB}_MuVar1" --ExtraZWeight 1
     run_pa_data_chain "pPb" true "${PPB_DATAINPUT}" "${ZWeightFile_PPb}" "${RWeightFile_PPb}" "${VZWeightFile_PPb}" "${OFFICIAL_TAG_PPB}_MuVar2" --ExtraZWeight 2
     run_pa_data_chain "pPb" true "${PPB_DATAINPUT}" "${ZWeightFile_PPb}" "${RWeightFile_PPb}" "${VZWeightFile_PPb}" "${OFFICIAL_TAG_PPB}_MuVar3" --ExtraZWeight 3
+    run_pa_data_chain "pPb" true "${PPB_DATAINPUT}" "${ZWeightFile_PPb}" "${RWeightFile_PPb_TrackCorrection0p976}" "${VZWeightFile_PPb}" "${OFFICIAL_TAG_PPB}_TrackCorrection0p976" --TrackExtraWeight 0.976
+    run_pa_data_chain "pPb" true "${PPB_DATAINPUT}" "${ZWeightFile_PPb}" "${RWeightFile_PPb_TrackCorrection1p024}" "${VZWeightFile_PPb}" "${OFFICIAL_TAG_PPB}_TrackCorrection1p024" --TrackExtraWeight 1.024
 fi
 
 if [ "$DOPBP" == "1" ]; then
@@ -121,17 +127,21 @@ if [ "$DOPBP" == "1" ]; then
     run_pa_data_chain "PbP" false "${PBP_DATAINPUT}" "${ZWeightFile_PbP}" "${RWeightFile_PbP}" "${VZWeightFile_PbP}" "${OFFICIAL_TAG_PPB}_MuVar1" --ExtraZWeight 1
     run_pa_data_chain "PbP" false "${PBP_DATAINPUT}" "${ZWeightFile_PbP}" "${RWeightFile_PbP}" "${VZWeightFile_PbP}" "${OFFICIAL_TAG_PPB}_MuVar2" --ExtraZWeight 2
     run_pa_data_chain "PbP" false "${PBP_DATAINPUT}" "${ZWeightFile_PbP}" "${RWeightFile_PbP}" "${VZWeightFile_PbP}" "${OFFICIAL_TAG_PPB}_MuVar3" --ExtraZWeight 3
+    run_pa_data_chain "PbP" false "${PBP_DATAINPUT}" "${ZWeightFile_PbP}" "${RWeightFile_PbP_TrackCorrection0p976}" "${VZWeightFile_PbP}" "${OFFICIAL_TAG_PPB}_TrackCorrection0p976" --TrackExtraWeight 0.976
+    run_pa_data_chain "PbP" false "${PBP_DATAINPUT}" "${ZWeightFile_PbP}" "${RWeightFile_PbP_TrackCorrection1p024}" "${VZWeightFile_PbP}" "${OFFICIAL_TAG_PPB}_TrackCorrection1p024" --TrackExtraWeight 1.024
 fi
 
 if [ -n "${CONFIG_OVERRIDE}" ]; then
     exit 0
 fi
 
-write_config '"5_500"' '"0.5_500"'
+write_config '"0_500"' '"0.5_15"'
 activate_config
 
 if [ "$DOPP" == "1" ]; then
-    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_IsMuTaggedFalse" --IsMuTagged false
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_Loose}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_Loose" --TrackSelectionMode Loose
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_Tight}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_Tight" --TrackSelectionMode Tight
+    run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP_IsMuTaggedFalse}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_IsMuTaggedFalse" --IsMuTagged false
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP_IsPURejectTrue}" "${RWeightFile_PP_IsPURejectTrue}" "${EEWeightFile_PP}" "${VZWeightFile_PP_IsPURejectTrue}" "${OFFICIAL_TAG_PP}_IsPURejectTrue" --IsPUReject true
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar0" --ExtraZWeight 0
     run_pp_chain "pp" "${PP_INPUT}" "${ZWeightFile_PP}" "${RWeightFile_PP}" "${EEWeightFile_PP}" "${VZWeightFile_PP}" "${OFFICIAL_TAG_PP}_MuVar1" --ExtraZWeight 1

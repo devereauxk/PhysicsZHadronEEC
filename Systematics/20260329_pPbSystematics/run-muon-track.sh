@@ -9,11 +9,11 @@ source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 
 cd "$THISDIR"
 
-SYSTEMS_CSV=${SYSTEMS:-pp,pPb,PbP,pPbPbp}
+SYSTEMS_CSV=${SYSTEMS:-pPb,PbP,pPbPbp}
 ZPT_RANGES_CSV=${ZPT_RANGES:-5_500}
 TRACK_RANGES_CSV=${TRACK_RANGES:-0.5_500}
-VARIATION_TAGS_CSV=${VARIATION_TAGS:-IsMuTaggedFalse,TrackMuDR0p001,TrackMuDR0p0025,TrackMuDR0p0035,TrackMuClosestTrue}
-VARIATION_LABELS_CSV=${VARIATION_LABELS:-No rejection,#DeltaR < 0.001,#DeltaR < 0.0025,#DeltaR < 0.0035,2 closest tracks}
+VARIATION_TAGS_CSV=${VARIATION_TAGS:-IsMuTaggedFalse}
+VARIATION_LABELS_CSV=${VARIATION_LABELS:-Muon rejection off}
 
 IFS=',' read -ra SYSTEMS_ARRAY <<< "$SYSTEMS_CSV"
 IFS=',' read -ra ZPT_ARRAY <<< "$ZPT_RANGES_CSV"

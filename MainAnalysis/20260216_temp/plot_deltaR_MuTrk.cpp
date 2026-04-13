@@ -61,6 +61,7 @@ int main(int argc, char *argv[]) {
     string sample = CL.Get("sample", "Gen");
     string inputSubdir = CL.Get("inputSubdir", "");
     string outputSubdir = CL.Get("outputSubdir", "");
+    vector<double> circleRadii = CL.GetDoubleVector("CircleRadii", vector<double>{0.001, 0.0025, 0.0035});
     string inputPrefix = GetInputPrefix(collisionType, sample);
     string inputBase = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260216_temp/output";
     string outputBase = "plots";
@@ -88,7 +89,8 @@ int main(int argc, char *argv[]) {
     vector<string> labels = {
         GetSampleLabel(collisionType, sample)
     };
-    string output = Form("%s/%s_ZPT%s_%s", outputBase.c_str(), inputPrefix.c_str(), zPtRange.c_str(), tag.c_str());
+    string output = Form("%s/%s_ZPT%s_trkPT%s_%s", outputBase.c_str(), inputPrefix.c_str(),
+        zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     vector<TH2D*> hDeltaRMuTrk;
 
@@ -137,7 +139,7 @@ int main(int argc, char *argv[]) {
     gPad->SetLogz();
     hDeltaRMuTrk[0]->Draw("COLZ");
     
-    for(double radius : {0.001, 0.0025, 0.0035})
+    for(double radius : circleRadii)
     {
         TEllipse *circle = new TEllipse(0, 0, radius, radius);
         circle->SetLineColor(kBlack);

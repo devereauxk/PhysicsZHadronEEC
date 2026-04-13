@@ -14,6 +14,17 @@ using namespace std;
 #include <vector>
 #include <string>
 
+static string ReplaceAll(string Value, const string &Needle, const string &Replacement)
+{
+    size_t Position = 0;
+    while((Position = Value.find(Needle, Position)) != string::npos)
+    {
+        Value.replace(Position, Needle.size(), Replacement);
+        Position += Replacement.size();
+    }
+    return Value;
+}
+
 int main(int argc, char *argv[]) {
 
     CommandLine CL(argc, argv);
@@ -22,19 +33,33 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
+    string inputTag = CL.Get("inputTag", "");
+    bool UseWorkflowInputs = (inputTag.empty() == false);
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
-    string mctag = (collisionType == "pp") ? "pythia" : collisionType;
-
-    // files to load
-    vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
-    };
+    vector<string> input_ZPT_files;
+    if(inputTag.empty() == false)
+    {
+        string zPtRangeDash = ReplaceAll(zPtRange, "_", "-");
+        string base = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260115_ZCorrection/workflow/output/closure_inputs";
+        input_ZPT_files = {
+            Form("%s/%s_%s_zPt%s_gen.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
+            Form("%s/%s_%s_zPt%s_reco.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
+            Form("%s/%s_%s_zPt%s_corrected.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str())
+        };
+    }
+    else
+    {
+        string mctag = (collisionType == "pp") ? "pythia" : collisionType;
+        input_ZPT_files = {
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str())
+        };
+    }
     vector<string> labels = {
         "MC DY-GEN",
         "MC DY-RECO",
@@ -52,24 +77,49 @@ int main(int argc, char *argv[]) {
     int i = 0;
     for (const auto& input_ZPT : input_ZPT_files) {
 
-        cout<<"opening file: "<<Form("%s-nosub.root", input_ZPT.c_str())<<endl;
+        cout<<"opening file: "<<input_ZPT<<endl;
 
-        TFile* fin = TFile::Open(Form("%s-nosub.root", input_ZPT.c_str()), "READ");
+        TFile* fin = TFile::Open(input_ZPT.c_str(), "READ");
         if (!fin || fin->IsZombie()) {
             std::cerr << "Error: Unable to open file " << input_ZPT << std::endl;
             continue;
         }
 
         // Z pt eta Phi
-        TH3D* this_hZPtEtaPhi = (TH3D*)fin->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
+        TH3D* this_hZPtEtaPhi = nullptr;
+        TH1D* hNZ = nullptr;
+        if(UseWorkflowInputs == true)
+        {
+            this_hZPtEtaPhi = (TH3D*)fin->Get("h3D");
+            hNZ = (TH1D*)fin->Get("hNZ");
+        }
+        else
+        {
+            this_hZPtEtaPhi = (TH3D*)fin->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
+            hNZ = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
+        }
+        if(this_hZPtEtaPhi == nullptr || hNZ == nullptr)
+        {
+            cerr << "Missing closure histograms in " << input_ZPT << endl;
+            continue;
+        }
         TH1D* this_hZPt = this_hZPtEtaPhi->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
         TH1D* this_hZEta = this_hZPtEtaPhi->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
         TH1D* this_hZPhi = this_hZPtEtaPhi->ProjectionZ(Form("ZPhi_%s", labels[i].c_str()));
 
-        TH1D* hNZ = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
-
         cout<<" "<<this_hZPtEtaPhi->Integral()<<endl;
         cout<<"hNZ bin content: "<<hNZ->Integral()<<endl;
+
+        if(UseWorkflowInputs == true)
+        {
+            double NZ = hNZ->GetBinContent(1);
+            if(NZ > 0)
+            {
+                this_hZPt->Scale(1.0 / NZ);
+                this_hZEta->Scale(1.0 / NZ);
+                this_hZPhi->Scale(1.0 / NZ);
+            }
+        }
 
         divideByWidth(this_hZPt);
         divideByWidth(this_hZEta);

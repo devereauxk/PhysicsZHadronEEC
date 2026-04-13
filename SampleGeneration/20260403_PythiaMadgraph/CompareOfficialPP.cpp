@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
    CommandLine CL(argc, argv);
 
    string OfficialInputFileName = CL.Get("OfficialInput",
-      "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/mergedSample/pp-v11-Zpt0.root");
+      "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/mergedSample/pythia-gen-v11-Zpt0.root");
    string PrivateInputFileName = CL.Get("PrivateInput");
    string OutputDirectory = CL.Get("OutputDir", "plots/officialPP");
    string OfficialLabel = CL.Get("OfficialLabel", "Official pp MC");

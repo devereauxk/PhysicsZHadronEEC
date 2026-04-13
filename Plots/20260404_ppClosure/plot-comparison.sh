@@ -9,7 +9,7 @@ source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 
 make ExecuteComparePP
 
-PRIVATE_INPUT=${PRIVATE_INPUT:-/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20260403_PythiaMadgraph/output/ZMuMu_5020_validation.root}
+PRIVATE_INPUT=${PRIVATE_INPUT:-${PRIVATE_PP_5020_INPUT}}
 OFFICIAL_INPUT=${OFFICIAL_INPUT:-${OFFICIAL_MCGENINPUT_PP}}
 OUTPUT_DIR=${OUTPUT_DIR:-$SCRIPT_DIR/plots/compare}
 OFFICIAL_MAX_EVENTS=${OFFICIAL_MAX_EVENTS:--1}

@@ -12,10 +12,12 @@ run_one() {
     ./ExecuteCentralPlot --collisionType PbP --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$OFFICIAL_TAG_PPB" --pptag "$OFFICIAL_TAG_PP"
 }
 
-run_one "5_30" "0.5_4"
-run_one "5_30" "4_500"
-run_one "30_500" "0.5_4"
-run_one "30_500" "4_500"
-run_one "5_500" "0.5_500"
+run_one "0_30" "0.5_2"
+run_one "0_30" "2_4"
+run_one "0_30" "4_15"
+run_one "30_500" "0.5_2"
+run_one "30_500" "2_4"
+run_one "30_500" "4_15"
+run_one "0_500" "0.5_15"
 
 exit

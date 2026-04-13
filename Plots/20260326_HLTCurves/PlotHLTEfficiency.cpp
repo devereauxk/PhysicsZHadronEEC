@@ -10,6 +10,7 @@ using namespace std;
 #include "TGraphAsymmErrors.h"
 #include "TH1D.h"
 #include "TLegend.h"
+#include "TPad.h"
 #include "TLatex.h"
 
 #include "CommandLine.h"
@@ -42,6 +43,18 @@ static vector<string> GetInputFiles(const string &SingleFileName, const string &
       return vector<string>{SingleFileName};
 
    return vector<string>();
+}
+
+static string NormalizeOrientation(const string &Orientation)
+{
+   if(Orientation == "Pbp")
+      return "Pbp";
+   return Orientation;
+}
+
+static string GetMCLabel(const string &Orientation)
+{
+   return (NormalizeOrientation(Orientation) == "pp") ? "Pythia+Madgraph" : "Powheg+EPOS";
 }
 
 static TGraphAsymmErrors BuildEfficiencyGraph(const vector<string> &InputFileNames)
@@ -99,13 +112,64 @@ static TGraphAsymmErrors BuildEfficiencyGraph(const vector<string> &InputFileNam
    return Graph;
 }
 
+static void DrawPanel(TPad *Pad, TGraphAsymmErrors &DataEfficiency, TGraphAsymmErrors &MCEfficiency,
+   const string &Orientation)
+{
+   string NormalizedOrientation = NormalizeOrientation(Orientation);
+
+   Pad->cd();
+   Pad->SetMargin(0.14, 0.05, 0.12, 0.10);
+
+   DataEfficiency.SetMarkerStyle(20);
+   DataEfficiency.SetMarkerColor(kBlack);
+   DataEfficiency.SetLineColor(kBlack);
+   DataEfficiency.SetLineWidth(2);
+   DataEfficiency.SetMarkerSize(1.4);
+
+   MCEfficiency.SetMarkerStyle(21);
+   MCEfficiency.SetMarkerColor(kBlue + 1);
+   MCEfficiency.SetLineColor(kBlue + 1);
+   MCEfficiency.SetLineWidth(2);
+   MCEfficiency.SetMarkerSize(1.4);
+
+   TH1 *HWorld = Pad->DrawFrame(0, 0.90, 120, 1.02);
+   HWorld->SetTitle(";Reco Z p_{T};Trigger efficiency");
+   HWorld->SetStats(0);
+
+   static int GraphIndex = 0;
+   TGraphAsymmErrors *MCGraph = (TGraphAsymmErrors *)MCEfficiency.Clone(Form("MCEfficiency_%d", GraphIndex));
+   TGraphAsymmErrors *DataGraph = (TGraphAsymmErrors *)DataEfficiency.Clone(Form("DataEfficiency_%d", GraphIndex));
+   GraphIndex = GraphIndex + 1;
+   MCGraph->Draw("P SAME");
+   DataGraph->Draw("P SAME");
+
+   TLegend *Legend = new TLegend(0.48, 0.20, 0.88, 0.36);
+   Legend->SetBorderSize(0);
+   Legend->SetFillStyle(0);
+   Legend->SetTextFont(42);
+   Legend->SetTextSize(0.035);
+   Legend->AddEntry(MCGraph, GetMCLabel(NormalizedOrientation).c_str(), "pl");
+   Legend->AddEntry(DataGraph, (NormalizedOrientation + " data").c_str(), "pl");
+   Legend->Draw();
+
+   TLatex Latex;
+   Latex.SetNDC();
+   Latex.SetTextFont(42);
+   Latex.SetTextSize(0.040);
+   Latex.DrawLatex(0.17, 0.92, "HLT efficiency");
+   Latex.DrawLatex(0.17, 0.86, NormalizedOrientation.c_str());
+
+   Pad->Modified();
+   Pad->Update();
+}
+
 int main(int argc, char *argv[])
 {
    CommandLine CL(argc, argv);
 
    vector<string> DataFileNames = GetInputFiles(CL.Get("Data", ""), CL.Get("DataList", ""));
    vector<string> MCFileNames = GetInputFiles(CL.Get("MC", ""), CL.Get("MCList", ""));
-   string Orientation = CL.Get("Orientation", "pPb");
+   string Orientation = NormalizeOrientation(CL.Get("Orientation", "pPb"));
    string OutputFileName = CL.Get("Output", "HLTEfficiency.pdf");
 
    if(DataFileNames.empty() == true || MCFileNames.empty() == true)
@@ -117,40 +181,8 @@ int main(int argc, char *argv[])
    TGraphAsymmErrors DataEfficiency = BuildEfficiencyGraph(DataFileNames);
    TGraphAsymmErrors MCEfficiency = BuildEfficiencyGraph(MCFileNames);
 
-   DataEfficiency.SetMarkerStyle(20);
-   DataEfficiency.SetMarkerColor(kBlack);
-   DataEfficiency.SetLineColor(kBlack);
-   DataEfficiency.SetLineWidth(2);
-
-   MCEfficiency.SetMarkerStyle(21);
-   MCEfficiency.SetMarkerColor(kBlue + 1);
-   MCEfficiency.SetLineColor(kBlue + 1);
-   MCEfficiency.SetLineWidth(2);
-
    TCanvas Canvas("Canvas", "", 800, 800);
-   TH1D HWorld("HWorld", ";Reco Z p_{T};Trigger efficiency", 30, 0, 120);
-   HWorld.SetMinimum(0);
-   HWorld.SetMaximum(1.1);
-   HWorld.SetStats(0);
-   HWorld.Draw();
-
-   MCEfficiency.Draw("P SAME");
-   DataEfficiency.Draw("P SAME");
-
-   TLegend Legend(0.58, 0.20, 0.86, 0.33);
-   Legend.SetBorderSize(0);
-   Legend.SetFillStyle(0);
-   Legend.SetTextFont(42);
-   Legend.SetTextSize(0.035);
-   Legend.AddEntry(&MCEfficiency, "Powheg+EPOS", "pl");
-   Legend.AddEntry(&DataEfficiency, (Orientation + " data").c_str(), "pl");
-   Legend.Draw();
-
-   TLatex Latex;
-   Latex.SetNDC();
-   Latex.SetTextFont(42);
-   Latex.SetTextSize(0.035);
-    Latex.DrawLatex(0.15, 0.92, ("HLT efficiency from V0.2 " + Orientation + " inputs").c_str());
+   DrawPanel((TPad *)Canvas.cd(), DataEfficiency, MCEfficiency, Orientation);
 
    Canvas.SaveAs(OutputFileName.c_str());
 

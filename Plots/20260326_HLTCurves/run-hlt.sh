@@ -6,31 +6,54 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 
 source "$REPO_ROOT/SetupAnalysis.sh"
+source "$REPO_ROOT/OfficialWeightDictionary.sh"
 
 cd "$SCRIPT_DIR"
 make
 
-INPUT_BASE="${INPUT_BASE:-/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20250929_ReducedTreePA/V0.2}"
-OUTPUTBASE="${OUTPUTBASE:-$SCRIPT_DIR/output/20260331_hlt_efficiency_study}"
+OUTPUTBASE="${OUTPUTBASE:-$SCRIPT_DIR/output}"
+SYSTEMS=(${SYSTEMS:-pp pPb PbP})
 
 mkdir -p "$OUTPUTBASE"
 
-DATA_PPB_FILE="$INPUT_BASE/PPbData_Reco.root"
-MC_PPB_FILE="$INPUT_BASE/PPbMC_Reco.root"
-DATA_PBP_FILE="$INPUT_BASE/PbPData_Reco.root"
-MC_PBP_FILE="$INPUT_BASE/PbPMC_Reco.root"
+declare -A DATA_FILES=(
+   [pp]="$OFFICIAL_DATAINPUT_PP"
+   [pPb]="$OFFICIAL_DATAINPUT_PPB"
+   [PbP]="$OFFICIAL_DATAINPUT_PBP"
+)
+declare -A MC_FILES=(
+   [pp]="$OFFICIAL_MCRECOINPUT_PP"
+   [pPb]="$OFFICIAL_MCRECOINPUT_PPB"
+   [PbP]="$OFFICIAL_MCRECOINPUT_PBP"
+)
 
-for input_file in "$DATA_PPB_FILE" "$MC_PPB_FILE" "$DATA_PBP_FILE" "$MC_PBP_FILE"; do
-   if [ ! -f "$input_file" ]; then
-      echo "Required merged input file is missing: $input_file" >&2
-      exit 1
-   fi
-   echo "Using input file $input_file"
+for system in "${SYSTEMS[@]}"; do
+   case "$system" in
+      pp|pPb|PbP)
+         normalized_system="$system"
+         ;;
+      Pbp)
+         normalized_system="PbP"
+         ;;
+      *)
+         echo "Unsupported system: $system" >&2
+         exit 1
+         ;;
+   esac
+
+   data_file="${DATA_FILES[$normalized_system]}"
+   mc_file="${MC_FILES[$normalized_system]}"
+
+   for input_file in "$data_file" "$mc_file"; do
+      if [ ! -f "$input_file" ]; then
+         echo "Required merged input file is missing: $input_file" >&2
+         exit 1
+      fi
+      echo "Using input file $input_file"
+   done
+
+   ./ExecuteHLTCurvePlot --Data "$data_file" --MC "$mc_file" \
+      --Orientation "$normalized_system" --Output "$OUTPUTBASE/HLTEfficiency_${normalized_system}.pdf"
 done
-
-./ExecuteHLTCurvePlot --Data "$DATA_PPB_FILE" --MC "$MC_PPB_FILE" \
-   --Orientation "pPb" --Output "$OUTPUTBASE/HLTEfficiency_pPb.pdf"
-./ExecuteHLTCurvePlot --Data "$DATA_PBP_FILE" --MC "$MC_PBP_FILE" \
-   --Orientation "Pbp" --Output "$OUTPUTBASE/HLTEfficiency_Pbp.pdf"
 
 echo "Wrote HLT plots under $OUTPUTBASE"

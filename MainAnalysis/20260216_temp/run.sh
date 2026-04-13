@@ -7,6 +7,7 @@ ISMUTAGGED=${ISMUTAGGED:-false}
 TRACKMUDR=${TRACKMUDR:--1}
 TRACKMUCLOSEST=${TRACKMUCLOSEST:-false}
 OUTPUT_SUBDIR=${OUTPUT_SUBDIR:-}
+CONFIG_OVERRIDE=${CONFIG_FILE:-}
 
 DOPP=${1:-1}
 DOPPB=${2:-1}
@@ -37,10 +38,14 @@ if [ -n "${OUTPUT_SUBDIR}" ]; then
     mkdir -p "output/${OUTPUT_SUBDIR}"
 fi
 
+if [ -z "${CONFIG_OVERRIDE}" ]; then
 cat > config.sh <<EOF
 ZPT_RANGES=("5_500")
 PT_RANGES=("0.5_500")
 EOF
+else
+    export CONFIG_FILE="${CONFIG_OVERRIDE}"
+fi
 
 run_case() {
     local prefix=$1

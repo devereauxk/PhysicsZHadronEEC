@@ -21,6 +21,8 @@ Quick dn/deta validation:
 
 Notes:
 - generate_madgraph.sh now calls MadEvent explicitly with /usr/bin/python3.11 so the local MG5 install is usable on this machine.
+- generate_madgraph.sh now builds the private pp hard process as aMC@NLO (`loop_sm`, `p p > z [QCD]`) and decays the Z with MadSpin (`z > mu+ mu-`) before the maintained local Pythia shower step.
+- The maintained NLO run card now uses `pdlabel=lhapdf`, `lhaid=303600` (`NNPDF31_nnlo_as_0118` from the local LHAPDF area), `parton_shower=PYTHIA8`, and weighted `events.lhe.gz` output rather than the old LO `unweighted_events.lhe.gz` path.
 - ExecuteConvertHepMC3 autodetects HepMC2/HepMC3/LHEF readers through HepMC3::deduce_reader, so future MG5-produced HepMC outputs do not need a format-specific converter edit.
 - The skim now matches the official gen-level charged-track acceptance for comparison work by storing only leaf charged tracks with pT > 0.5 GeV and |eta| < 2.4, while computing the HF observables from the full leaf-particle set with 3 < |eta| < 5 and pT > 0.4 GeV.
 - Gen muons are matched to the Z candidate through recursive parent-chain lookup so final-state muons remain tied to the showered Z when filling the gen-Z and track-muon matching branches.

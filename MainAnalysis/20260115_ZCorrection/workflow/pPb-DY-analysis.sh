@@ -4,7 +4,7 @@ set -euo pipefail
 
 minZpt="${1:-0}"
 maxZpt="${2:-500}"
-name="${3:-${NAME_TAG:-20260331_ZCorrection_V7}}"
+name="${3:-${NAME_TAG:-20260407_ZCorrection_V8}}"
 if [ "$#" -ge 3 ]; then
     shift 3
 else
@@ -30,6 +30,7 @@ PBP_EPOSINPUT="${PBP_EPOSINPUT:-${OFFICIAL_EPOSINPUT_PBP}}"
 
 ppb_output="output/${name}_PPb${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}.root"
 pbp_output="output/${name}_PbP${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}.root"
+closure_dir="output/closure_inputs"
 
 if [ -n "$ZWeightFile_pPb" ]; then
     PPB_Z_ARGS=(--ZWeightFile "$ZWeightFile_pPb")
@@ -73,6 +74,10 @@ root -l -q -b plot_corrections.C
 mv corrections.pdf "plots/corrections_PPb_${name}${VARIANT_SUFFIX}_${minZpt}_${maxZpt}.pdf"
 root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"${ppb_output}\")"
 ./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PPB_MCRECOINPUT" --residualFile "$ppb_output" --IsGen false --IsPP false --IsGenZ false "${PPB_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PPb"
+mkdir -p "$closure_dir"
+cp output/DY-GEN.root "$closure_dir/pPb_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_gen.root"
+cp output/DY-RECO-noResidual.root "$closure_dir/pPb_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_reco.root"
+cp output/DY-RECO.root "$closure_dir/pPb_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_corrected.root"
 root -l -q -b "plot_closure.C(\"plots/isPPb_ZPT${minZpt}_${maxZpt}${VARIANT_SUFFIX}\")"
 
 # PbP
@@ -92,4 +97,8 @@ root -l -q -b plot_corrections.C
 mv corrections.pdf "plots/corrections_PbP_${name}${VARIANT_SUFFIX}_${minZpt}_${maxZpt}.pdf"
 root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"${pbp_output}\")"
 ./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PBP_MCRECOINPUT" --residualFile "$pbp_output" --IsGen false --IsPP false --IsGenZ false "${PBP_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PbP"
+mkdir -p "$closure_dir"
+cp output/DY-GEN.root "$closure_dir/PbP_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_gen.root"
+cp output/DY-RECO-noResidual.root "$closure_dir/PbP_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_reco.root"
+cp output/DY-RECO.root "$closure_dir/PbP_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_corrected.root"
 root -l -q -b "plot_closure.C(\"plots/isPbP_ZPT${minZpt}_${maxZpt}${VARIANT_SUFFIX}\")"

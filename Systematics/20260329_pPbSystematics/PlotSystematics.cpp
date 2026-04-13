@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -30,6 +31,22 @@ vector<string> ParseCSV(const string &text)
       if(item != "")
          cleaned.push_back(item);
    return cleaned;
+}
+
+vector<string> NormalizeDifferenceFamilies(const vector<string> &families)
+{
+   vector<string> normalized;
+   set<string> seen;
+
+   for(string family : families)
+   {
+      if(family == "PUpp" || family == "PUpPb")
+         family = "PU";
+      if(seen.insert(family).second == true)
+         normalized.push_back(family);
+   }
+
+   return normalized;
 }
 
 TH1D *CloneHistogram(TFile &file, const string &name, double scale = 1)
@@ -64,12 +81,14 @@ string GetResultAxisLabel(const string &observable)
    return "Result d#LT#DeltaN_{ch}#GT/d" + GetObservableLabel(observable);
 }
 
-string GetLegendLabel(const string &family)
+string GetLegendLabel(const string &family, bool differenceMode = false)
 {
+    if(family == "PU")
+       return "PU";
     if(family == "PUpp" || family == "PUpPb")
        return "PU";
     if(family == "EnergyExtrapolation")
-       return "EnergyExtrapolation";
+       return "Energy extrapolation";
     return family;
 }
 
@@ -123,47 +142,52 @@ TH1D *BuildRelativeHistogram(const TH1D *histogram, const TH1D *nominal, const s
 map<string, int> GetColors()
 {
    map<string, int> colors;
-   colors["TrackSelection"] = kBlue + 1;
-   colors["TrackCorrection"] = kMagenta + 1;
-   colors["MuonRejection"] = kGreen + 2;
-    colors["PUpp"] = kOrange + 7;
-    colors["PUpPb"] = kAzure + 2;
+    colors["TrackSelection"] = kBlue + 1;
+    colors["TrackCorrection"] = kMagenta + 1;
+    colors["MuonRejection"] = kGreen + 2;
+    colors["PU"] = kOrange + 7;
+     colors["PUpp"] = kOrange + 7;
+     colors["PUpPb"] = kAzure + 2;
     colors["ScaleFactor"] = kRed + 1;
     colors["EnergyExtrapolation"] = kViolet + 1;
     colors["Total"] = kBlack;
     return colors;
 }
 
-vector<pair<string, TH1D *>> LoadFamilyHistograms(TFile &file, const string &observable, const vector<string> &families)
+vector<pair<string, TH1D *>> LoadFamilyHistograms(TFile &file, const string &observable,
+   const vector<string> &families, const string &prefix = "", const string &totalName = "")
 {
    vector<pair<string, TH1D *>> histograms;
-   for(const string &family : families)
-   {
-      if(family == "Total")
-         continue;
-      TH1D *histogram = CloneHistogram(file, family + "_" + observable);
-      if(histogram == nullptr)
-         continue;
-      histograms.push_back({family, histogram});
-   }
+    for(const string &family : families)
+    {
+       if(family == "Total")
+          continue;
+       TH1D *histogram = CloneHistogram(file, prefix + family + "_" + observable);
+       if(histogram == nullptr)
+          continue;
+       histograms.push_back({family, histogram});
+    }
 
-   TH1D *total = CloneHistogram(file, "Total_" + observable);
-   if(total != nullptr)
-      histograms.push_back({"Total", total});
-   return histograms;
+    string resolvedTotalName = (totalName == "") ? ("Total_" + observable) : (totalName + observable);
+    TH1D *total = CloneHistogram(file, resolvedTotalName);
+    if(total != nullptr)
+       histograms.push_back({"Total", total});
+    return histograms;
 }
 
 void DrawUncertaintyOverlay(TFile &systematicsFile, TH1D *nominal, const string &observable,
    const vector<string> &families, const string &collision, const string &zptRange,
-   const string &trackRange, const string &outputName, bool doRelative)
+   const string &trackRange, const string &outputName, bool doRelative,
+   const string &histogramPrefix = "", const string &totalPrefix = "", bool differenceMode = false)
 {
-   map<string, int> colors = GetColors();
+    map<string, int> colors = GetColors();
 
-   vector<pair<string, TH1D *>> histograms;
-   vector<pair<string, TH1D *>> absoluteHistograms = LoadFamilyHistograms(systematicsFile, observable, families);
-   for(const auto &entry : absoluteHistograms)
-   {
-      TH1D *histogram = entry.second;
+    vector<pair<string, TH1D *>> histograms;
+    vector<pair<string, TH1D *>> absoluteHistograms = LoadFamilyHistograms(systematicsFile, observable,
+       families, histogramPrefix, totalPrefix);
+    for(const auto &entry : absoluteHistograms)
+    {
+       TH1D *histogram = entry.second;
       if(doRelative == true)
          histogram = BuildRelativeHistogram(entry.second, nominal, entry.first + "_Relative_" + observable);
       histograms.push_back({entry.first, histogram});
@@ -203,17 +227,20 @@ void DrawUncertaintyOverlay(TFile &systematicsFile, TH1D *nominal, const string 
    legend.SetBorderSize(0);
    legend.SetTextSize(0.028);
 
-   for(auto &entry : histograms)
-   {
-      entry.second->SetStats(0);
-      entry.second->SetLineColor(colors[entry.first]);
-      entry.second->SetLineWidth(entry.first == "Total" ? 3 : 2);
-      entry.second->Draw("hist same");
-      legend.AddEntry(entry.second, GetLegendLabel(entry.first).c_str(), "l");
-   }
-   legend.Draw();
+    for(auto &entry : histograms)
+    {
+       entry.second->SetStats(0);
+       entry.second->SetLineColor(colors[entry.first]);
+       entry.second->SetLineWidth(entry.first == "Total" ? 3 : 2);
+       entry.second->Draw("hist same");
+       legend.AddEntry(entry.second, GetLegendLabel(entry.first, differenceMode).c_str(), "l");
+    }
+    legend.Draw();
 
-   DrawLabels(collision, zptRange, trackRange, doRelative == true ? "relative systematic uncertainties" : "systematic uncertainties");
+    string title = doRelative == true ? "relative systematic uncertainties" : "systematic uncertainties";
+    if(differenceMode == true)
+       title = "difference systematic uncertainties";
+    DrawLabels(collision, zptRange, trackRange, title);
 
    canvas.SaveAs(outputName.c_str());
 
@@ -304,6 +331,7 @@ int main(int argc, char *argv[])
    string zptRange = CL.Get("ZPTRange", "40_350");
    string trackRange = CL.Get("TrackPTRange", "2_500");
     vector<string> families = ParseCSV(CL.Get("Families", "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
+     vector<string> differenceFamilies = NormalizeDifferenceFamilies(ParseCSV(CL.Get("DifferenceFamilies", "TrackSelection,TrackCorrection,MuonRejection,PU,ScaleFactor,EnergyExtrapolation")));
 
    TFile systematicsFile(inputFileName.c_str());
    TFile *nominalFile = (nominalFileName != "") ? TFile::Open(nominalFileName.c_str()) : nullptr;
@@ -314,16 +342,22 @@ int main(int argc, char *argv[])
       "DeltaPhi", trackRange, "NominalDeltaPhi");
    TH1D *nominalDeltaEta = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
       "DeltaEta", trackRange, "NominalDeltaEta");
-   if(nominalDeltaPhi != nullptr)
-   {
-      DrawUncertaintyOverlay(systematicsFile, nominalDeltaPhi, "DeltaPhi", families, collision, zptRange, trackRange, outputBase + "-DeltaPhi-absolute.pdf", false);
-      DrawUncertaintyOverlay(systematicsFile, nominalDeltaPhi, "DeltaPhi", families, collision, zptRange, trackRange, outputBase + "-DeltaPhi-relative.pdf", true);
-   }
-   if(nominalDeltaEta != nullptr)
-   {
-      DrawUncertaintyOverlay(systematicsFile, nominalDeltaEta, "DeltaEta", families, collision, zptRange, trackRange, outputBase + "-DeltaEta-absolute.pdf", false);
-      DrawUncertaintyOverlay(systematicsFile, nominalDeltaEta, "DeltaEta", families, collision, zptRange, trackRange, outputBase + "-DeltaEta-relative.pdf", true);
-   }
+    if(nominalDeltaPhi != nullptr)
+    {
+       DrawUncertaintyOverlay(systematicsFile, nominalDeltaPhi, "DeltaPhi", families, collision, zptRange, trackRange, outputBase + "-DeltaPhi-absolute.pdf", false);
+       DrawUncertaintyOverlay(systematicsFile, nominalDeltaPhi, "DeltaPhi", families, collision, zptRange, trackRange, outputBase + "-DeltaPhi-relative.pdf", true);
+       if(systematicsFile.Get("DifferenceTotal_DeltaPhi") != nullptr)
+          DrawUncertaintyOverlay(systematicsFile, nominalDeltaPhi, "DeltaPhi", differenceFamilies, collision, zptRange, trackRange,
+             outputBase + "-DeltaPhi-difference-absolute.pdf", false, "Difference", "DifferenceTotal_", true);
+    }
+    if(nominalDeltaEta != nullptr)
+    {
+       DrawUncertaintyOverlay(systematicsFile, nominalDeltaEta, "DeltaEta", families, collision, zptRange, trackRange, outputBase + "-DeltaEta-absolute.pdf", false);
+       DrawUncertaintyOverlay(systematicsFile, nominalDeltaEta, "DeltaEta", families, collision, zptRange, trackRange, outputBase + "-DeltaEta-relative.pdf", true);
+       if(systematicsFile.Get("DifferenceTotal_DeltaEta") != nullptr)
+          DrawUncertaintyOverlay(systematicsFile, nominalDeltaEta, "DeltaEta", differenceFamilies, collision, zptRange, trackRange,
+             outputBase + "-DeltaEta-difference-absolute.pdf", false, "Difference", "DifferenceTotal_", true);
+    }
 
    if(nominalFile != nullptr)
    {

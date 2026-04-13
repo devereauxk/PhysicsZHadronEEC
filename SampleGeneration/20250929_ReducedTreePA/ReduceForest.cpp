@@ -14,6 +14,7 @@ using namespace std;
 #include "ProgressBar.h"
 #include "Messenger.h"
 #include "tnp_weight.h"
+#include "trackingEfficiency2017pp.h"
 
 #include "TrackEfficiencyCorrector.h"
 #include "JSON_handler.h"
@@ -25,6 +26,7 @@ double GetPPDimuonTnPWeight(double Mu1Eta, double Mu2Eta);
 double GetPADimuonTnPWeight(double Mu1PT, double Mu1Eta, double Mu2PT, double Mu2Eta);
 bool UsePADimuonTnPWeights(double Mu1PT, double Mu1Eta, double Mu2PT, double Mu2Eta);
 double GetRelativeWeight(double Numerator, double Denominator);
+string GetPPTrackingDirectory(string TrackEfficiencyPath);
 
 double GetPPDimuonTnPWeight(double Mu1Eta, double Mu2Eta)
 {
@@ -51,6 +53,24 @@ double GetRelativeWeight(double Numerator, double Denominator)
    if(std::isfinite(Numerator) == false || std::isfinite(Denominator) == false || Denominator == 0)
       return numeric_limits<double>::quiet_NaN();
    return Numerator / Denominator;
+}
+
+string GetPPTrackingDirectory(string TrackEfficiencyPath)
+{
+   if(TrackEfficiencyPath == "")
+      return "";
+
+   if(TrackEfficiencyPath.rfind(".root") == TrackEfficiencyPath.size() - 5)
+   {
+      size_t Slash = TrackEfficiencyPath.find_last_of('/');
+      if(Slash == string::npos)
+         return "";
+      return TrackEfficiencyPath.substr(0, Slash + 1);
+   }
+
+   if(TrackEfficiencyPath.back() != '/')
+      TrackEfficiencyPath = TrackEfficiencyPath + "/";
+   return TrackEfficiencyPath;
 }
 
 int main(int argc, char *argv[])
@@ -91,11 +111,23 @@ int main(int argc, char *argv[])
    TrackEfficiencyCorrector *TrackEfficiency = nullptr;
    TrackEfficiencyCorrector *TrackEfficiencyLoose = nullptr;
    TrackEfficiencyCorrector *TrackEfficiencyTight = nullptr;
+   TrkEff2017pp *TrackEfficiencyPP = nullptr;
+   TrkEff2017pp *TrackEfficiencyPPLoose = nullptr;
+   TrkEff2017pp *TrackEfficiencyPPTight = nullptr;
    if(DoGenLevel == false)
    {
-      TrackEfficiency = new TrackEfficiencyCorrector(TrackEfficiencyPath);
-      TrackEfficiencyLoose = new TrackEfficiencyCorrector(TrackEfficiencyPathLoose);
-      TrackEfficiencyTight = new TrackEfficiencyCorrector(TrackEfficiencyPathTight);
+      if(IsPP == true)
+      {
+         TrackEfficiencyPP = new TrkEff2017pp(false, GetPPTrackingDirectory(TrackEfficiencyPath));
+         TrackEfficiencyPPLoose = new TrkEff2017pp(false, GetPPTrackingDirectory(TrackEfficiencyPathLoose));
+         TrackEfficiencyPPTight = new TrkEff2017pp(false, GetPPTrackingDirectory(TrackEfficiencyPathTight));
+      }
+      else
+      {
+         TrackEfficiency = new TrackEfficiencyCorrector(TrackEfficiencyPath);
+         TrackEfficiencyLoose = new TrackEfficiencyCorrector(TrackEfficiencyPathLoose);
+         TrackEfficiencyTight = new TrackEfficiencyCorrector(TrackEfficiencyPathTight);
+      }
    }
    // TrackResidualCentralityCorrector TrackResidual(TrackResidualPath);
 
@@ -498,6 +530,7 @@ int main(int argc, char *argv[])
             
          ZHadronMessenger *CurrentMessenger[3] = {&MZHadron, &MZHadronLoose, &MZHadronTight};
          TrackEfficiencyCorrector *CurrentTrackEfficiency[3] = {TrackEfficiency, TrackEfficiencyLoose, TrackEfficiencyTight};
+         TrkEff2017pp *CurrentPPTrackEfficiency[3] = {TrackEfficiencyPP, TrackEfficiencyPPLoose, TrackEfficiencyPPTight};
          string CurrentTrackSelectionMode[3] = {"Nominal", "Loose", "Tight"};
          int ModeCount = 1;
 
@@ -578,12 +611,14 @@ int main(int argc, char *argv[])
                Current->trackPt->push_back(TrackPT);
                Current->subevent->push_back(SubEvent);
 
-               double TrackCorrection = 1;
-               if(DoGenLevel == false)
-               {
-                  if(CurrentTrackEfficiency[iM] != nullptr)
-                     TrackCorrection = CurrentTrackEfficiency[iM]->GetCorrection(TrackPT, TrackEta);
-               }
+                double TrackCorrection = 1;
+                if(DoGenLevel == false)
+                {
+                   if(IsPP == true && CurrentPPTrackEfficiency[iM] != nullptr)
+                      TrackCorrection = CurrentPPTrackEfficiency[iM]->getCorrection(TrackPT, TrackEta);
+                   else if(CurrentTrackEfficiency[iM] != nullptr)
+                      TrackCorrection = CurrentTrackEfficiency[iM]->GetCorrection(TrackPT, TrackEta);
+                }
                double TrackResidualCorrection = 1;
                // if(DoTrackResidual == true && DoGenLevel == false)
                //    TrackResidualCorrection = TrackResidual.GetCorrectionFactor(TrackPT, TrackEta, TrackPhi, MZHadron.hiBin);
@@ -622,6 +657,9 @@ int main(int argc, char *argv[])
    delete TrackEfficiency;
    delete TrackEfficiencyLoose;
    delete TrackEfficiencyTight;
+   delete TrackEfficiencyPP;
+   delete TrackEfficiencyPPLoose;
+   delete TrackEfficiencyPPTight;
    delete JSONHandler;
 
    return 0;

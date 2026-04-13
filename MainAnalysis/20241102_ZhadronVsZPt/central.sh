@@ -68,7 +68,7 @@ export NTHREAD=${NTHREAD:-20}
 export NSLICE_FACTOR=${NSLICE_FACTOR:-1}
 
 # CENTRAL VALUES (requested): 4 selections
-write_config '"5_30" "30_500"' '"0.5_4" "4_500"'
+write_config '"0_30" "30_500"' '"0.5_2" "2_4" "4_15"'
 activate_config
 
 if [ "$DOPP" == "1" ]; then
@@ -91,7 +91,7 @@ if [ -n "${CONFIG_OVERRIDE}" ]; then
 fi
 
 # INCLUSIVE selection
-write_config '"5_500"' '"0.5_500"'
+write_config '"0_500"' '"0.5_15"'
 activate_config
 
 if [ "$DOPP" == "1" ]; then

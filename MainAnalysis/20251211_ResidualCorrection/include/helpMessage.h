@@ -16,8 +16,6 @@ int printHelpMessage(int argc, char *argv[]) {
               << "  --MaxZPT <value>       Maximum Z particle transverse momentum threshold for event selection.\n"
               << "  --MinZY <value>        Minimum Z particle rapidity threshold for event selection.\n"
               << "  --MaxZY <value>        Maximum Z particle rapidity threshold for event selection.\n"
-              << "  --MinTrackPT <value>   Minimum track transverse momentum threshold for track selection.\n"
-              << "  --MaxTrackPT <value>   Maximum track transverse momentum threshold for track selection.\n"
               << "  --TrackSelectionMode <Nominal|Loose|Tight>   Select Tree, TreeLoose, or TreeTight from the reco skim.\n"
               << "  --MinHiBin <value>     Minimum hiBin value for event selection.\n"
               << "  --MaxHiBin <value>     Maximum hiBin value for event selection.\n"
@@ -30,6 +28,8 @@ int printHelpMessage(int argc, char *argv[]) {
               << "  --IsPP                 Flag for Proton-Proton collision data.\n"
               << "  --IsJewel              Flag for Jewel analysis.\n"
               << "  --IsMuTagged           Flag for doing Z decay muon matching.\n"
+              << "  --TrackMuDR <value>    Reject tracks with trackMuDR below this value; -1 keeps the nominal muon-tagged logic.\n"
+              << "  --TrackMuClosest       Reject the two tracks with the smallest trackMuDR values in the event.\n"
               << "  --IsPUReject           Flag to reject PU sample for systematics.\n"
               << "  --TrackExtraWeight     Extra multiplicative factor applied to per-track efficiency weights.\n"
               << "  --UseVZWindow          Apply the analysis |vz| < 15 selection window.\n"
@@ -47,4 +47,3 @@ int printHelpMessage(int argc, char *argv[]) {
     }
     return 0;  
 }
-

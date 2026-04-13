@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
 
     CommandLine CL(argc, argv);
 
-    string zPtRange = CL.Get("zPtRange", "40_500");
-    string trkPtRange = CL.Get("trkPtRange", "0.5_500");
+    string zPtRange = CL.Get("zPtRange", "0_500");
+    string trkPtRange = CL.Get("trkPtRange", "0.5_15");
     string tag_pp = CL.Get("pptag", "V16_nmix5");
 
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -31,14 +31,14 @@ int main(int argc, char *argv[]) {
     vector<string> input_ZPT_files = {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_nominal_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_ZResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EEtrkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EExtrapolation_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
-        "pp 5TeV, uncorrected",
+        "pp 5.02 TeV baseline",
         "  + Z correction",
-        "  + track correction",
-        "  + energy extrapolation"
+        "  + Z and track correction",
+        "  + Z, track, energy correction"
     };
     string output = Form("plots/energyExtrapolation/%s_ZPT%s_trkPT%s", tag_pp.c_str(), zPtRange.c_str(), trkPtRange.c_str());
 
@@ -94,8 +94,8 @@ int main(int argc, char *argv[]) {
     vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed};
     vector<int> lineStyles = {0, 2, 1, 0, 1};
 
-    float diffMin = (trkPtRange == "4_500") ? -0.05 : -0.5;
-    float diffMax = (trkPtRange == "4_500") ? 0.05 : 0.5;
+    float diffMin = (trkPtRange == "4_15") ? -0.05 : -0.5;
+    float diffMax = (trkPtRange == "4_15") ? 0.05 : 0.5;
 
     // ===========================================
     // results
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "pp - pp[uncorrected]", diffMin, diffMax,
+        "pp - pp baseline", diffMin, diffMax,
         0,
         false, false, true,
         0.2
@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "pp - pp[uncorrected]", diffMin, diffMax,
+        "pp - pp baseline", diffMin, diffMax,
         0,
         false, false, true,
         0.2

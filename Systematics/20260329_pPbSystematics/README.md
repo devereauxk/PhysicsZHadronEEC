@@ -13,6 +13,7 @@ This directory is the compiled harvesting and plotting workspace for the note-fa
   - `IsMuTaggedFalse`
   - `IsPURejectTrue`
   - `MuVar0..3`
+  - `_EEPrivate` (pp only)
 
 ## Main files
 
@@ -49,7 +50,7 @@ The tracking-correction term is harvested from the dedicated corrected-data `Tra
 
 `run.sh` now applies the PU family collision-by-collision by default:
 
-- `pp`: `PUpp` only, with `TrackSelection` omitted because the official pp skim has no loose/tight trees
+- `pp`: `PUpp` only by default; `TrackSelection` / `MuonRejection` can be re-enabled explicitly through `INCLUDE_FAMILIES`, and the pp inputs now resolve `Loose`, `Tight`, and `IsMuTaggedFalse` from the maintained V0.3 outputs
 - `pp`: `EnergyExtrapolation` is harvested from the corrected-data `_EEPrivate` result against the nominal pp corrected output
 - `pPb`: `PUpPb` only
 - `PbP`: `PUpPb` only
@@ -80,9 +81,9 @@ cd /home/kdeverea/PhysicsZHadronEEC
 source SetupAnalysis.sh
 cd Systematics/20260329_pPbSystematics
 make
-SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 INCLUDE_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,ScaleFactor PLOT_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,ScaleFactor ./run.sh
+SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 INCLUDE_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation PLOT_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation ./run.sh
 SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-pu.sh
-SYSTEMS=pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-track-selection.sh
+SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-track-selection.sh
 SYSTEMS=pp,pPb,PbP ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-track-correction.sh
 SYSTEMS=pp,pPb,PbP,pPbPbp ZPT_RANGES=40_350 TRACK_RANGES=2_500 ./run-muon-track.sh
 SYSTEMS=pp ZPT_RANGES=5_500 TRACK_RANGES=0.5_500 ./run-energy-extrapolation.sh

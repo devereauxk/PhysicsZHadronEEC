@@ -1,8 +1,10 @@
 #!/bin/bash
 
 # Define common arguments
-source clean.sh
-source config.sh
+if [ "${SKIP_CLEAN:-0}" != "1" ]; then
+   source clean.sh
+fi
+source "${CONFIG_FILE:-config.sh}"
 
 OUTPUT_PREFIX=$1
 shift

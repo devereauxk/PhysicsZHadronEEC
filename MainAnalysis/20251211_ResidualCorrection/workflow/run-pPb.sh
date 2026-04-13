@@ -8,7 +8,7 @@ cd ..
 cd "$WORKINGDIR"
 sleep 1
 
-name="${NAME_TAG:-20260331_ZV7_trkV25_TrackResidualCorrection}"
+name="${NAME_TAG:-20260412_ZV8_trkV26_TrackResidualCorrection}"
 echo "[run-pPb] NAME_TAG=${name} VARIANT_TAG=${VARIANT_TAG:-Nominal}"
 ./pPb-DY-analysis.sh 0 10 "$name" "$@"
 ./pPb-DY-analysis.sh 10 20 "$name" "$@"

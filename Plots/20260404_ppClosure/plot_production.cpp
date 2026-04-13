@@ -49,7 +49,7 @@ TH1D *LoadProjection(TFile &InputFile, const string &TrkPtRange, int Axis, const
       Projection = Histogram3D->ProjectionZ(Name.c_str());
 
    Projection->SetDirectory(nullptr);
-   Projection->Scale(1.0 / NZ->GetBinContent(1));
+   // hZPtEtaPhi_* is already normalized by hNZData_* in makeProjection.C.
    divideByWidth(Projection);
    return Projection;
 }

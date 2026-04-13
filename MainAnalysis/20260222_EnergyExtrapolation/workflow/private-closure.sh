@@ -3,6 +3,7 @@ set -euo pipefail
 
 ScriptDir=$(cd "$(dirname "$0")" && pwd)
 AnalysisDir=$(cd "${ScriptDir}/.." && pwd)
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 cd "${AnalysisDir}"
 ./clean.sh
 cd "${ScriptDir}"
@@ -10,8 +11,8 @@ cd "${ScriptDir}"
 minZpt=0
 maxZpt=500
 name="${BASENAME:-20260405_EnergyExtrapolation_private8160over5020}"
-input5020="${PRIVATE_PP_5020_INPUT:-/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20260403_PythiaMadgraph/output/ZMuMu_5020_validation.root}"
-input8160="${PRIVATE_PP_8160_INPUT:-/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20260403_PythiaMadgraph/output/ZMuMu_8160_validation.root}"
+input5020="${PRIVATE_PP_5020_INPUT}"
+input8160="${PRIVATE_PP_8160_INPUT}"
 
 stage502="output/${name}-pp-private-502.root"
 stage816="output/${name}-pp-private-816.root"
