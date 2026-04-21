@@ -115,74 +115,20 @@ TH1D *BuildFamilyHistogramCombined(const TH1D *nominal,
    return result;
 }
 
-TH1D *LoadDifferenceVariationHistogram(const vector<pair<string, string>> &combinedFiles,
-   const vector<string> &ppFiles, const string &observable, const string &trackTag,
-   const string &histogramName, int index, const TH1D *nominalCombined, const TH1D *nominalPP)
-{
-   TH1D *combined = nullptr;
-   TH1D *pp = nullptr;
-
-   if(index < (int)combinedFiles.size())
-   {
-      TFile ppbFile(combinedFiles[index].first.c_str());
-      TFile pbpFile(combinedFiles[index].second.c_str());
-      combined = BuildCombinedResultHistogram(ppbFile, pbpFile, observable,
-         trackTag, histogramName + "_Combined");
-   }
-   if(index < (int)ppFiles.size())
-   {
-      TFile ppFile(ppFiles[index].c_str());
-      pp = LoadSingleResultHistogram(ppFile, observable, trackTag,
-         histogramName + "_PP");
-   }
-
-   if(combined == nullptr && nominalCombined != nullptr)
-      combined = (TH1D *)nominalCombined->Clone((histogramName + "_NominalCombined").c_str());
-   if(pp == nullptr && nominalPP != nullptr)
-      pp = (TH1D *)nominalPP->Clone((histogramName + "_NominalPP").c_str());
-   if(combined == nullptr || pp == nullptr)
-   {
-      delete combined;
-      delete pp;
-      return nullptr;
-   }
-
-   combined->SetDirectory(nullptr);
-   pp->SetDirectory(nullptr);
-   combined->Add(pp, -1);
-   delete pp;
-   return combined;
-}
-
 TH1D *BuildDifferenceFamilyHistogram(const TH1D *nominalDifference,
-   const TH1D *nominalCombined, const TH1D *nominalPP,
-   const vector<pair<string, string>> &combinedFiles, const vector<string> &ppFiles,
-   const string &observable, const string &trackTag, const string &histogramName)
+   const TH1D *combinedContribution, const TH1D *ppContribution,
+   const string &histogramName)
 {
    TH1D *result = (TH1D *)nominalDifference->Clone(histogramName.c_str());
    result->Reset("ICES");
    result->SetTitle(histogramName.c_str());
    result->SetDirectory(nullptr);
 
-   int variationCount = max(combinedFiles.size(), ppFiles.size());
-   if(variationCount == 0)
-      return result;
-
    for(int i = 1; i <= nominalDifference->GetNbinsX(); i++)
    {
-      double value = 0;
-      for(int variationIndex = 0; variationIndex < variationCount; variationIndex++)
-      {
-         TH1D *variation = LoadDifferenceVariationHistogram(combinedFiles, ppFiles,
-            observable, trackTag, histogramName + Form("_Variation%d", variationIndex),
-            variationIndex, nominalCombined, nominalPP);
-         if(variation == nullptr)
-            continue;
-
-         value = max(value, fabs(nominalDifference->GetBinContent(i) - variation->GetBinContent(i)));
-         delete variation;
-      }
-
+      double combinedValue = (combinedContribution != nullptr) ? combinedContribution->GetBinContent(i) : 0;
+      double ppValue = (ppContribution != nullptr) ? ppContribution->GetBinContent(i) : 0;
+      double value = sqrt(combinedValue * combinedValue + ppValue * ppValue);
       result->SetBinContent(i, value);
       result->SetBinError(i, 0);
    }
@@ -310,17 +256,20 @@ int main(int argc, char *argv[])
                familyFiles[family], observable, trackTag, histogramName);
       }
 
-      map<string, TH1D *> differenceContributions;
-      if(doDifference == true)
-      {
+       map<string, TH1D *> differenceContributions;
+       if(doDifference == true)
+       {
           for(const string &family : differenceFamilies)
-         {
-            string histogramName = "Difference" + family + "_" + observable;
-            differenceContributions[family] = BuildDifferenceFamilyHistogram(nominalDifference,
-               nominal, nominalPP, familyFilePairs[family], familyFilesPP[family],
-               observable, trackTag, histogramName);
-         }
-      }
+          {
+             string histogramName = "Difference" + family + "_" + observable;
+             const TH1D *combinedContribution = (family == "PU") ? contributions["PUpPb"] : contributions[family];
+             TH1D *ppContribution = BuildFamilyHistogramSingle(nominalPP,
+                familyFilesPP[family], observable, trackTag, histogramName + "_PP");
+             differenceContributions[family] = BuildDifferenceFamilyHistogram(nominalDifference,
+                combinedContribution, ppContribution, histogramName);
+             delete ppContribution;
+          }
+       }
 
       TH1D *total = (TH1D *)nominal->Clone(("Total_" + observable).c_str());
       total->Reset("ICES");
