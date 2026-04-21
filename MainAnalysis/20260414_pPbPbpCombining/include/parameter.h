@@ -46,6 +46,7 @@ public:
    string residualWeightFile; // Residual weight file
    string EnergyExtraFile; // Input file for energy extrapolation
    string VZWeightFile;      // VZ weight file
+   string ZCorrectionFile;   // pPb→PbP Z correction file
    string TrackSelectionMode; // Track selection systematic mode
    string TrackTreeName;      // Input tree name
    bool isPPb;            // Flag to check if this is a PPb analysis

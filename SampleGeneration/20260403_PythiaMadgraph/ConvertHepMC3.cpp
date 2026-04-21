@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
    string InputFileName = CL.Get("Input");
    string OutputFileName = CL.Get("Output");
    bool ChargedOnly = CL.GetBool("ChargedOnly", true);
-   bool MirrorGenToReco = CL.GetBool("MirrorGenToReco", false);
+   bool MirrorGenToReco = CL.GetBool("MirrorGenToReco", true);
 
    TFile OutputFile(OutputFileName.c_str(), "RECREATE");
    TTree OutputTree("Tree", "Tree for ZHadron Pythia+MadGraph samples");

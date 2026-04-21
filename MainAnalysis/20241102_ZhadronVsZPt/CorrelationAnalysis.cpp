@@ -342,6 +342,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       //==================================================//
       float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
       if (par.ExtraZWeight >= 0) ZWeight *= MZSignal->ExtraZWeight[par.ExtraZWeight];
+      else if (par.isData) ZWeight *= MZSignal->ZWeight;
 
       float eventWeightSignal = 1;
       if (par.useEventWeight) eventWeightSignal *= MZSignal->EventWeight;
@@ -447,6 +448,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             if (zPhiMix < 0) zPhiMix += 2 * M_PI;
             float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, zPhiMix) : 1;
             if (par.ExtraZWeight >= 0) ZWeightMix *= MMix->ExtraZWeight[par.ExtraZWeight];
+            else if (par.isData) ZWeightMix *= MMix->ZWeight;
             
             float computedMixWeight = 1;
             if (par.useEventWeight) computedMixWeight *= MMix->EventWeight;

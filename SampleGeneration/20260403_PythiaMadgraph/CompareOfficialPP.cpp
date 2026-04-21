@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
 
    const int LogBinCount = 40;
    vector<double> LogBins(LogBinCount + 1);
-   double LogMin = log10(0.01);
+   double LogMin = log10(0.5);
    double LogMax = log10(500);
    for(int i = 0; i <= LogBinCount; i++)
       LogBins[i] = pow(10, LogMin + (LogMax - LogMin) * i / LogBinCount);
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
    TCanvas CZPtLog("CZPtLog", "", 600, 600);
    TPad *PZPtLog = (TPad *)plotCMSRatio(ZPtLogHistograms, "", Labels,
       LineColors, LineStyles, MarkerColors, MarkerStyles,
-      "p_{T}^{Z} (GeV)", 0.01, 500,
+      "p_{T}^{Z} (GeV)", 0.5, 500,
       "(1/N_{Z}) dN_{Z}/dp_{T}^{Z}", -1, -1,
       "Private / official", 0.5, 1.5,
       0, true, true, true, 0.55);

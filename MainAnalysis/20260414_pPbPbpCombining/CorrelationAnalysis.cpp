@@ -144,6 +144,7 @@ int main(int argc, char *argv[])
    par.includeHole   = true;
    par.isPPb         = CL.GetBool  ("IsPPb", false);
    par.yBoost        = CL.GetDouble("yBoost", 0);
+   par.ZCorrectionFile = CL.Get    ("ZCorrectionFile", "");
    par.mix = false;
    par.isPP = IsPP;
    par.isData = IsData;
@@ -188,6 +189,44 @@ int main(int argc, char *argv[])
    hZPt->Sumw2();
    hZY->Sumw2();
 
+   // Z-track correlation histograms
+   const int nDEtaBins = 12;
+   double dEtaMin = 0, dEtaMax = 4.8;
+   const int nDPhiBins = 12;
+   double dPhiMin = 0, dPhiMax = M_PI;
+
+   TH1D *hDEta  = new TH1D("hDEtaData",  ";|#Delta#eta|;1/N_{Z} dN/d|#Delta#eta|", nDEtaBins, dEtaMin, dEtaMax);
+   TH1D *hDPhi  = new TH1D("hDPhiData",  ";|#Delta#phi|;1/N_{Z} dN/d|#Delta#phi|", nDPhiBins, dPhiMin, dPhiMax);
+   TH2D *hDEtaDPhi = new TH2D("hDEtaDPhiData", ";|#Delta#eta|;|#Delta#phi|",
+      nDEtaBins, dEtaMin, dEtaMax, nDPhiBins, dPhiMin, dPhiMax);
+
+   hDEta->Sumw2();
+   hDPhi->Sumw2();
+   hDEtaDPhi->Sumw2();
+
+   // Event multiplicity (track count per event)
+   TH1D *hMult = new TH1D("hMultData", ";N_{trk};Events", 20, 0, 150);
+   hMult->Sumw2();
+
+   // 3D Z histogram for correction derivation (pT, y_CM, phi)
+   // Use log-spaced pT bins from 0.5–100 GeV; events outside land in overflow (correction=1)
+   const int nZ3dPtBins = 50;
+   double z3dPtBins[nZ3dPtBins + 1];
+   double z3dLogMin = log(0.5), z3dLogMax = log(100.0);
+   for (int i = 0; i <= nZ3dPtBins; i++)
+       z3dPtBins[i] = exp(z3dLogMin + (z3dLogMax - z3dLogMin) * i / nZ3dPtBins);
+   const int nZ3dYBins = 12;
+   double z3dYBins[nZ3dYBins + 1];
+   for (int i = 0; i <= nZ3dYBins; i++)
+       z3dYBins[i] = -3.5 + (2.5 - (-3.5)) * i / nZ3dYBins;
+   const int nZ3dPhiBins = 12;
+   double z3dPhiBins[nZ3dPhiBins + 1];
+   for (int i = 0; i <= nZ3dPhiBins; i++)
+       z3dPhiBins[i] = 2 * M_PI * i / nZ3dPhiBins;
+   TH3D *hZ3D = new TH3D("hZ3D", ";Z p_{T};Z y_{CM};Z #phi",
+       nZ3dPtBins, z3dPtBins, nZ3dYBins, z3dYBins, nZ3dPhiBins, z3dPhiBins);
+   hZ3D->Sumw2();
+
    // Open correctors if needed
    TrackResidualCorrector *Zcorrector = nullptr;
    if (par.useZWeight && par.ZWeightFile != "")
@@ -196,6 +235,10 @@ int main(int argc, char *argv[])
    VZCorrector *vzCorrector = nullptr;
    if (par.useVZWeight)
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
+
+   TrackResidualCorrector *ZCorrectionCorrector = nullptr;
+   if (par.ZCorrectionFile != "")
+      ZCorrectionCorrector = new TrackResidualCorrector(par.ZCorrectionFile.c_str());
 
    TrackResidualCorrector *corrector_0_10 = nullptr, *corrector_10_20 = nullptr,
                           *corrector_20_40 = nullptr, *corrector_40_500 = nullptr;
@@ -224,8 +267,16 @@ int main(int argc, char *argv[])
 
       float zPt = (par.isGenZ ? (*M->genZPt)[0] : (*M->zPt)[0]);
       float zY  = (par.isGenZ ? (*M->genZY)[0] : (*M->zY)[0]);
+      float zEta = (par.isGenZ ? (*M->genZEta)[0] : (*M->zEta)[0]);
       float zPhi = (par.isGenZ ? (*M->genZPhi)[0] : (*M->zPhi)[0]);
       if (zPhi < 0) zPhi += 2 * M_PI;
+
+      // Boost Z y to CM frame (needed before Z correction lookup)
+      float zY_CM = zY;
+      if (!par.isPP) {
+         if (par.isPPb) zY_CM = zY - par.yBoost;
+         else           zY_CM = -(zY + par.yBoost);
+      }
 
       // Z correction weight (from file) and skim TnP scale factor
       float ZWeight = (Zcorrector != nullptr) ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
@@ -236,18 +287,14 @@ int main(int argc, char *argv[])
       if (par.useEventWeight) eventWeight *= M->EventWeight;
       if (par.useVZWeight) eventWeight *= vzCorrector->GetCorrectionFactor(M->VZ);
       if (par.useZWeight) eventWeight *= ZWeight;
+      if (ZCorrectionCorrector != nullptr)
+         eventWeight *= ZCorrectionCorrector->GetCorrectionFactor(zPt, zY_CM, zPhi);
 
       nZ += eventWeight;
 
-      // Boost Z y to CM frame
-      float zY_CM = zY;
-      if (!par.isPP) {
-         if (par.isPPb) zY_CM = zY - par.yBoost;
-         else           zY_CM = -(zY + par.yBoost);
-      }
-
       hZPt->Fill(zPt, eventWeight);
       hZY->Fill(zY_CM, eventWeight);
+      hZ3D->Fill(zPt, zY_CM, zPhi, eventWeight);
 
       // Select track residual corrector by Z pT bin
       TrackResidualCorrector *corrector = nullptr;
@@ -259,10 +306,12 @@ int main(int argc, char *argv[])
       }
 
       // Track loop
+      int nTracks = 0;
       pair<int, int> closestMuonTracks = findClosestMuonTracks(M, par);
       for (unsigned long j = 0; j < M->trackPt->size(); j++) {
          if (!trackSelection(M, par, j, closestMuonTracks)) continue;
 
+         nTracks++;
          float trackPt  = (*M->trackPt)[j];
          float trackEta = (*M->trackEta)[j];
          float trackPhi = (*M->trackPhi)[j];
@@ -281,7 +330,18 @@ int main(int argc, char *argv[])
 
          hTrkPt->Fill(trackPt, weight);
          hTrkEta->Fill(trackEta_CM, weight);
+
+         // Z-track correlations (lab frame, unsigned)
+         float dEta = fabs(trackEta - zEta);
+         float rawDPhi = trackPhi - zPhi;
+         while (rawDPhi >  M_PI) rawDPhi -= 2*M_PI;
+         while (rawDPhi < -M_PI) rawDPhi += 2*M_PI;
+         float dPhi = fabs(rawDPhi);
+         hDEta->Fill(dEta, weight);
+         hDPhi->Fill(dPhi, weight);
+         hDEtaDPhi->Fill(dEta, dPhi, weight);
       }
+      hMult->Fill(nTracks, eventWeight);
    }
    cout << endl << "Total NZ: " << nZ << endl;
 
@@ -293,6 +353,11 @@ int main(int argc, char *argv[])
    hZPt->Write();
    hZY->Write();
    hNZ->Write();
+   hDEta->Write();
+   hDPhi->Write();
+   hDEtaDPhi->Write();
+   hMult->Write();
+   hZ3D->Write();
    outf->Close();
    cout << "done! " << par.output << endl;
 }

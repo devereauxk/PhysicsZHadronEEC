@@ -158,6 +158,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
       float this_eventWeight = MZSignal->EventWeight;
       if (std::isfinite(this_eventWeight) == false)
          this_eventWeight = 1;
+      if (par.isData) this_eventWeight *= MZSignal->ZWeight;
       if (par.useVZWeight)
          this_eventWeight *= vzCorrector->GetCorrectionFactor(MZSignal->VZ);
       this_eventWeight *= residualCorrection;

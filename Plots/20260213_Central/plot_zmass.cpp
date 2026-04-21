@@ -132,8 +132,10 @@ int main(int argc, char *argv[]) {
 
         cout<<"Opening file: "<<input_ZPT<<endl;
 
-        // track pt eta phi
+        // track pt eta phi — try requested range first, fall back to 0.5_500
         TH1D* this_hZmass = (TH1D*)fin->Get(Form("hZmassData_%s", trkPtRange.c_str()));
+        if(this_hZmass == nullptr && trkPtRange != "0.5_500")
+            this_hZmass = (TH1D*)fin->Get("hZmassData_0.5_500");
         if(this_hZmass == nullptr) {
             cerr << "Error: histogram hZmassData_" << trkPtRange << " missing in " << input_ZPT << endl;
             return 1;

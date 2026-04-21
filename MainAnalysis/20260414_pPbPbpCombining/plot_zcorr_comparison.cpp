@@ -24,18 +24,18 @@ int main(int argc, char *argv[]) {
     };
 
     vector<CorrLevel> levels = {
-        {"raw",                    "No corrections",               "output/pPb_raw.root",                    "output/PbP_raw.root"},
-        {"VZ",                     "+VZ",                          "output/pPb_VZ.root",                     "output/PbP_VZ.root"},
-        {"VZ_Z",                   "+VZ+Z",                        "output/pPb_VZ_Z.root",                   "output/PbP_VZ_Z.root"},
-        {"VZ_Z_ZSF",               "+VZ+Z+ZSF",                    "output/pPb_VZ_Z_ZSF.root",               "output/PbP_VZ_Z_ZSF.root"},
-        {"VZ_Z_ZSF_trk",           "+VZ+Z+ZSF+trk",                "output/pPb_VZ_Z_ZSF_trk.root",           "output/PbP_VZ_Z_ZSF_trk.root"},
-        {"VZ_Z_ZSF_trk_res",       "+VZ+Z+ZSF+trk+res",            "output/pPb_VZ_Z_ZSF_trk_res.root",       "output/PbP_VZ_Z_ZSF_trk_res.root"},
-        {"raw_PUReject",           "No corrections, N_{vtx}=1",    "output/pPb_raw_PUReject.root",            "output/PbP_raw_PUReject.root"},
-        {"VZ_PUReject",            "+VZ, N_{vtx}=1",               "output/pPb_VZ_PUReject.root",             "output/PbP_VZ_PUReject.root"},
-        {"VZ_Z_PUReject",          "+VZ+Z, N_{vtx}=1",             "output/pPb_VZ_Z_PUReject.root",           "output/PbP_VZ_Z_PUReject.root"},
-        {"VZ_Z_ZSF_PUReject",      "+VZ+Z+ZSF, N_{vtx}=1",        "output/pPb_VZ_Z_ZSF_PUReject.root",      "output/PbP_VZ_Z_ZSF_PUReject.root"},
-        {"VZ_Z_ZSF_trk_PUReject",  "+VZ+Z+ZSF+trk, N_{vtx}=1",    "output/pPb_VZ_Z_ZSF_trk_PUReject.root",  "output/PbP_VZ_Z_ZSF_trk_PUReject.root"},
-        {"VZ_Z_ZSF_trk_res_PUReject", "+VZ+Z+ZSF+trk+res, N_{vtx}=1", "output/pPb_VZ_Z_ZSF_trk_res_PUReject.root", "output/PbP_VZ_Z_ZSF_trk_res_PUReject.root"},
+        {"raw",                    "No corrections",               "output/pPb_Zcorr_raw.root",                    "output/PbP_Zcorr_raw.root"},
+        {"VZ",                     "+VZ",                          "output/pPb_Zcorr_VZ.root",                     "output/PbP_Zcorr_VZ.root"},
+        {"VZ_Z",                   "+VZ+Z",                        "output/pPb_Zcorr_VZ_Z.root",                   "output/PbP_Zcorr_VZ_Z.root"},
+        {"VZ_Z_ZSF",               "+VZ+Z+ZSF",                    "output/pPb_Zcorr_VZ_Z_ZSF.root",               "output/PbP_Zcorr_VZ_Z_ZSF.root"},
+        {"VZ_Z_ZSF_trk",           "+VZ+Z+ZSF+trk",                "output/pPb_Zcorr_VZ_Z_ZSF_trk.root",           "output/PbP_Zcorr_VZ_Z_ZSF_trk.root"},
+        {"VZ_Z_ZSF_trk_res",       "+VZ+Z+ZSF+trk+res",            "output/pPb_Zcorr_VZ_Z_ZSF_trk_res.root",       "output/PbP_Zcorr_VZ_Z_ZSF_trk_res.root"},
+        {"raw_PUReject",           "No corrections, N_{vtx}=1",    "output/pPb_Zcorr_raw_PUReject.root",            "output/PbP_Zcorr_raw_PUReject.root"},
+        {"VZ_PUReject",            "+VZ, N_{vtx}=1",               "output/pPb_Zcorr_VZ_PUReject.root",             "output/PbP_Zcorr_VZ_PUReject.root"},
+        {"VZ_Z_PUReject",          "+VZ+Z, N_{vtx}=1",             "output/pPb_Zcorr_VZ_Z_PUReject.root",           "output/PbP_Zcorr_VZ_Z_PUReject.root"},
+        {"VZ_Z_ZSF_PUReject",      "+VZ+Z+ZSF, N_{vtx}=1",        "output/pPb_Zcorr_VZ_Z_ZSF_PUReject.root",      "output/PbP_Zcorr_VZ_Z_ZSF_PUReject.root"},
+        {"VZ_Z_ZSF_trk_PUReject",  "+VZ+Z+ZSF+trk, N_{vtx}=1",    "output/pPb_Zcorr_VZ_Z_ZSF_trk_PUReject.root",  "output/PbP_Zcorr_VZ_Z_ZSF_trk_PUReject.root"},
+        {"VZ_Z_ZSF_trk_res_PUReject", "+VZ+Z+ZSF+trk+res, N_{vtx}=1", "output/pPb_Zcorr_VZ_Z_ZSF_trk_res_PUReject.root", "output/PbP_Zcorr_VZ_Z_ZSF_trk_res_PUReject.root"},
     };
 
     struct HistDef {
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
             AddCMSHeader(pad, "Internal", false);
             AddUPCHeader(pad, "8.16 TeV", levels[il].title.c_str());
 
-            c->SaveAs(Form("plots/%s_%s.pdf", shortNames[ih].c_str(), levels[il].label.c_str()));
+            c->SaveAs(Form("plots/zcorr_%s_%s.pdf", shortNames[ih].c_str(), levels[il].label.c_str()));
             delete c;
             delete h_pPb;
             delete h_PbP;
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
         pad->cd();
         AddCMSHeader(pad, "Internal", false);
         AddUPCHeader(pad, "8.16 TeV", Form("Pbp/pPb %s", levels[il].title.c_str()));
-        c->SaveAs(Form("plots/DEtaDPhi_ratio_%s.pdf", levels[il].label.c_str()));
+        c->SaveAs(Form("plots/zcorr_DEtaDPhi_ratio_%s.pdf", levels[il].label.c_str()));
         delete c;
         delete h2_pPb;
         delete h2_PbP;

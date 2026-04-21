@@ -8,7 +8,7 @@ cd ..
 cd "$WORKINGDIR"
 sleep 1
 
-name="${NAME_TAG:-20260412_ZV8_trkV26_TrackResidualCorrection}"
+name="${NAME_TAG:-20260415_ZV9_trkV27_TrackResidualCorrection}"
 echo "[run-pp] NAME_TAG=${name} VARIANT_TAG=${VARIANT_TAG:-Nominal}"
 ./pythia-analysis.sh 0 10 "$name" "$@"
 ./pythia-analysis.sh 10 20 "$name" "$@"

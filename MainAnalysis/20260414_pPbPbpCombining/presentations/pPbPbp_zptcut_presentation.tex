@@ -1,0 +1,140 @@
+\documentclass[aspectratio=169]{beamer}
+
+\setbeamersize{text margin left=0.15cm, text margin right=0.15cm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+
+\title{pPb vs Pbp: Z correction + Z $p_T \in [5, 100]$ GeV}
+\date{}
+
+\newcommand{\plotpanel}[2]{%
+  \begin{minipage}[t]{0.327\textwidth}
+    \centering
+    {\tiny #1\par}
+    \vspace{0.2em}
+    \includegraphics[width=\linewidth]{#2}
+  \end{minipage}%
+}
+
+\newcommand{\plotslideA}[3]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{../plots/zptcut_#2_raw#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{../plots/zptcut_#2_VZ#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{../plots/zptcut_#2_VZ_Z#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideB}[3]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{../plots/zptcut_#2_VZ_Z_ZSF#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{../plots/zptcut_#2_VZ_Z_ZSF_trk#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{../plots/zptcut_#2_VZ_Z_ZSF_trk_res#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\ratioheatmapslideA}[3]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{../plots/zptcut_#2_raw#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{../plots/zptcut_#2_VZ#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{../plots/zptcut_#2_VZ_Z#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\ratioheatmapslideB}[3]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{../plots/zptcut_#2_VZ_Z_ZSF#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{../plots/zptcut_#2_VZ_Z_ZSF_trk#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{../plots/zptcut_#2_VZ_Z_ZSF_trk_res#3.pdf}
+  \end{frame}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[t]{Z $p_T$ cut + Z correction: pPb$\to$Pbp}
+  \small
+  \textbf{Z $p_T$ selection:} $5 < p_T^Z < 100$~GeV\par
+  \vspace{0.3em}
+  \textbf{Z correction:} iterative 3D ($p_T$, $y_\text{CM}$, $\phi$) reweighting of pPb Z to match Pbp\par
+  \vspace{0.3em}
+  \textbf{skims}\par
+  {\scriptsize
+  \texttt{pPb: SampleGeneration/20250929\_ReducedTreePA/V0.2/PPbData\_Reco.root}\par
+  \texttt{Pbp: SampleGeneration/20250929\_ReducedTreePA/V0.2/PbPData\_Reco.root}\par}
+  \vspace{0.3em}
+  \textbf{kinematic} $60 < m_Z < 120$~GeV,\ $5 < p_T^Z < 100$~GeV,\ $|v_z| < 15$~cm,\ $0.5 < p_T^\text{trk} < 15$~GeV,\ $|\eta^\text{trk}| < 2.4$\par
+  \vspace{0.3em}
+  \textbf{$y_\text{boost}$} = 0.465\par
+  \vspace{0.3em}
+  \textbf{corrections} 6 levels: raw $\to$ +VZ $\to$ +Z $\to$ +ZSF (skim TnP) $\to$ +trk $\to$ +trk+res\par
+  \vspace{0.3em}
+  {\scriptsize
+  \begin{tabular}{l r r}
+              & pPb NZ    & Pbp NZ \\
+  raw         & 5295      & 3086 \\
+  +VZ         & 5516      & 3223 \\
+  +VZ+Z       & 4679      & 2733 \\
+  +VZ+Z+ZSF   & 4616      & 2696 \\
+  +VZ+Z+ZSF+trk     & 4616      & 2696 \\
+  +VZ+Z+ZSF+trk+res & 4616      & 2696 \\
+  \end{tabular}}
+\end{frame}
+
+\plotslideA{trkPt (Zptcut)}{trkPt}{}
+\plotslideB{trkPt (Zptcut)}{trkPt}{}
+\plotslideA{trkPt + PUReject (Zptcut)}{trkPt}{_PUReject}
+\plotslideB{trkPt + PUReject (Zptcut)}{trkPt}{_PUReject}
+\plotslideA{trkEta (Zptcut)}{trkEta}{}
+\plotslideB{trkEta (Zptcut)}{trkEta}{}
+\plotslideA{trkEta + PUReject (Zptcut)}{trkEta}{_PUReject}
+\plotslideB{trkEta + PUReject (Zptcut)}{trkEta}{_PUReject}
+\plotslideA{ZPt (Zptcut)}{ZPt}{}
+\plotslideB{ZPt (Zptcut)}{ZPt}{}
+\plotslideA{ZPt + PUReject (Zptcut)}{ZPt}{_PUReject}
+\plotslideB{ZPt + PUReject (Zptcut)}{ZPt}{_PUReject}
+\plotslideA{Zy (Zptcut)}{Zy}{}
+\plotslideB{Zy (Zptcut)}{Zy}{}
+\plotslideA{Zy + PUReject (Zptcut)}{Zy}{_PUReject}
+\plotslideB{Zy + PUReject (Zptcut)}{Zy}{_PUReject}
+\plotslideA{Multiplicity (Zptcut)}{Mult}{}
+\plotslideB{Multiplicity (Zptcut)}{Mult}{}
+\plotslideA{Multiplicity + PUReject (Zptcut)}{Mult}{_PUReject}
+\plotslideB{Multiplicity + PUReject (Zptcut)}{Mult}{_PUReject}
+\plotslideA{$|\Delta\eta|$ (Zptcut)}{DEta}{}
+\plotslideB{$|\Delta\eta|$ (Zptcut)}{DEta}{}
+\plotslideA{$|\Delta\eta|$ + PUReject (Zptcut)}{DEta}{_PUReject}
+\plotslideB{$|\Delta\eta|$ + PUReject (Zptcut)}{DEta}{_PUReject}
+\plotslideA{$|\Delta\phi|$ (Zptcut)}{DPhi}{}
+\plotslideB{$|\Delta\phi|$ (Zptcut)}{DPhi}{}
+\plotslideA{$|\Delta\phi|$ + PUReject (Zptcut)}{DPhi}{_PUReject}
+\plotslideB{$|\Delta\phi|$ + PUReject (Zptcut)}{DPhi}{_PUReject}
+\plotslideA{$\Delta R$ (Zptcut)}{DR}{}
+\plotslideB{$\Delta R$ (Zptcut)}{DR}{}
+\plotslideA{$\Delta R$ + PUReject (Zptcut)}{DR}{_PUReject}
+\plotslideB{$\Delta R$ + PUReject (Zptcut)}{DR}{_PUReject}
+
+\ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio (Zptcut)}{DEtaDPhi_ratio}{}
+\ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio (Zptcut)}{DEtaDPhi_ratio}{}
+\ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject (Zptcut)}{DEtaDPhi_ratio}{_PUReject}
+\ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject (Zptcut)}{DEtaDPhi_ratio}{_PUReject}
+
+\end{document}

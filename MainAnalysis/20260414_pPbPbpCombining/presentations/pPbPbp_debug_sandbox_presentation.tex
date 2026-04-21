@@ -40,6 +40,30 @@
   \end{frame}
 }
 
+\newcommand{\ratioheatmapslideA}[3]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{../plots/#2_raw#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{../plots/#2_VZ#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{../plots/#2_VZ_Z#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\ratioheatmapslideB}[3]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{../plots/#2_VZ_Z_ZSF#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{../plots/#2_VZ_Z_ZSF_trk#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{../plots/#2_VZ_Z_ZSF_trk_res#3.pdf}
+  \end{frame}
+}
+
 \begin{document}
 
 \begin{frame}
@@ -50,27 +74,27 @@
   \small
   \textbf{skims}\par
   {\scriptsize
-  \texttt{pPb: SampleGeneration/20250929\_ReducedTreePA/V0.3/PPbData\_Reco.root}\par
-  \texttt{Pbp: SampleGeneration/20250929\_ReducedTreePA/V0.3/PbPData\_Reco.root}\par}
+  \texttt{pPb: SampleGeneration/20250929\_ReducedTreePA/V0.2/PPbData\_Reco.root}\par
+  \texttt{Pbp: SampleGeneration/20250929\_ReducedTreePA/V0.2/PbPData\_Reco.root}\par}
   \vspace{0.5em}
-  \textbf{tag} \texttt{ZV8\_trkV26\_nmix10}\par
-  \vspace{0.5em}
-  \textbf{cuts} $Z~p_T$: 0--500,\ track $p_T$: 0.5--15,\ $nMix=0$,\ CM $\eta/y$,\ range $[-3.5,\,2.5]$\par
+  \textbf{tag} \texttt{ZV9\_trkV27\_nmix10}\par
+  \vspace{0.3em}
+  \textbf{kinematic} $60 < m_Z < 120$~GeV,\ $|v_z| < 15$~cm,\ $0.5 < p_T^\text{trk} < 15$~GeV,\ $|\eta^\text{trk}| < 2.4$\par
+  \vspace{0.3em}
+  \textbf{$y_\text{boost}$} = 0.465\par
   \vspace{0.3em}
   \textbf{corrections} 6 levels: raw $\to$ +VZ $\to$ +Z $\to$ +ZSF (skim TnP) $\to$ +trk $\to$ +trk+res\par
   \vspace{0.3em}
   {\scriptsize
   \begin{tabular}{l r r}
               & pPb NZ    & Pbp NZ \\
-  raw         & 20413     & 11901 \\
-  +VZ         & 94300     & 54992 \\
+  raw         & 11729     & 6742 \\
+  +VZ         & 12225     & 7035 \\
   +VZ+Z       & 10463     & 6024 \\
-  +VZ+Z+ZSF   & 10323     & 5943 \\
-  +VZ+Z+ZSF+trk     & 10323     & 5943 \\
-  +VZ+Z+ZSF+trk+res & 10323     & 5943 \\
+  +VZ+Z+ZSF   & 10324     & 5943 \\
+  +VZ+Z+ZSF+trk     & 10324     & 5943 \\
+  +VZ+Z+ZSF+trk+res & 10324     & 5943 \\
   \end{tabular}}
-  \par\vspace{0.3em}
-  {\scriptsize ZSF = skim \texttt{ZWeight} (TnP efficiency); shift VZ\_Z$\to$VZ\_Z\_ZSF: $-1.33\%$ (pPb), $-1.35\%$ (Pbp)}
 \end{frame}
 
 \plotslideA{trkPt}{trkPt}{}
@@ -89,5 +113,21 @@
 \plotslideB{Zy}{Zy}{}
 \plotslideA{Zy + PUReject}{Zy}{_PUReject}
 \plotslideB{Zy + PUReject}{Zy}{_PUReject}
+\plotslideA{Multiplicity}{Mult}{}
+\plotslideB{Multiplicity}{Mult}{}
+\plotslideA{Multiplicity + PUReject}{Mult}{_PUReject}
+\plotslideB{Multiplicity + PUReject}{Mult}{_PUReject}
+\plotslideA{$|\Delta\eta|$}{DEta}{}
+\plotslideB{$|\Delta\eta|$}{DEta}{}
+\plotslideA{$|\Delta\eta|$ + PUReject}{DEta}{_PUReject}
+\plotslideB{$|\Delta\eta|$ + PUReject}{DEta}{_PUReject}
+\plotslideA{$|\Delta\phi|$}{DPhi}{}
+\plotslideB{$|\Delta\phi|$}{DPhi}{}
+\plotslideA{$|\Delta\phi|$ + PUReject}{DPhi}{_PUReject}
+\plotslideB{$|\Delta\phi|$ + PUReject}{DPhi}{_PUReject}
+\ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio}{DEtaDPhi_ratio}{}
+\ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio}{DEtaDPhi_ratio}{}
+\ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject}{DEtaDPhi_ratio}{_PUReject}
+\ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject}{DEtaDPhi_ratio}{_PUReject}
 
 \end{document}

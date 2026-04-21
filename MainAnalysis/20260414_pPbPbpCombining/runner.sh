@@ -24,7 +24,7 @@ run_analysis() {
     for (( chunk=1; chunk<=NTHREAD; chunk++ )); do
         ./ExecuteCorrelationAnalysis "$@" \
             --nThread $NTHREAD --nChunk $chunk \
-            --Output "output/${NAME}_${chunk}.root" &
+            --Output "output/${NAME}_chunk${chunk}.root" &
         pids+=($!)
         # Limit concurrent workers
         while [ "$(jobs -rp | wc -l)" -ge "$NTHREAD" ]; do
@@ -33,9 +33,9 @@ run_analysis() {
     done
     wait
 
-    # Merge
-    hadd -f "output/${NAME}.root" output/${NAME}_*.root
-    rm -f output/${NAME}_*.root
+    # Merge (use _chunk* pattern to avoid matching other merged outputs)
+    hadd -f "output/${NAME}.root" output/${NAME}_chunk*.root
+    rm -f output/${NAME}_chunk*.root
     echo "=== Done: output/${NAME}.root ==="
 }
 

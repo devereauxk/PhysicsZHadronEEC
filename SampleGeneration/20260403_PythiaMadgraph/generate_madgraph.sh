@@ -11,6 +11,7 @@ ProcessDir=""
 OutputLHE=""
 ForceProcess=0
 LHAID=303600
+PDFLabel=lhapdf
 
 while [[ $# -gt 0 ]]; do
    case "$1" in
@@ -20,6 +21,8 @@ while [[ $# -gt 0 ]]; do
       --ProcessDir) ProcessDir="$2"; shift 2 ;;
       --OutputLHE) OutputLHE="$2"; shift 2 ;;
       --ForceProcess) ForceProcess="$2"; shift 2 ;;
+      --LHAID) LHAID="$2"; shift 2 ;;
+      --PDFLabel) PDFLabel="$2"; shift 2 ;;
       *) echo "Unknown option: $1"; exit 1 ;;
    esac
 done
@@ -47,9 +50,9 @@ if [[ ! -d "$ProcessDir" || "$ForceProcess" == "1" ]]; then
    NeedProcess=1
 elif [[ ! -f "$ProcessDir/Cards/proc_card_mg5.dat" ]]; then
    NeedProcess=1
-elif ! grep -Fq 'import model loop_sm' "$ProcessDir/Cards/proc_card_mg5.dat"; then
+elif ! grep -Fq 'import model sm' "$ProcessDir/Cards/proc_card_mg5.dat"; then
    NeedProcess=1
-elif ! grep -Fq 'generate p p > z [QCD]' "$ProcessDir/Cards/proc_card_mg5.dat"; then
+elif ! grep -Fq 'generate p p > z' "$ProcessDir/Cards/proc_card_mg5.dat"; then
    NeedProcess=1
 fi
 
@@ -57,8 +60,8 @@ if [[ "$NeedProcess" == "1" ]]; then
    cat > "$ProcessCard" <<MG5
 set automatic_html_opening False --no_save
 set lhapdf ${LHAPDF6_BASE}/bin/lhapdf-config --no_save
-import model loop_sm
-generate p p > z [QCD]
+import model sm
+generate p p > z
 output ${ProcessDir} -f
 quit
 MG5
@@ -80,7 +83,7 @@ set nevents ${Events}
 set iseed ${Seed}
 set ebeam1 ${EBeam}
 set ebeam2 ${EBeam}
-set pdlabel lhapdf
+set pdlabel ${PDFLabel}
 set lhaid ${LHAID}
 set parton_shower PYTHIA8
 set event_norm average
@@ -117,6 +120,13 @@ PY
 )
 LatestRun=${LatestPaths[0]}
 LatestDecayedRun=${LatestPaths[1]}
-gzip -dc "$LatestDecayedRun/events.lhe.gz" > "$OutputLHE"
+# LO produces unweighted_events.lhe.gz; NLO produces events.lhe.gz
+if [[ -f "$LatestDecayedRun/unweighted_events.lhe.gz" ]]; then
+   gzip -dc "$LatestDecayedRun/unweighted_events.lhe.gz" > "$OutputLHE"
+elif [[ -f "$LatestDecayedRun/events.lhe.gz" ]]; then
+   gzip -dc "$LatestDecayedRun/events.lhe.gz" > "$OutputLHE"
+else
+   echo "ERROR: no LHE file found in $LatestDecayedRun"; exit 1
+fi
 
 echo "$OutputLHE"
