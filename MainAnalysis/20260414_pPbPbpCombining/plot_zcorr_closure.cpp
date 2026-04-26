@@ -1,6 +1,5 @@
 #include <TFile.h>
 #include <TH1D.h>
-#include <TH3D.h>
 #include <TCanvas.h>
 #include <TPad.h>
 #include <iostream>
@@ -16,9 +15,9 @@ using namespace std;
 int main(int argc, char *argv[]) {
     SetThesisStyle();
 
-    string pPbRawFile  = "output/pPb_raw.root";
-    string PbPRawFile  = "output/PbP_raw.root";
-    string pPbZcorrFile = "output/pPb_Zcorr_raw.root";
+    string pPbRawFile   = "output/pPb_VZ_Z_ZSF.root";
+    string PbPRawFile   = "output/PbP_VZ_Z_ZSF.root";
+    string pPbZcorrFile = "output/pPb_Zcorr_VZ_Z_ZSF.root";
 
     TFile *fPPbRaw  = TFile::Open(pPbRawFile.c_str(), "READ");
     TFile *fPbPRaw  = TFile::Open(PbPRawFile.c_str(), "READ");
@@ -37,24 +36,16 @@ int main(int argc, char *argv[]) {
     cout << "NZ PbP raw: " << nZ_PbPRaw << endl;
     cout << "NZ pPb Zcorr: " << nZ_pPbZcorr << endl;
 
-    TH3D *h3_pPbRaw  = (TH3D*)fPPbRaw->Get("hZ3D")->Clone("h3_pPbRaw");
-    TH3D *h3_PbPRaw  = (TH3D*)fPbPRaw->Get("hZ3D")->Clone("h3_PbPRaw");
-    TH3D *h3_pPbZcorr = (TH3D*)fPPbZcorr->Get("hZ3D")->Clone("h3_pPbZcorr");
-    h3_pPbRaw->SetDirectory(nullptr);
-    h3_PbPRaw->SetDirectory(nullptr);
-    h3_pPbZcorr->SetDirectory(nullptr);
-
     struct AxisDef {
         string shortName;
         string xTitle;
         bool logx;
-        int axis; // 1=X(pT), 2=Y(y_CM), 3=Z(phi)
+        string histName;
     };
 
     vector<AxisDef> axes = {
-        {"ZPt",  "Z p_{T} [GeV]", true,  1},
-        {"Zy",   "Z y_{CM}",      false, 2},
-        {"ZPhi", "Z #phi",        false, 3},
+        {"Zy",   "Z y_{CM}", false, "hZYData"},
+        {"ZPhi", "Z #phi",   false, "hZPhiData"},
     };
 
     const Int_t cmsGreen = cmsTeal;
@@ -64,20 +55,9 @@ int main(int argc, char *argv[]) {
     vector<Int_t> lineStyles = {1, 1, 1};
 
     for (auto &ax : axes) {
-        TH1D *h_pPbRaw = nullptr, *h_PbPRaw = nullptr, *h_pPbZcorr = nullptr;
-        if (ax.axis == 1) {
-            h_pPbRaw   = h3_pPbRaw->ProjectionX(Form("proj_pPbRaw_%s", ax.shortName.c_str()));
-            h_PbPRaw   = h3_PbPRaw->ProjectionX(Form("proj_PbPRaw_%s", ax.shortName.c_str()));
-            h_pPbZcorr = h3_pPbZcorr->ProjectionX(Form("proj_pPbZcorr_%s", ax.shortName.c_str()));
-        } else if (ax.axis == 2) {
-            h_pPbRaw   = h3_pPbRaw->ProjectionY(Form("proj_pPbRaw_%s", ax.shortName.c_str()));
-            h_PbPRaw   = h3_PbPRaw->ProjectionY(Form("proj_PbPRaw_%s", ax.shortName.c_str()));
-            h_pPbZcorr = h3_pPbZcorr->ProjectionY(Form("proj_pPbZcorr_%s", ax.shortName.c_str()));
-        } else {
-            h_pPbRaw   = h3_pPbRaw->ProjectionZ(Form("proj_pPbRaw_%s", ax.shortName.c_str()));
-            h_PbPRaw   = h3_PbPRaw->ProjectionZ(Form("proj_PbPRaw_%s", ax.shortName.c_str()));
-            h_pPbZcorr = h3_pPbZcorr->ProjectionZ(Form("proj_pPbZcorr_%s", ax.shortName.c_str()));
-        }
+        TH1D *h_pPbRaw   = (TH1D*)fPPbRaw->Get(ax.histName.c_str())->Clone(Form("proj_pPbRaw_%s", ax.shortName.c_str()));
+        TH1D *h_PbPRaw   = (TH1D*)fPbPRaw->Get(ax.histName.c_str())->Clone(Form("proj_PbPRaw_%s", ax.shortName.c_str()));
+        TH1D *h_pPbZcorr = (TH1D*)fPPbZcorr->Get(ax.histName.c_str())->Clone(Form("proj_pPbZcorr_%s", ax.shortName.c_str()));
         h_pPbRaw->SetDirectory(nullptr);
         h_PbPRaw->SetDirectory(nullptr);
         h_pPbZcorr->SetDirectory(nullptr);
@@ -94,7 +74,7 @@ int main(int argc, char *argv[]) {
         double xmax = h_pPbRaw->GetXaxis()->GetXmax();
 
         vector<TH1*> overlay = {(TH1*)h_pPbRaw, (TH1*)h_PbPRaw, (TH1*)h_pPbZcorr};
-        vector<string> labels = {"pPb", "Pbp", "pPb (Z-corrected)"};
+        vector<string> labels = {"pPb (+VZ+Z+ZSF)", "Pbp (+VZ+Z+ZSF)", "pPb (+ direct 2D zcorr)"};
 
         TCanvas *c = new TCanvas(Form("c_closure_%s", ax.shortName.c_str()), "", 700, 700);
         TPad *pad = plotCMSRatio(overlay, Form("pad_closure_%s", ax.shortName.c_str()), labels,
@@ -115,7 +95,7 @@ int main(int argc, char *argv[]) {
             overlay[i]->Draw("E SAME");
         }
         AddCMSHeader(pad, "Internal", false);
-        AddUPCHeader(pad, "8.16 TeV", "Z correction closure");
+        AddUPCHeader(pad, "8.16 TeV", "Direct 2D Z correction closure");
 
         c->SaveAs(Form("plots/zcorr_closure_%s.pdf", ax.shortName.c_str()));
         delete c;
@@ -128,6 +108,6 @@ int main(int argc, char *argv[]) {
     fPbPRaw->Close();
     fPPbZcorr->Close();
 
-    cout << "Z correction closure plots saved to plots/" << endl;
+    cout << "Direct 2D Z correction closure plots saved to plots/" << endl;
     return 0;
 }

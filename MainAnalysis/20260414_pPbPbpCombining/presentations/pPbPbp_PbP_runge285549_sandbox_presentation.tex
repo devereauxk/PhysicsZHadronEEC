@@ -1,0 +1,153 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{graphicx}
+\setbeamersize{text margin left=0.15cm, text margin right=0.15cm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+
+\newcommand{\plotdir}{../plots/PbP_runge285549}
+\title{pPb full statistics vs Pbp upper-run split sandbox}
+\date{}
+
+\newcommand{\plotpanel}[2]{%
+  \begin{minipage}[t]{0.327\textwidth}
+    \centering
+    {\tiny #1\par}
+    \vspace{0.2em}
+    \includegraphics[width=\linewidth]{\plotdir/#2}
+  \end{minipage}%
+}
+
+\newcommand{\plotslideA}[2]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{#2_raw.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{#2_VZ.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{#2_VZ_Z.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideB}[2]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{#2_VZ_Z_ZSF.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{#2_VZ_Z_ZSF_trk.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{#2_VZ_Z_ZSF_trk_res.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideAPU}[2]{%
+  \begin{frame}[t]{#1 + PUReject (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{#2_raw_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{#2_VZ_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{#2_VZ_Z_PUReject.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideBPU}[2]{%
+  \begin{frame}[t]{#1 + PUReject (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{#2_VZ_Z_ZSF_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{#2_VZ_Z_ZSF_trk_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{#2_VZ_Z_ZSF_trk_res_PUReject.pdf}
+  \end{frame}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[t]{metadata}
+  \tiny
+  \textbf{skims}\\
+  \texttt{pPb: \detokenize{/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20250929_ReducedTreePA/V0.3/PPbData_Reco.root}}\\
+  \texttt{Pbp: \detokenize{/home/kdeverea/PhysicsZHadronEEC/SampleGeneration/20250929_ReducedTreePA/V0.3/PbPData_Reco.root}}\\
+  \vspace{0.35em}
+  \textbf{run split} threshold = \texttt{285549}\\
+  Strictly increasing in skim entry sequence? \textbf{no}\\
+  pPb: full statistics; Pbp: \texttt{Run >= 285549}\\
+  Exact Pbp entry counts: \texttt{Run < 285549} = 1,341,303, \texttt{Run >= 285549} = 1,223,786\\
+  \vspace{0.35em}
+  \textbf{nominal kinematic selection} \texttt{ZPT 0\_500}, \texttt{trkPT 0.5\_15}, $60 < m_Z < 120$~GeV, $|v_z| < 15$~cm\\
+  \textbf{correction ladder} raw $\to$ +VZ $\to$ +VZ+Z $\to$ +VZ+Z+ZSF $\to$ +VZ+Z+ZSF+trk $\to$ +VZ+Z+ZSF+trk+res\\
+  \textbf{pPb sample} full statistics in every panel\\
+  \vspace{0.4em}
+  \begin{columns}[t,onlytextwidth]
+    \column{0.49\textwidth}
+    \centering
+    \textbf{Nominal NZ}\\[-0.2em]
+    \scriptsize
+    \begin{tabular}{lrr}
+      level & pPb & Pbp \\
+raw & 11729.00 & 3356.00 \\
++VZ & 12225.31 & 3491.57 \\
++VZ+Z & 10463.06 & 2990.59 \\
++VZ+Z+ZSF & 10323.47 & 2950.37 \\
++VZ+Z+ZSF+trk & 10323.47 & 2950.37 \\
++VZ+Z+ZSF+trk+res & 10323.47 & 2950.37 \\
+    \end{tabular}
+    \column{0.49\textwidth}
+    \centering
+    \textbf{PUReject NZ}\\[-0.2em]
+    \scriptsize
+    \begin{tabular}{lrr}
+      level & pPb & Pbp \\
+raw & 8684.00 & 2533.00 \\
++VZ & 9062.14 & 2630.34 \\
++VZ+Z & 7755.42 & 2253.91 \\
++VZ+Z+ZSF & 7652.17 & 2223.83 \\
++VZ+Z+ZSF+trk & 7652.17 & 2223.83 \\
++VZ+Z+ZSF+trk+res & 7652.17 & 2223.83 \\
+    \end{tabular}
+  \end{columns}
+\end{frame}
+
+\plotslideA{trkPt}{trkPt}
+\plotslideB{trkPt}{trkPt}
+\plotslideAPU{trkPt}{trkPt}
+\plotslideBPU{trkPt}{trkPt}
+\plotslideA{trkEta}{trkEta}
+\plotslideB{trkEta}{trkEta}
+\plotslideAPU{trkEta}{trkEta}
+\plotslideBPU{trkEta}{trkEta}
+\plotslideA{ZPt}{ZPt}
+\plotslideB{ZPt}{ZPt}
+\plotslideAPU{ZPt}{ZPt}
+\plotslideBPU{ZPt}{ZPt}
+\plotslideA{Zy}{Zy}
+\plotslideB{Zy}{Zy}
+\plotslideAPU{Zy}{Zy}
+\plotslideBPU{Zy}{Zy}
+\plotslideA{Multiplicity}{Mult}
+\plotslideB{Multiplicity}{Mult}
+\plotslideAPU{Multiplicity}{Mult}
+\plotslideBPU{Multiplicity}{Mult}
+\plotslideA{$|\Delta\eta|$}{DEta}
+\plotslideB{$|\Delta\eta|$}{DEta}
+\plotslideAPU{$|\Delta\eta|$}{DEta}
+\plotslideBPU{$|\Delta\eta|$}{DEta}
+\plotslideA{$|\Delta\phi|$}{DPhi}
+\plotslideB{$|\Delta\phi|$}{DPhi}
+\plotslideAPU{$|\Delta\phi|$}{DPhi}
+\plotslideBPU{$|\Delta\phi|$}{DPhi}
+\plotslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio}{DEtaDPhi_ratio}
+\plotslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio}{DEtaDPhi_ratio}
+\plotslideAPU{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio}{DEtaDPhi_ratio}
+\plotslideBPU{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio}{DEtaDPhi_ratio}
+
+\end{document}

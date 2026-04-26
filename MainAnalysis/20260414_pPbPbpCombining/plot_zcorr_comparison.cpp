@@ -125,6 +125,25 @@ int main(int argc, char *argv[]) {
         fPbP->Close();
     }
 
+    struct Hist2DDef {
+        string name;
+        string outputStem;
+        string xTitle;
+        double xmin;
+        double xmax;
+        string yTitle;
+        double ymin;
+        double ymax;
+        string zTitle;
+        double zmin;
+        double zmax;
+    };
+
+    vector<Hist2DDef> heatmaps = {
+        {"hDEtaDPhiData", "DEtaDPhi_ratio", "|#Delta#eta|", 0, 4.8, "|#Delta#phi|", 0, M_PI, "Pbp / pPb", 0.85, 1.15},
+        {"hZEtaPhiData",  "ZEtaPhi_ratio",  "Z #eta",       -2.4, 2.4, "Z #phi",       0, 2 * M_PI, "Pbp / pPb", 0.85, 1.15},
+    };
+
     // 2D ratio heatmap plots (PbP/pPb)
     for (int il = 0; il < (int)levels.size(); il++) {
         TFile *fPPb = TFile::Open(levels[il].pPbFile.c_str(), "READ");
@@ -133,31 +152,33 @@ int main(int argc, char *argv[]) {
         double nZ_pPb = ((TH1D*)fPPb->Get("hNZData"))->GetBinContent(1);
         double nZ_PbP = ((TH1D*)fPbP->Get("hNZData"))->GetBinContent(1);
 
-        TH2D *h2_pPb = (TH2D*)fPPb->Get("hDEtaDPhiData")->Clone("h2_pPb_ratio");
-        TH2D *h2_PbP = (TH2D*)fPbP->Get("hDEtaDPhiData")->Clone("h2_PbP_ratio");
-        h2_pPb->SetDirectory(nullptr);
-        h2_PbP->SetDirectory(nullptr);
+        for(const Hist2DDef &heatmap : heatmaps) {
+            TH2D *h2_pPb = (TH2D*)fPPb->Get(heatmap.name.c_str())->Clone(Form("h2_pPb_%s_%s", heatmap.outputStem.c_str(), levels[il].label.c_str()));
+            TH2D *h2_PbP = (TH2D*)fPbP->Get(heatmap.name.c_str())->Clone(Form("h2_PbP_%s_%s", heatmap.outputStem.c_str(), levels[il].label.c_str()));
+            h2_pPb->SetDirectory(nullptr);
+            h2_PbP->SetDirectory(nullptr);
 
-        h2_pPb->Scale(1.0 / nZ_pPb);
-        h2_PbP->Scale(1.0 / nZ_PbP);
+            h2_pPb->Scale(1.0 / nZ_pPb);
+            h2_PbP->Scale(1.0 / nZ_PbP);
 
-        TH2D *h2_ratio = (TH2D*)h2_PbP->Clone("h2_ratio");
-        h2_ratio->Divide(h2_pPb);
+            TH2D *h2_ratio = (TH2D*)h2_PbP->Clone(Form("h2_ratio_%s_%s", heatmap.outputStem.c_str(), levels[il].label.c_str()));
+            h2_ratio->Divide(h2_pPb);
 
-        TCanvas *c = new TCanvas(Form("c2d_ratio_%s", levels[il].label.c_str()), "", 700, 600);
-        TPad* pad = plotCMSSimple2D(c, h2_ratio, "",
-            "|#Delta#eta|", 0, 4.8,
-            "|#Delta#phi|", 0, M_PI,
-            "Pbp / pPb", 0.85, 1.15,
-            false, false, false);
-        pad->cd();
-        AddCMSHeader(pad, "Internal", false);
-        AddUPCHeader(pad, "8.16 TeV", Form("Pbp/pPb %s", levels[il].title.c_str()));
-        c->SaveAs(Form("plots/zcorr_DEtaDPhi_ratio_%s.pdf", levels[il].label.c_str()));
-        delete c;
-        delete h2_pPb;
-        delete h2_PbP;
-        delete h2_ratio;
+            TCanvas *c = new TCanvas(Form("c2d_ratio_%s_%s", heatmap.outputStem.c_str(), levels[il].label.c_str()), "", 700, 600);
+            TPad* pad = plotCMSSimple2D(c, h2_ratio, "",
+                heatmap.xTitle.c_str(), heatmap.xmin, heatmap.xmax,
+                heatmap.yTitle.c_str(), heatmap.ymin, heatmap.ymax,
+                heatmap.zTitle.c_str(), heatmap.zmin, heatmap.zmax,
+                false, false, false);
+            pad->cd();
+            AddCMSHeader(pad, "Internal", false);
+            AddUPCHeader(pad, "8.16 TeV", Form("Pbp/pPb %s", levels[il].title.c_str()));
+            c->SaveAs(Form("plots/zcorr_%s_%s.pdf", heatmap.outputStem.c_str(), levels[il].label.c_str()));
+            delete c;
+            delete h2_pPb;
+            delete h2_PbP;
+            delete h2_ratio;
+        }
         fPPb->Close();
         fPbP->Close();
     }

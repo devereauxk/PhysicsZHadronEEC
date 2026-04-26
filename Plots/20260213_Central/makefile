@@ -1,8 +1,13 @@
-default: clean ExecuteCentralPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot ExecuteEnergyExtrapolationPlot ExecutePPPlot ExecutePUPlot ExecuteVZPlot ExecuteCentralOverlayPPbPbPPlot ExecutePaperPlot
+default: clean ExecuteCentralPlot ExecuteCentralSBPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot ExecuteEnergyExtrapolationPlot ExecutePPPlot ExecutePUPlot ExecuteVZPlot ExecuteCentralOverlayPPbPbPPlot ExecutePaperPlot
 
 ExecuteCentralPlot: plot_central.cpp
 	g++ plot_central.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
 		-o ExecuteCentralPlot `root-config --cflags --glibs` \
+		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
+
+ExecuteCentralSBPlot: plot_central_sb.cpp
+	g++ plot_central_sb.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecuteCentralSBPlot `root-config --cflags --glibs` \
 		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
 
 ExecuteZSpectrumPlot: plot_zspectrum.cpp
@@ -57,6 +62,7 @@ ExecutePaperPlot: plot_paper.cpp
 
 clean:
 	rm -f ExecuteCentralPlot
+	rm -f ExecuteCentralSBPlot
 	rm -f ExecuteZMassPlot
 	rm -f ExecuteZSpectrumPlot
 	rm -f ExecuteDataMCComparison
