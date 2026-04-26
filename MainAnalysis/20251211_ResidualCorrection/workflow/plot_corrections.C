@@ -46,9 +46,12 @@ void plot_corrections() {
 
     // Plot hPtCorrTotal
     c->cd(1)->SetLogx();
+    double ptMin = hPtCorr1->GetXaxis()->GetBinLowEdge(1);
+    double ptMax = hPtCorr1->GetXaxis()->GetBinUpEdge(hPtCorr1->GetNbinsX());
     hPtCorr1->SetLineColor(kRed);
     hPtCorr1->SetTitle("Track p_{T} Dependent Correction");
     hPtCorr1->GetYaxis()->SetRangeUser(0.8,1.2);
+    hPtCorr1->GetXaxis()->SetRangeUser(ptMin, ptMax);
     hPtCorr1->GetXaxis()->CenterTitle();
     hPtCorr1->SetTitleOffset(1.1,"X");
     hPtCorr1->SetTitleSize(0.055,"X");

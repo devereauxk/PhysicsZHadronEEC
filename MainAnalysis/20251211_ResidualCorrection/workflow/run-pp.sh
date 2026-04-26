@@ -1,11 +1,16 @@
+#!/bin/bash
+
+set -euo pipefail
+
 WORKINGDIR=$(pwd)
 cd ..
 ./clean.sh
-cd $WORKINGDIR
+cd "$WORKINGDIR"
 sleep 1
 
-name="20260308_TrackResidualCorrection_V23_ZWeight_V5"
-./pythia-analysis.sh 0 10 $name
-./pythia-analysis.sh 10 20 $name
-./pythia-analysis.sh 20 40 $name
-./pythia-analysis.sh 40 500 $name
+name="${NAME_TAG:-20260415_ZV9_trkV27_TrackResidualCorrection}"
+echo "[run-pp] NAME_TAG=${name} VARIANT_TAG=${VARIANT_TAG:-Nominal}"
+./pythia-analysis.sh 0 10 "$name" "$@"
+./pythia-analysis.sh 10 20 "$name" "$@"
+./pythia-analysis.sh 20 40 "$name" "$@"
+./pythia-analysis.sh 40 500 "$name" "$@"

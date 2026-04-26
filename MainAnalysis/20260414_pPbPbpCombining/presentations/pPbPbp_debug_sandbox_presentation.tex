@@ -1,0 +1,133 @@
+\documentclass[aspectratio=169]{beamer}
+
+\setbeamersize{text margin left=0.15cm, text margin right=0.15cm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+
+\title{pPb vs Pbp debugging sandbox}
+\date{}
+
+\newcommand{\plotpanel}[2]{%
+  \begin{minipage}[t]{0.327\textwidth}
+    \centering
+    {\tiny #1\par}
+    \vspace{0.2em}
+    \includegraphics[width=\linewidth]{#2}
+  \end{minipage}%
+}
+
+\newcommand{\plotslideA}[3]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{../plots/#2_raw#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{../plots/#2_VZ#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{../plots/#2_VZ_Z#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideB}[3]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{../plots/#2_VZ_Z_ZSF#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{../plots/#2_VZ_Z_ZSF_trk#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{../plots/#2_VZ_Z_ZSF_trk_res#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\ratioheatmapslideA}[3]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{../plots/#2_raw#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{../plots/#2_VZ#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{../plots/#2_VZ_Z#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\ratioheatmapslideB}[3]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{../plots/#2_VZ_Z_ZSF#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{../plots/#2_VZ_Z_ZSF_trk#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{../plots/#2_VZ_Z_ZSF_trk_res#3.pdf}
+  \end{frame}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[t]{meta}
+  \small
+  \textbf{skims}\par
+  {\scriptsize
+  \texttt{pPb: SampleGeneration/20250929\_ReducedTreePA/V0.2/PPbData\_Reco.root}\par
+  \texttt{Pbp: SampleGeneration/20250929\_ReducedTreePA/V0.2/PbPData\_Reco.root}\par}
+  \vspace{0.5em}
+  \textbf{tag} \texttt{ZV9\_trkV27\_nmix10}\par
+  \vspace{0.3em}
+  \textbf{kinematic} $60 < m_Z < 120$~GeV,\ $|v_z| < 15$~cm,\ $0.5 < p_T^\text{trk} < 15$~GeV,\ $|\eta^\text{trk}| < 2.4$\par
+  \vspace{0.3em}
+  \textbf{$y_\text{boost}$} = 0.465\par
+  \vspace{0.3em}
+  \textbf{corrections} 6 levels: raw $\to$ +VZ $\to$ +Z $\to$ +ZSF (skim TnP) $\to$ +trk $\to$ +trk+res\par
+  \vspace{0.3em}
+  {\scriptsize
+  \begin{tabular}{l r r}
+              & pPb NZ    & Pbp NZ \\
+  raw         & 11729     & 6742 \\
+  +VZ         & 12225     & 7035 \\
+  +VZ+Z       & 10463     & 6024 \\
+  +VZ+Z+ZSF   & 10324     & 5943 \\
+  +VZ+Z+ZSF+trk     & 10324     & 5943 \\
+  +VZ+Z+ZSF+trk+res & 10324     & 5943 \\
+  \end{tabular}}
+\end{frame}
+
+\plotslideA{trkPt}{trkPt}{}
+\plotslideB{trkPt}{trkPt}{}
+\plotslideA{trkPt + PUReject}{trkPt}{_PUReject}
+\plotslideB{trkPt + PUReject}{trkPt}{_PUReject}
+\plotslideA{trkEta}{trkEta}{}
+\plotslideB{trkEta}{trkEta}{}
+\plotslideA{trkEta + PUReject}{trkEta}{_PUReject}
+\plotslideB{trkEta + PUReject}{trkEta}{_PUReject}
+\plotslideA{ZPt}{ZPt}{}
+\plotslideB{ZPt}{ZPt}{}
+\plotslideA{ZPt + PUReject}{ZPt}{_PUReject}
+\plotslideB{ZPt + PUReject}{ZPt}{_PUReject}
+\plotslideA{Zy}{Zy}{}
+\plotslideB{Zy}{Zy}{}
+\plotslideA{Zy + PUReject}{Zy}{_PUReject}
+\plotslideB{Zy + PUReject}{Zy}{_PUReject}
+\plotslideA{Multiplicity}{Mult}{}
+\plotslideB{Multiplicity}{Mult}{}
+\plotslideA{Multiplicity + PUReject}{Mult}{_PUReject}
+\plotslideB{Multiplicity + PUReject}{Mult}{_PUReject}
+\plotslideA{$|\Delta\eta|$}{DEta}{}
+\plotslideB{$|\Delta\eta|$}{DEta}{}
+\plotslideA{$|\Delta\eta|$ + PUReject}{DEta}{_PUReject}
+\plotslideB{$|\Delta\eta|$ + PUReject}{DEta}{_PUReject}
+\plotslideA{$|\Delta\phi|$}{DPhi}{}
+\plotslideB{$|\Delta\phi|$}{DPhi}{}
+\plotslideA{$|\Delta\phi|$ + PUReject}{DPhi}{_PUReject}
+\plotslideB{$|\Delta\phi|$ + PUReject}{DPhi}{_PUReject}
+\ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio}{DEtaDPhi_ratio}{}
+\ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio}{DEtaDPhi_ratio}{}
+\ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject}{DEtaDPhi_ratio}{_PUReject}
+\ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject}{DEtaDPhi_ratio}{_PUReject}
+
+\end{document}

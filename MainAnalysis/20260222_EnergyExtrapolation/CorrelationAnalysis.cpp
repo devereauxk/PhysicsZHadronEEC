@@ -8,6 +8,7 @@
 #include <TNtuple.h>
 #include <TFile.h>
 
+#include <cmath>
 #include <iostream>
 
 using namespace std;
@@ -18,6 +19,31 @@ using namespace std;
 #include "CommandLine.h"           // Yi's Commandline bundle
 #include "ProgressBar.h"           // Yi's fish progress bar
 #include "TrackResidualCorrector.h" // Residual correction
+
+bool validateVZConfiguration(const Parameters& par) {
+   if (par.isData) {
+      if (par.useVZWeight) {
+         cerr << "Error! Data stages must run with UseVZWeight=false." << endl;
+         return false;
+      }
+      if (par.VZWeightFile != "") {
+         cerr << "Error! Data stages must not receive VZWeightFile." << endl;
+         return false;
+      }
+   }
+
+   if (par.useVZWeight && par.VZWeightFile == "") {
+      cerr << "Error! UseVZWeight=true requires an explicit external VZWeightFile for MC stages." << endl;
+      return false;
+   }
+
+   if (!par.useVZWeight && par.VZWeightFile != "") {
+      cerr << "Error! VZWeightFile was provided but UseVZWeight=false. Pass both explicitly for MC VZ weighting." << endl;
+      return false;
+   }
+
+   return true;
+}
 
 
 //======= eventSelection =====================================//
@@ -105,8 +131,8 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
    TrackResidualCorrector energy_extrapolator(par.EnergyExtraFile.c_str());
 
    // open VZ correction if needed
-   VZCorrector *vzCorrector;
-   if (par.VZWeightFile != "") {
+   VZCorrector *vzCorrector = nullptr;
+   if (par.useVZWeight) {
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
    }
 
@@ -129,14 +155,12 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
       float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, zPhi);
 
       // fill histograms
-      // hard coded since SIM should have event weights of 1, for pp pythia+MADGRAPH for some reason they aren't
-      float this_eventWeight = 1; // MZSignal->EventWeight;
-      if (par.VZWeightFile != "") {
-         float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
-         this_eventWeight *= vzCorrectionFactor;
-      } else {
-         this_eventWeight *= MZSignal->VZWeight;
-      }
+      float this_eventWeight = MZSignal->EventWeight;
+      if (std::isfinite(this_eventWeight) == false)
+         this_eventWeight = 1;
+      if (par.isData) this_eventWeight *= MZSignal->ZWeight;
+      if (par.useVZWeight)
+         this_eventWeight *= vzCorrector->GetCorrectionFactor(MZSignal->VZ);
       this_eventWeight *= residualCorrection;
 
       // energy extrapolation weight, parasitically uses track residual weight, dummy args for eta and phi
@@ -252,11 +276,13 @@ int main(int argc, char *argv[])
    par.inputUE       = CL.Get      ("InputUE", "");                                             // Input file for UE
    par.residualFile  = CL.Get      ("residualFile", "");            // Input Mix file
    par.EnergyExtraFile =  CL.Get      ("EnergyExtraFile", "");            // Input file for energy extrapolation
-   par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
+    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
+    par.useVZWeight      = CL.GetBool  ("UseVZWeight", false);
    par.output        = CL.Get      ("Output",  "output.root");                             	// Output file
    par.isGen         = CL.GetBool  ("IsGen", false); // Determine if the analysis is gen level
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);  // Flag to reject PU sample for systemaitcs.
+   par.isData        = IsData;
+   par.isPUReject    = CL.GetBool  ("IsPUReject", false); // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);     // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);         // The number of threads to be used for parallel processing.
@@ -271,7 +297,8 @@ int main(int argc, char *argv[])
    par.isPP = IsPP;
    par.isJewel = IsJewel;
    
-   if (par.inputUE=="") par.isAddUE = false; else par.isAddUE = true;
+    if (par.inputUE=="") par.isAddUE = false; else par.isAddUE = true;
+    if (!validateVZConfiguration(par)) return -1;
           
    // Analyze Data
    DataAnalyzer analyzer(par.input.c_str(), par.inputUE.c_str(), par.residualFile.c_str(), par.output.c_str(), "Data", par.isAddUE);

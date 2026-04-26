@@ -1,242 +1,167 @@
+#!/bin/bash
 
 DOPP=$1
 DOPPB=$2
 DOPBP=$3
 
-cat > config.sh <<EOF
-ZPT_RANGES=("0_500")
-PT_RANGES=("1_10") 
-EOF
+shift 3
+COMMON_EXTRA_ARGS=("$@")
 
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 
-# ================================================================================
-# pp
-# ================================================================================
-if [ "$DOPP" == "1" ]; then
+nMixPP=0
+nMixPA=0
+TAG_PREFIX=${TAG_PREFIX:-}
 
-    nMix=1
-    TAG="_myEvtWeight_VZOnly_nmix1"
+PP_MCRECOINPUT=${PP_MCRECOINPUT:-${OFFICIAL_MCRECOINPUT_PP}}
+PP_MCGENINPUT=${PP_MCGENINPUT:-${OFFICIAL_MCGENINPUT_PP}}
+PP_DATAINPUT=${PP_DATAINPUT:-${OFFICIAL_DATAINPUT_PP}}
+PPB_MCRECOINPUT=${PPB_MCRECOINPUT:-${OFFICIAL_MCRECOINPUT_PPB}}
+PPB_MCGENINPUT=${PPB_MCGENINPUT:-${OFFICIAL_MCGENINPUT_PPB}}
+PPB_EPOSINPUT=${PPB_EPOSINPUT:-${OFFICIAL_EPOSINPUT_PPB}}
+PPB_DATAINPUT=${PPB_DATAINPUT:-${OFFICIAL_DATAINPUT_PPB}}
+PBP_MCRECOINPUT=${PBP_MCRECOINPUT:-${OFFICIAL_MCRECOINPUT_PBP}}
+PBP_MCGENINPUT=${PBP_MCGENINPUT:-${OFFICIAL_MCGENINPUT_PBP}}
+PBP_EPOSINPUT=${PBP_EPOSINPUT:-${OFFICIAL_EPOSINPUT_PBP}}
+PBP_DATAINPUT=${PBP_DATAINPUT:-${OFFICIAL_DATAINPUT_PBP}}
 
-    ./system-analysis.sh "pythiaMC_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData false \
-        --Input mergedSample/pythia-v11-Zpt0.root \
-        --MixFile mergedSample/pythia-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile /home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/20260307_VzReweightFits_pp.root
+write_config() {
+    local zpt_list="$1"
+    local pt_list="$2"
+    cat > config.sh <<CFG
+ZPT_RANGES=(${zpt_list})
+PT_RANGES=(${pt_list})
+CFG
+}
 
-    ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
-        --IsPP true --IsGenZ true --IsData false \
-        --Input mergedSample/pythia-gen-v11-Zpt0.root  \
-        --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile /home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/20260307_VzReweightFits_pp.root
+tag_name() {
+    local base="$1"
+    if [ -n "$TAG_PREFIX" ]; then
+        echo "_${TAG_PREFIX}_${base#_}"
+    else
+        echo "$base"
+    fi
+}
 
-    ./system-analysis.sh "pp_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData true \
-        --Input mergedSample/pp-v11-Zpt0.root \
-       --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-    nMix=1
-    TAG="_EvtWeight_VZOnly_nmix1"
-
-    ./system-analysis.sh "pythiaMC_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData false \
-        --Input mergedSample/pythia-v11-Zpt0.root \
-        --MixFile mergedSample/pythia-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
-        --IsPP true --IsGenZ true --IsData false \
-        --Input mergedSample/pythia-gen-v11-Zpt0.root  \
-        --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "pp_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData true \
-        --Input mergedSample/pp-v11-Zpt0.root \
-        --MixFile mergedSample/pp-v11-Zpt0.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-
-    nMix=1
-    TAG="_noEvtWeight_VZOnly_nmix1"
+run_pp_chain() {
+    local TAG=$1
+    local USE_EVENT_WEIGHT=$2
+    local USE_TRACK_WEIGHT=$3
+    local VZ_FILE=$4
 
     ./system-analysis.sh "pythiaMC_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData false \
-        --Input mergedSample/pythia-v11-Zpt0.root \
-        --MixFile mergedSample/pythia-v11-Zpt0.root \
-        --UseEventWeight false --UseZWeight false \
-        --UseTrackWeight false --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
+        --IsPP true --IsGenZ false --IsData false --UseVZWindow false \
+        --Input "${PP_MCRECOINPUT}" \
+        --MixFile "${PP_MCRECOINPUT}" \
+        --UseEventWeight "${USE_EVENT_WEIGHT}" --UseZWeight false \
+        --UseTrackWeight "${USE_TRACK_WEIGHT}" --UseResidualWeight false \
+        --yBoost 0 --nMix ${nMixPP} \
+        ${VZ_FILE:+--UseVZWeight true --VZWeightFile ${VZ_FILE}} \
+        "${COMMON_EXTRA_ARGS[@]}"
 
     ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
-        --IsPP true --IsGenZ true --IsData false \
-        --Input mergedSample/pythia-gen-v11-Zpt0.root  \
-        --MixFile mergedSample/pythia-gen-v11-Zpt0.root  \
-        --UseEventWeight false --UseZWeight false \
-        --UseTrackWeight false --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
+        --IsPP true --IsGenZ true --IsData false --UseVZWindow false \
+        --Input "${PP_MCGENINPUT}" \
+        --MixFile "${PP_MCGENINPUT}" \
+        --UseEventWeight "${USE_EVENT_WEIGHT}" --UseZWeight false \
+        --UseTrackWeight "${USE_TRACK_WEIGHT}" --UseResidualWeight false \
+        --yBoost 0 --nMix ${nMixPP} \
+        ${VZ_FILE:+--UseVZWeight true --VZWeightFile ${VZ_FILE}} \
+        "${COMMON_EXTRA_ARGS[@]}"
 
     ./system-analysis.sh "pp_nominal${TAG}" \
-        --IsPP true --IsGenZ false --IsData true \
-        --Input mergedSample/pp-v11-Zpt0.root \
-       --MixFile mergedSample/pp-v11-Zpt0.root \
+        --IsPP true --IsGenZ false --IsData true --UseVZWeight false --UseVZWindow false \
+        --Input "${PP_DATAINPUT}" \
+        --MixFile "${PP_DATAINPUT}" \
         --UseEventWeight true --UseZWeight false \
         --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
+        --yBoost 0 --nMix ${nMixPP} \
+        "${COMMON_EXTRA_ARGS[@]}"
+}
 
+run_pap_chain() {
+    local MCPREFIX=$1
+    local DATAPREFIX=$2
+    local ISPPB=$3
+    local MCRECOINPUT=$4
+    local MCGENINPUT=$5
+    local EPOSINPUT=$6
+    local DATAINPUT=$7
+    local TAG=$8
+    local VZ_FILE=$9
 
+    ./system-analysis.sh "${MCPREFIX}_nominal${TAG}" \
+        --IsPP false --IsGenZ false --IsData false --IsPPb ${ISPPB} --UseVZWindow false \
+        --Input "${MCRECOINPUT}" \
+        --MixFile "${MCRECOINPUT}" \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix ${nMixPA} \
+        ${VZ_FILE:+--UseVZWeight true --VZWeightFile ${VZ_FILE}} \
+        "${COMMON_EXTRA_ARGS[@]}"
+
+    ./system-analysis.sh "${MCPREFIX}_Gen_nominal${TAG}" \
+        --IsPP false --IsGenZ true --IsData false --IsPPb ${ISPPB} --UseVZWindow false \
+        --Input "${MCGENINPUT}" \
+        --MixFile "${MCGENINPUT}" \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --EPOSFile "${EPOSINPUT}" --Fraction 1 \
+        --yBoost 0 --nMix ${nMixPA} \
+        ${VZ_FILE:+--UseVZWeight true --VZWeightFile ${VZ_FILE}} \
+        "${COMMON_EXTRA_ARGS[@]}"
+
+    ./system-analysis.sh "${DATAPREFIX}_nominal${TAG}" \
+        --IsPP false --IsGenZ false --IsData true --UseVZWeight false --IsPPb ${ISPPB} --UseVZWindow false \
+        --Input "${DATAINPUT}" \
+        --MixFile "${DATAINPUT}" \
+        --UseEventWeight true --UseZWeight false \
+        --UseTrackWeight true --UseResidualWeight false \
+        --yBoost 0 --nMix ${nMixPA} \
+        "${COMMON_EXTRA_ARGS[@]}"
+}
+
+write_config '"0_500"' '"1_10"'
+
+if [ "${DOPP}" == "1" ]; then
+    run_pp_chain "$(tag_name _noVZWeight_nmix0)" true true ""
+    run_pp_chain "$(tag_name _VZWeight_nmix0)" true true "${VZWeightFile_PP}"
 fi
 
-# ================================================================================
-# pPb
-# ================================================================================
-if [ "$DOPPB" == "1" ]; then
-
-    nMix=0
-    TAG="_noVZWeight_nmix0"
-
-    ./system-analysis.sh "pPbMC_nominal${TAG}" \
-        --IsPP false --IsGenZ false --IsData false --IsPPb true \
-        --Input pPbSample/V0.2/PPbMC_Reco.root \
-        --MixFile pPbSample/V0.2/PPbMC_Reco.root \
-        --UseEventWeight true --UseVZWeight false --UseZWeight false \
-        --UseTrackWeight false --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "pPbMC_Gen_nominal${TAG}" \
-        --IsPP false --IsGenZ true --IsData false --IsPPb true \
-        --Input pPbSample/V0.2/PPbMC_Gen.root \
-        --MixFile pPbSample/V0.2/PPbMC_Gen.root \
-        --UseEventWeight true --UseVZWeight false --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --EPOSFile mergedEPOS/PPbMC_Gen.root --Fraction 1 \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "pPb_nominal${TAG}" \
-        --IsPP false --IsGenZ false --IsData true --IsPPb true \
-        --Input pPbSample/V0.2/PbPData_Reco.root \
-        --MixFile pPbSample/V0.2/PbPData_Reco.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
+if [ "${DOPPB}" == "1" ]; then
+    run_pap_chain "pPbMC" "pPb" true \
+        "${PPB_MCRECOINPUT}" \
+        "${PPB_MCGENINPUT}" \
+        "${PPB_EPOSINPUT}" \
+        "${PPB_DATAINPUT}" \
+        "$(tag_name _noVZWeight_nmix0)" ""
 fi
 
-if [ "$DOPPB" == "2" ]; then
-
-    nMix=0
-    TAG="_VZWeight_nmix0"
-    VZFile="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_pPb.root"
-
-    ./system-analysis.sh "pPbMC_nominal${TAG}" \
-        --IsPP false --IsGenZ false --IsData false --IsPPb true \
-        --Input pPbSample/V0.2/PPbMC_Reco.root \
-        --MixFile pPbSample/V0.2/PPbMC_Reco.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile $VZFile
-
-    ./system-analysis.sh "pPbMC_Gen_nominal${TAG}" \
-        --IsPP false --IsGenZ true --IsData false --IsPPb true \
-        --Input pPbSample/V0.2/PPbMC_Gen.root \
-        --MixFile pPbSample/V0.2/PPbMC_Gen.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --EPOSFile mergedEPOS/PPbMC_Gen.root --Fraction 1 \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile $VZFile
-
-    ./system-analysis.sh "pPb_nominal${TAG}" \
-        --IsPP false --IsGenZ false --IsData true --IsPPb true \
-        --Input pPbSample/V0.2/PbPData_Reco.root \
-        --MixFile pPbSample/V0.2/PbPData_Reco.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-    
+if [ "${DOPPB}" == "2" ]; then
+    run_pap_chain "pPbMC" "pPb" true \
+        "${PPB_MCRECOINPUT}" \
+        "${PPB_MCGENINPUT}" \
+        "${PPB_EPOSINPUT}" \
+        "${PPB_DATAINPUT}" \
+        "$(tag_name _VZWeight_nmix0)" \
+        "${VZWeightFile_PPb}"
 fi
 
-# ================================================================================
-# PbP
-# ================================================================================
-if [ "$DOPBP" == "1" ]; then
-    
-    nMix=0
-    TAG="_noVZWeight_nmix0"
-
-    ./system-analysis.sh "PbPMC_nominal${TAG}" \
-        --IsPP false --IsGenZ false --IsData false --IsPPb false \
-        --Input pPbSample/V0.2/PbPMC_Reco.root \
-        --MixFile pPbSample/V0.2/PbPMC_Reco.root \
-        --UseEventWeight true --UseVZWeight false --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "PbPMC_Gen_nominal${TAG}" \
-        --IsPP false --IsGenZ true --IsData false --IsPPb false \
-        --Input pPbSample/V0.2/PbPMC_Gen.root \
-        --MixFile pPbSample/V0.2/PbPMC_Gen.root \
-        --UseEventWeight true --UseVZWeight false --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --EPOSFile mergedEPOS/PbPMC_Gen.root --Fraction 1 \
-        --yBoost 0 --nMix $nMix
-
-    ./system-analysis.sh "PbP_nominal${TAG}" \
-        --IsPP false --IsGenZ false --IsData true --IsPPb false \
-        --Input pPbSample/V0.2/PPbData_Reco.root \
-        --MixFile pPbSample/V0.2/PPbData_Reco.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
+if [ "${DOPBP}" == "1" ]; then
+    run_pap_chain "PbPMC" "PbP" false \
+        "${PBP_MCRECOINPUT}" \
+        "${PBP_MCGENINPUT}" \
+        "${PBP_EPOSINPUT}" \
+        "${PBP_DATAINPUT}" \
+        "$(tag_name _noVZWeight_nmix0)" ""
 fi
 
-if [ "$DOPBP" == "2" ]; then
-
-    nMix=0
-    TAG="_VZWeight_nmix0"
-    VZFile="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_PbP.root"
-
-    ./system-analysis.sh "PbPMC_nominal${TAG}" \
-        --IsPP false --IsGenZ false --IsData false --IsPPb false \
-        --Input pPbSample/V0.2/PbPMC_Reco.root \
-        --MixFile pPbSample/V0.2/PbPMC_Reco.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile $VZFile
-
-    ./system-analysis.sh "PbPMC_Gen_nominal${TAG}" \
-        --IsPP false --IsGenZ true --IsData false --IsPPb false \
-        --Input pPbSample/V0.2/PbPMC_Gen.root \
-        --MixFile pPbSample/V0.2/PbPMC_Gen.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --EPOSFile mergedEPOS/PbPMC_Gen.root --Fraction 1 \
-        --yBoost 0 --nMix $nMix \
-        --VZWeightFile $VZFile
-
-    ./system-analysis.sh "PbP_nominal${TAG}" \
-        --IsPP false --IsGenZ false --IsData true --IsPPb false \
-        --Input pPbSample/V0.2/PPbData_Reco.root \
-        --MixFile pPbSample/V0.2/PPbData_Reco.root \
-        --UseEventWeight true --UseZWeight false \
-        --UseTrackWeight true --UseResidualWeight false \
-        --yBoost 0 --nMix $nMix
-
+if [ "${DOPBP}" == "2" ]; then
+    run_pap_chain "PbPMC" "PbP" false \
+        "${PBP_MCRECOINPUT}" \
+        "${PBP_MCGENINPUT}" \
+        "${PBP_EPOSINPUT}" \
+        "${PBP_DATAINPUT}" \
+        "$(tag_name _VZWeight_nmix0)" \
+        "${VZWeightFile_PbP}"
 fi

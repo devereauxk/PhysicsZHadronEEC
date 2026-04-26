@@ -1,0 +1,30 @@
+Local Pythia8 + MadGraph5_aMC@NLO workflow for private pp Z->mumu generation.
+
+Setup:
+1. cd /home/kdeverea/PhysicsZHadronEEC
+2. source SetupAnalysis.sh
+3. cd SampleGeneration/20260403_PythiaMadgraph
+4. source env.sh
+5. make
+
+Generate local 5.02 TeV events:
+./generate_madgraph.sh --Energy 5020 --Events 2000 --OutputLHE output/ZMuMu_5020.lhe
+
+Shower with CP5 and write HepMC3:
+./ExecuteShowerLHE --Input output/ZMuMu_5020.lhe --Output output/ZMuMu_5020.hepmc --Config CP5.cmnd --Events 2000
+
+Convert to ZHadronMessenger skim:
+./ExecuteConvertHepMC3 --Input output/ZMuMu_5020.hepmc --Output output/ZMuMu_5020.root --MirrorGenToReco true
+
+Quick dn/deta validation:
+./ExecuteQuickDndEta --Input output/ZMuMu_5020.root --Output output/ZMuMu_5020_dndeta.root --TrackPlot output/tracks.pdf --ZPlot output/z.pdf
+
+Notes:
+- generate_madgraph.sh now calls MadEvent explicitly with /usr/bin/python3.11 so the local MG5 install is usable on this machine.
+- generate_madgraph.sh now builds the private pp hard process as aMC@NLO (`loop_sm`, `p p > z [QCD]`) and decays the Z with MadSpin (`z > mu+ mu-`) before the maintained local Pythia shower step.
+- The maintained NLO run card now uses `pdlabel=lhapdf`, `lhaid=303600` (`NNPDF31_nnlo_as_0118` from the local LHAPDF area), `parton_shower=PYTHIA8`, and weighted `events.lhe.gz` output rather than the old LO `unweighted_events.lhe.gz` path.
+- ExecuteConvertHepMC3 autodetects HepMC2/HepMC3/LHEF readers through HepMC3::deduce_reader, so future MG5-produced HepMC outputs do not need a format-specific converter edit.
+- The skim now matches the official gen-level charged-track acceptance for comparison work by storing only leaf charged tracks with pT > 0.5 GeV and |eta| < 2.4, while computing the HF observables from the full leaf-particle set with 3 < |eta| < 5 and pT > 0.4 GeV.
+- Gen muons are matched to the Z candidate through recursive parent-chain lookup so final-state muons remain tied to the showered Z when filling the gen-Z and track-muon matching branches.
+- For official pp comparisons (for example against pp-v11-Zpt0.root), run ExecuteConvertHepMC3 with --MirrorGenToReco true so the private sample also fills z*/mu* reco-style branches from the selected gen-Z candidate.
+- The generator toolchain lives under /home/kdeverea/pythia.

@@ -1,14 +1,19 @@
+#!/bin/bash
+
+set -euo pipefail
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 make
 
-ZPT_RANGES=("0_10" "10_20" "20_40" "40_500")
+TAG="${1:-${OFFICIAL_TAG_PPB}}"
+INPUT_TAG="${INPUT_TAG:-20260407_ZV8_trkV26_TrackResidualCorrection}"
+PLOT_SYSTEMS=(${PLOT_SYSTEMS:-pp pPb PbP})
 
-for zPtRange in "${ZPT_RANGES[@]}"
+for zPtRange in "0_10" "10_20" "20_40" "40_500"
 do
     echo "Processing zPtRange: $zPtRange"
-
-    #./ExecuteClosureTest --collisionType pp --zPtRange $zPtRange --trkPtRange 0.5_500 --tag ZV5_trkV23_nmix1
-    ./ExecuteClosureTest --collisionType pPb --zPtRange $zPtRange --trkPtRange 0.5_500 --tag ZV6_trkV24_nmix10
-    ./ExecuteClosureTest --collisionType PbP --zPtRange $zPtRange --trkPtRange 0.5_500 --tag ZV6_trkV24_nmix10
+    for system in "${PLOT_SYSTEMS[@]}"
+    do
+        ./ExecuteClosureTest --collisionType "$system" --zPtRange "$zPtRange" --trkPtRange 0.5_15 --tag "$TAG" --inputTag "$INPUT_TAG"
+    done
 done
-
-exit

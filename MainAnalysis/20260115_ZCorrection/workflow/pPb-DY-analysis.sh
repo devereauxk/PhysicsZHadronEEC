@@ -1,56 +1,104 @@
-WORKINGDIR=$(pwd)
-cd ..
-./clean.sh
-cd $WORKINGDIR
-sleep 1
+#!/bin/bash
 
-minZpt=0
-maxZpt=500
-name="20260311_ZCorrection_V6"
-VZWeightFile_PPb=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_pPb.root
-VZWeightFile_PbP=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260311_ZPT0_500_VzReweightFits_PbP.root
+set -euo pipefail
+
+minZpt="${1:-0}"
+maxZpt="${2:-500}"
+name="${3:-${NAME_TAG:-20260407_ZCorrection_V8}}"
+if [ "$#" -ge 3 ]; then
+    shift 3
+else
+    shift "$#"
+fi
+EXTRA_ARGS=("$@")
+VARIANT_TAG="${VARIANT_TAG:-}"
+VARIANT_SUFFIX=""
+if [ -n "$VARIANT_TAG" ]; then
+    VARIANT_SUFFIX="_${VARIANT_TAG}"
+fi
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
+ZWeightFile_pPb="${INITIAL_Z_WEIGHT_FILE_PPB:-}"
+ZWeightFile_PbP="${INITIAL_Z_WEIGHT_FILE_PBP:-}"
+PPB_MCRECOINPUT="${PPB_MCRECOINPUT:-${OFFICIAL_MCRECOINPUT_PPB}}"
+PPB_MCGENINPUT="${PPB_MCGENINPUT:-${OFFICIAL_MCGENINPUT_PPB}}"
+PPB_EPOSINPUT="${PPB_EPOSINPUT:-${OFFICIAL_EPOSINPUT_PPB}}"
+PBP_MCRECOINPUT="${PBP_MCRECOINPUT:-${OFFICIAL_MCRECOINPUT_PBP}}"
+PBP_MCGENINPUT="${PBP_MCGENINPUT:-${OFFICIAL_MCGENINPUT_PBP}}"
+PBP_EPOSINPUT="${PBP_EPOSINPUT:-${OFFICIAL_EPOSINPUT_PBP}}"
+
+ppb_output="output/${name}_PPb${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}.root"
+pbp_output="output/${name}_PbP${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}.root"
+closure_dir="output/closure_inputs"
+
+if [ -n "$ZWeightFile_pPb" ]; then
+    PPB_Z_ARGS=(--ZWeightFile "$ZWeightFile_pPb")
+else
+    PPB_Z_ARGS=()
+fi
+if [ -n "$ZWeightFile_PbP" ]; then
+    PBP_Z_ARGS=(--ZWeightFile "$ZWeightFile_PbP")
+else
+    PBP_Z_ARGS=()
+fi
+
+echo "[pPb-DY-analysis] minZpt=${minZpt} maxZpt=${maxZpt} name=${name} variant=${VARIANT_TAG:-Nominal}"
+
+action_reco() {
+    local input_file="$1"
+    local output_residual_args=("${@:2}")
+    ./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$input_file" "${output_residual_args[@]}"
+}
+
+action_gen() {
+    local input_file="$1"
+    local input_ue="$2"
+    ./finalAnalysis.sh output/DY GEN "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$input_file" --InputUE "$input_ue" --IsGen true --IsPP false --IsGenZ true --UseVZWeight true
+}
 
 # pPb
-./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --IsGen false --IsPP false --IsGenZ false --VZWeightFile $VZWeightFile_PPb
+./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PPB_MCRECOINPUT" --IsGen false --IsPP false --IsGenZ false "${PPB_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PPb"
 cp output/DY-RECO.root output/DY-RECO-noResidual.root
-./finalAnalysis.sh output/DY GEN   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Gen.root --InputUE mergedEPOS/PPbMC_Gen.root  --IsGen true --IsPP false --IsGenZ true --VZWeightFile $VZWeightFile_PPb
+./finalAnalysis.sh output/DY GEN "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PPB_MCGENINPUT" --InputUE "$PPB_EPOSINPUT" --IsGen true --IsPP false --IsGenZ true --UseVZWeight true --VZWeightFile "$VZWeightFile_PPb"
 root -l -q -b correction.C
 mv correction.root output/correction_1.root
-./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --residualFile output/correction_1.root --IsGen false --IsPP false --IsGenZ false --VZWeightFile $VZWeightFile_PPb
+./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PPB_MCRECOINPUT" --residualFile output/correction_1.root --IsGen false --IsPP false --IsGenZ false "${PPB_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PPb"
 root -l -q -b correction.C
 mv correction.root output/correction_2.root
-root -l -q -b "merge_corrections.C(\"output/correction_1.root\",\"output/correction_2.root\",\"output/correction_12.root\")"
-./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --residualFile output/correction_12.root --IsGen false --IsPP false --IsGenZ false --VZWeightFile $VZWeightFile_PPb
+root -l -q -b 'merge_corrections.C("output/correction_1.root","output/correction_2.root","output/correction_12.root")'
+./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PPB_MCRECOINPUT" --residualFile output/correction_12.root --IsGen false --IsPP false --IsGenZ false "${PPB_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PPb"
 root -l -q -b correction.C
 mv correction.root output/correction_3.root
-
 root -l -q -b plot_corrections.C
-mv corrections.pdf plots/corrections_PPb_${name}_${minZpt}_${maxZpt}.pdf
-root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"output/${name}_PPb.root\")"
-mv output/${name}_PPb.root output/${name}_PPb_zPt$minZpt-$maxZpt.root
+mv corrections.pdf "plots/corrections_PPb_${name}${VARIANT_SUFFIX}_${minZpt}_${maxZpt}.pdf"
+root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"${ppb_output}\")"
+./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PPB_MCRECOINPUT" --residualFile "$ppb_output" --IsGen false --IsPP false --IsGenZ false "${PPB_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PPb"
+mkdir -p "$closure_dir"
+cp output/DY-GEN.root "$closure_dir/pPb_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_gen.root"
+cp output/DY-RECO-noResidual.root "$closure_dir/pPb_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_reco.root"
+cp output/DY-RECO.root "$closure_dir/pPb_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_corrected.root"
+root -l -q -b "plot_closure.C(\"plots/isPPb_ZPT${minZpt}_${maxZpt}${VARIANT_SUFFIX}\")"
 
-./finalAnalysis.sh output/DY RECO $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PPbMC_Reco.root     --residualFile output/${name}_PPb_zPt$minZpt-$maxZpt.root --IsGen false --IsPP false --IsGenZ false --VZWeightFile $VZWeightFile_PPb
-root -l -q -b "plot_closure.C(\"plots/isPPb\")"
-
-#PbP
-./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PbPMC_Reco.root     --IsGen false --IsPP false --IsGenZ false --VZWeightFile $VZWeightFile_PbP
+# PbP
+./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PBP_MCRECOINPUT" --IsGen false --IsPP false --IsGenZ false "${PBP_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PbP"
 cp output/DY-RECO.root output/DY-RECO-noResidual.root
-./finalAnalysis.sh output/DY GEN   $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PbPMC_Gen.root --InputUE mergedEPOS/PbPMC_Gen.root --IsGen true --IsPP false --IsGenZ true --VZWeightFile $VZWeightFile_PbP
+./finalAnalysis.sh output/DY GEN "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PBP_MCGENINPUT" --InputUE "$PBP_EPOSINPUT" --IsGen true --IsPP false --IsGenZ true --UseVZWeight true --VZWeightFile "$VZWeightFile_PbP"
 root -l -q -b correction.C
 mv correction.root output/correction_1.root
-./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PbPMC_Reco.root     --residualFile output/correction_1.root --IsGen false --IsPP false --IsGenZ false --VZWeightFile $VZWeightFile_PbP
+./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PBP_MCRECOINPUT" --residualFile output/correction_1.root --IsGen false --IsPP false --IsGenZ false "${PBP_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PbP"
 root -l -q -b correction.C
 mv correction.root output/correction_2.root
-root -l -q -b "merge_corrections.C(\"output/correction_1.root\",\"output/correction_2.root\",\"output/correction_12.root\")"
-./finalAnalysis.sh output/DY RECO  $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PbPMC_Reco.root     --residualFile output/correction_12.root --IsGen false --IsPP false --IsGenZ false --VZWeightFile $VZWeightFile_PbP
+root -l -q -b 'merge_corrections.C("output/correction_1.root","output/correction_2.root","output/correction_12.root")'
+./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PBP_MCRECOINPUT" --residualFile output/correction_12.root --IsGen false --IsPP false --IsGenZ false "${PBP_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PbP"
 root -l -q -b correction.C
 mv correction.root output/correction_3.root
-
 root -l -q -b plot_corrections.C
-mv corrections.pdf plots/corrections_PbP_${name}_${minZpt}_${maxZpt}.pdf
-root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"output/${name}_PbP.root\")"
-mv output/${name}_PbP.root output/${name}_PbP_zPt$minZpt-$maxZpt.root
-
-./finalAnalysis.sh output/DY RECO $2 $3 $4 $5 $6 $7 $8 $9 ${10} ${11} --MinZPT $minZpt --MaxZPT $maxZpt -MinTrackPT 0.5 --MaxTrackPT 500  --Input pPbSample/V0.2/PbPMC_Reco.root     --residualFile output/${name}_PbP_zPt$minZpt-$maxZpt.root --IsGen false --IsPP false --IsGenZ false --VZWeightFile $VZWeightFile_PbP
-root -l -q -b "plot_closure.C(\"plots/isPbP\")"
-
+mv corrections.pdf "plots/corrections_PbP_${name}${VARIANT_SUFFIX}_${minZpt}_${maxZpt}.pdf"
+root -l -q -b "merge_corrections.C(\"output/correction_12.root\",\"output/correction_3.root\",\"${pbp_output}\")"
+./finalAnalysis.sh output/DY RECO "${EXTRA_ARGS[@]}" --MinZPT "$minZpt" --MaxZPT "$maxZpt" --MinTrackPT 0.5 --MaxTrackPT 500 --Input "$PBP_MCRECOINPUT" --residualFile "$pbp_output" --IsGen false --IsPP false --IsGenZ false "${PBP_Z_ARGS[@]}" --UseVZWeight true --VZWeightFile "$VZWeightFile_PbP"
+mkdir -p "$closure_dir"
+cp output/DY-GEN.root "$closure_dir/PbP_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_gen.root"
+cp output/DY-RECO-noResidual.root "$closure_dir/PbP_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_reco.root"
+cp output/DY-RECO.root "$closure_dir/PbP_${name}${VARIANT_SUFFIX}_zPt${minZpt}-${maxZpt}_corrected.root"
+root -l -q -b "plot_closure.C(\"plots/isPbP_ZPT${minZpt}_${maxZpt}${VARIANT_SUFFIX}\")"

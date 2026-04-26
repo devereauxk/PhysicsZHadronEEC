@@ -38,8 +38,9 @@ void scaleTH3D(TH3D* h3D, const TH1D* h1D, const char axis) {
 }
 
 
-void correction(const char* ppFileName = "output/pp-502.root", 
-                const char* pPbFileName = "output/pPb-PbP-816.root") {
+void correction(const char* ppFileName = "output/pp-502.root",
+                const char* pPbFileName = "output/pPb-PbP-816.root",
+                const char* outputFileName = "correction.root") {
     
     // Open RECO.root and GEN.root files using the input file names
     TFile *fpp = TFile::Open(ppFileName);
@@ -90,7 +91,7 @@ void correction(const char* ppFileName = "output/pp-502.root",
     */
 
     // Save the correction histograms into correction.root
-    TFile *fCorr = new TFile("correction.root", "RECREATE");
+    TFile *fCorr = new TFile(outputFileName, "RECREATE");
     hPtCorrTotal->Write();
     hEtaCorrTotal->Write();
     hPhiCorrTotal->Write();
@@ -104,5 +105,4 @@ void correction(const char* ppFileName = "output/pp-502.root",
     delete fpPb;
     delete fCorr;
 }
-
 

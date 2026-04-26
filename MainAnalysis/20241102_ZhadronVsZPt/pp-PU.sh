@@ -3,6 +3,8 @@ DOPP=$1
 DOPPB=$2
 DOPBP=$3
 
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
 
 #ZPT_RANGES=("5_30" "30_500")
 #PT_RANGES=("0.5_4" "4_500") 
@@ -19,8 +21,8 @@ EOF
 # pp
 # PU rejection turned off, PU=1 by default as set by IsPUReject=true flag
 nMix=10
-TAG="_PUNominal_ZV5_trkV23_nmix10"
-VZWeightFile=/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/20260307_VzReweightFits_pp.root
+TAG="_PUNominal_ZV6_trkV24_nmix10"
+VZWeightFile="${VZWeightFile_PP}"
 
 ./system-analysis.sh "pythiaMC_Gen_nominal${TAG}" \
     --IsPP true --IsGenZ true --IsData false \
@@ -50,7 +52,7 @@ exit
     --UseEventWeight true --UseZWeight true \
     --UseTrackWeight true --UseResidualWeight false \
     --yBoost 0 --nMix $nMix \
-    --ZWeightFile my_ZWeights/20260308_ZCorrection_V5_pp_zPt0-500.root \
+    --ZWeightFile "${ZWeightFile_PP}" \
     --IsPUReject false
 
 ./system-analysis.sh "pp_trkResidual${TAG}" \
@@ -60,8 +62,7 @@ exit
     --UseEventWeight true --UseZWeight true \
     --UseTrackWeight true --UseResidualWeight true \
     --yBoost 0 --nMix $nMix \
-    --ZWeightFile my_ZWeights/20260308_ZCorrection_V5_pp_zPt0-500.root \
-    --ResidualWeightFile my_residualWeights/20260308_TrackResidualCorrection_V23_ZWeight_V5_pp_zPt \
+    --ZWeightFile "${ZWeightFile_PP}" \
+    --ResidualWeightFile "${RWeightFile_PP}" \
     --IsPUReject false
-
 

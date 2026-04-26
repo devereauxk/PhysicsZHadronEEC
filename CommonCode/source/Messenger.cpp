@@ -1039,6 +1039,10 @@ void TriggerTreeMessenger::FillTriggerNames()
    Name.push_back("HLT_HIL3Mu20_v2");
    Name.push_back("HLT_HIL3Mu20_v3");
 
+   // muon pA triggers
+   Name.push_back("HLT_PAL2Mu12_v1");
+   Name.push_back("HLT_PAL3Mu12_v1");
+
    std::sort(Name.begin(), Name.end());
    std::vector<std::string>::iterator iter = std::unique(Name.begin(), Name.end());
    Name.erase(iter, Name.end());
@@ -1319,8 +1323,6 @@ bool TrackTreeMessenger::PassZHadron2022Cut(int index)
 
 bool TrackTreeMessenger::PassZHadron2022CutLoose(int index)
 {
-   // TODO
-
    if(index >= nTrk)
       return false;
 
@@ -1328,7 +1330,7 @@ bool TrackTreeMessenger::PassZHadron2022CutLoose(int index)
       return false;
 
    double RelativeUncertainty = trkPtError[index] / trkPt[index];
-   if(RelativeUncertainty > 0.15)
+   if(RelativeUncertainty > 0.1)
       return false;
 
    // if(trkDxyOverDxyError[index] > 3)
@@ -1349,8 +1351,6 @@ bool TrackTreeMessenger::PassZHadron2022CutLoose(int index)
 
 bool TrackTreeMessenger::PassZHadron2022CutTight(int index)
 {
-   // TODO
-   
    if(index >= nTrk)
       return false;
 
@@ -1358,7 +1358,7 @@ bool TrackTreeMessenger::PassZHadron2022CutTight(int index)
       return false;
 
    double RelativeUncertainty = trkPtError[index] / trkPt[index];
-   if(RelativeUncertainty > 0.15)
+   if(RelativeUncertainty > 0.05) // typo: this used to be 0.15
       return false;
 
    // if(trkDxyOverDxyError[index] > 3)
@@ -1615,15 +1615,19 @@ bool PbPbTrackTreeMessenger::Initialize()
    Tree->SetBranchAddress("trkEta", &TrackEta);
    Tree->SetBranchAddress("trkPhi", &TrackPhi);
    Tree->SetBranchAddress("trkCharge", &TrackCharge);
-   Tree->SetBranchAddress("trkPDFId", &TrackPDFID);
+   if(Tree->GetBranch("trkPDFId") != nullptr)
+      Tree->SetBranchAddress("trkPDFId", &TrackPDFID);
    Tree->SetBranchAddress("trkNHits", &TrackNHits);
    Tree->SetBranchAddress("trkNPixHits", &TrackNPixHits);
    Tree->SetBranchAddress("trkNLayers", &TrackNLayers);
    Tree->SetBranchAddress("trkNormChi2", &TrackNormChi2);
    Tree->SetBranchAddress("highPurity", &TrackHighPurity);
-   Tree->SetBranchAddress("pfEnergy", &PFEnergy);
-   Tree->SetBranchAddress("pfEcal", &PFEcal);
-   Tree->SetBranchAddress("pfHcal", &PFHcal);
+   if(Tree->GetBranch("pfEnergy") != nullptr)
+      Tree->SetBranchAddress("pfEnergy", &PFEnergy);
+   if(Tree->GetBranch("pfEcal") != nullptr)
+      Tree->SetBranchAddress("pfEcal", &PFEcal);
+   if(Tree->GetBranch("pfHcal") != nullptr)
+      Tree->SetBranchAddress("pfHcal", &PFHcal);
    Tree->SetBranchAddress("trkAssociatedVtxIndx", &TrackAssociatedVertexIndex);
    Tree->SetBranchAddress("trkAssociatedVtxQuality", &TrackAssociatedVertexQuality);
    Tree->SetBranchAddress("trkDzAssociatedVtx", &TrackAssociatedVertexDz);

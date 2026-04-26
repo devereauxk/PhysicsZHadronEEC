@@ -45,25 +45,35 @@ void correction(const char* recoFileName = "output/DY-RECO.root",
     // Retrieve 3D histograms
     TH3D *hReco3D = (TH3D*)fReco->Get("h3D");
     TH3D *hGen3D = (TH3D*)fGen->Get("h3D");
+    TH1D *hNZReco = (TH1D*)fReco->Get("hNZ");
+    TH1D *hNZGen = (TH1D*)fGen->Get("hNZ");
+    const double nZReco = hNZReco->GetBinContent(1);
+    const double nZGen = hNZGen->GetBinContent(1);
 
     // Project into 1D histograms for pt, eta, and phi
 
     TH1D *hPtGen = hGen3D->ProjectionX("hPtGen");
     TH1D *hEtaGen = hGen3D->ProjectionY("hEtaGen");
     TH1D *hPhiGen = hGen3D->ProjectionZ("hPhiGen");
+    hPtGen->Scale(1.0 / nZGen);
+    hEtaGen->Scale(1.0 / nZGen);
+    hPhiGen->Scale(1.0 / nZGen);
 
     // Calculate the ratios GEN/RECO
     TH1D *hPtReco = hReco3D->ProjectionX("hPtReco");
+    hPtReco->Scale(1.0 / nZReco);
     TH1D *hPtCorrTotal = (TH1D*)hPtGen->Clone("hPtCorrTotal");
     hPtCorrTotal->Divide(hPtReco);
     
     scaleTH3D(hReco3D, hPtCorrTotal, 'x');
     TH1D *hEtaReco = hReco3D->ProjectionY("hEtaReco");
+    hEtaReco->Scale(1.0 / nZReco);
     TH1D *hEtaCorrTotal = (TH1D*)hEtaGen->Clone("hEtaCorrTotal");
     hEtaCorrTotal->Divide(hEtaReco);
 
     scaleTH3D(hReco3D, hEtaCorrTotal, 'y');
     TH1D *hPhiReco = hReco3D->ProjectionZ("hPhiReco");
+    hPhiReco->Scale(1.0 / nZReco);
     TH1D *hPhiCorrTotal = (TH1D*)hPhiGen->Clone("hPhiCorrTotal");
     hPhiCorrTotal->Divide(hPhiReco);
 
@@ -82,5 +92,4 @@ void correction(const char* recoFileName = "output/DY-RECO.root",
     delete fGen;
     delete fCorr;
 }
-
 

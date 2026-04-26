@@ -9,6 +9,7 @@
 #include <TFile.h>
 
 #include <iostream>
+#include <utility>
 
 using namespace std;
 #include "utilities.h"              // Yen-Jie's random utility functions
@@ -28,14 +29,70 @@ bool checkError(const Parameters& par) {
       return true;  // Return true indicates an error was found
    }
 
+   if (par.useVZWeight && par.VZWeightFile == "") {
+      std::cout << "Error! UseVZWeight=true requires an explicit external VZWeightFile." << std::endl;
+      return true;
+   }
+
+   if (!par.useVZWeight && par.VZWeightFile != "") {
+      std::cout << "Error! VZWeightFile was provided but UseVZWeight=false. Pass both explicitly for VZ weighting." << std::endl;
+      return true;
+   }
+
    return false;    // No errors found
+}
+
+pair<int, int> findClosestMuonTracks(ZHadronMessenger *b, const Parameters &par)
+{
+   if(!par.TrackMuClosest)
+      return {-1, -1};
+
+   int closestTrack = -1;
+   int secondClosestTrack = -1;
+   float closestDR = -1;
+   float secondClosestDR = -1;
+
+   for(unsigned int i = 0; i < b->trackMuDR->size(); i++)
+   {
+      float trackMuDR = (*b->trackMuDR)[i];
+      if(trackMuDR < 0)
+         continue;
+
+      if(closestTrack < 0 || trackMuDR < closestDR)
+      {
+         secondClosestTrack = closestTrack;
+         secondClosestDR = closestDR;
+         closestTrack = i;
+         closestDR = trackMuDR;
+      }
+      else if(secondClosestTrack < 0 || trackMuDR < secondClosestDR)
+      {
+         secondClosestTrack = i;
+         secondClosestDR = trackMuDR;
+      }
+   }
+
+   return {closestTrack, secondClosestTrack};
+}
+
+bool rejectMuonMatchedTrack(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1})
+{
+   if(par.TrackMuDR >= 0)
+      return ((*b->trackMuDR)[j] >= 0 && (*b->trackMuDR)[j] < par.TrackMuDR);
+
+   if(par.TrackMuClosest)
+      return (j == closestMuonTracks.first || j == closestMuonTracks.second);
+
+   return (par.isMuTagged && (*b->trackMuTagged)[j]);
 }
 
 //======= trackSelection =====================================//
 // Check if the track pass selection criteria
 //============================================================//
-bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
-   if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
+bool trackSelection(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+   if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((*b->trackPt)[j] > par.MaxTrackPT) return false;  
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
@@ -47,8 +104,9 @@ bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
 //======= trackSelection =====================================//
 // Check if the track pass selection criteria
 //============================================================//
-bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
-   if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
+bool trackSelectionNoPt(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+   if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
    if ((*b->trackEta)[j] > 2.4) return false;
    if ((*b->trackEta)[j] < -2.4) return false;
@@ -60,7 +118,8 @@ bool trackSelectionNoPt(ZHadronMessenger *b, Parameters par, int j) {
 // MinZPT < zPt < MaxZPT
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
-   if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
+   if (par.isPUReject && par.isData && b->NVertex != 1) return 0;
+   if (par.useVZWindow && fabs(b->VZ) >= 15) return 0;
 
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size()) == 0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) < 60) return 0;
@@ -91,12 +150,6 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 }
 
 
-// ======= Check if PPb event is PPb or PbP, returns true if PPb
-bool isPPbEvent(ZHadronMessenger *b) {
-   if (b->Run < 285922) return true;
-   return false;
-}
-
 // ====== add UE event from EPOS to hard event
 vector<int>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
    // returns a mask vector hard event = 0, UE event = 1
@@ -109,6 +162,7 @@ vector<int>* addUEParticles(ZHadronMessenger *hard, ZHadronMessenger *ue) {
       hard->trackY->push_back(ue->trackY->at(i));
       hard->trackPhi->push_back(ue->trackPhi->at(i));
       hard->trackMuTagged->push_back(ue->trackMuTagged->at(i));
+      hard->trackMuDR->push_back(ue->trackMuDR->at(i));
       hard->trackWeight->push_back(ue->trackWeight->at(i));
       hard->trackResidualWeight->push_back(ue->trackResidualWeight->at(i));
       UEmask->push_back(1);
@@ -127,10 +181,18 @@ bool isSameZpTBin(float zPt_sig, float zPt_bkg) {
    return false;
 }
 
+int getZpTBin(float zPt) {
+   if (zPt < 10) return 0;
+   if (zPt < 20) return 1;
+   if (zPt < 40) return 2;
+   return 3;
+}
+
 float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector *corrector) {
    float mult = 0;
+   pair<int, int> closestMuonTracks = findClosestMuonTracks(b, par);
    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
-      if (!trackSelection(b, par, j)) continue;
+      if (!trackSelection(b, par, j, closestMuonTracks)) continue;
       float trackWeight = (*b->trackWeight)[j];
       mult += trackWeight;
    }
@@ -203,8 +265,8 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    }
 
    // open VZ correction if needed
-   VZCorrector *vzCorrector;
-   if (par.VZWeightFile != "") {
+   VZCorrector *vzCorrector = nullptr;
+   if (par.useVZWeight) {
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
    }
 
@@ -219,6 +281,24 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       corrector_10_20  = new TrackResidualCorrector(Form("%s10-20.root",  par.residualWeightFile.c_str()));
       corrector_20_40  = new TrackResidualCorrector(Form("%s20-40.root",  par.residualWeightFile.c_str()));
       corrector_40_500 = new TrackResidualCorrector(Form("%s40-500.root", par.residualWeightFile.c_str()));              
+   }
+
+   // Optional fast-mixing metadata cache:
+   // keep event-matching logic the same but avoid repeated eventSelection scans in the inner loop.
+   vector<char> mixEventPass;
+   vector<char> mixEventZPtBin;
+   bool useFastMixingCache = (par.mix && par.useFastMixing && !par.useEPOSFile);
+   if (useFastMixingCache) {
+      unsigned long nMixEntry = MMix->GetEntries();
+      mixEventPass.assign(nMixEntry, 0);
+      mixEventZPtBin.assign(nMixEntry, -1);
+      for (unsigned long m = 0; m < nMixEntry; m++) {
+         MMix->GetEntry(m);
+         if (!eventSelection(MMix, par)) continue;
+         float mixZPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
+         mixEventPass[m] = 1;
+         mixEventZPtBin[m] = getZpTBin(mixZPt);
+      }
    }
 
 
@@ -249,6 +329,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       if (zPhi < 0) zPhi += 2 * M_PI;
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
       float zMass = (par.isGenZ ? (*MZSignal->genZMass)[0] : (*MZSignal->zMass)[0]);
+      int zPtBin = getZpTBin(zPt);
 
       if (zPt < 10) corrector = corrector_0_10;
       else if (zPt >= 10 && zPt < 20) corrector = corrector_10_20;
@@ -260,17 +341,13 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       // calculate event weights
       //==================================================//
       float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
+      if (par.ExtraZWeight >= 0) ZWeight *= MZSignal->ExtraZWeight[par.ExtraZWeight];
+      else if (par.isData) ZWeight *= MZSignal->ZWeight;
 
       float eventWeightSignal = 1;
       if (par.useEventWeight) eventWeightSignal *= MZSignal->EventWeight;
-      if (par.useVZWeight) {
-         if (par.VZWeightFile != "") {
-            float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
-            eventWeightSignal *= vzCorrectionFactor;
-         } else {
-            eventWeightSignal *= MZSignal->VZWeight;
-         }
-      }
+      if (par.useVZWeight)
+         eventWeightSignal *= vzCorrector->GetCorrectionFactor(MZSignal->VZ);
       if (par.useZWeight) eventWeightSignal *= ZWeight;
 
       // energy extrapolation
@@ -297,15 +374,15 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       //==================================================//
       // get track residual corrector
       // correcting MMix or MSignal particles here, we force both Zs in mixed events to be in the same track residual correction Z bin though, so we just use the sig Z here
+      pair<int, int> signalClosestMuonTracks = findClosestMuonTracks(MZSignal, par);
       for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
-         if (!trackSelection(MZSignal, par, j)) continue;
+         if (!trackSelection(MZSignal, par, j, signalClosestMuonTracks)) continue;
          float trackPhi  = (*MZSignal->trackPhi)[j];
          if (trackPhi<0) trackPhi+= 2 * M_PI;
          float trackEta  = (*MZSignal->trackEta)[j];
          float trackPt   = (*MZSignal->trackPt)[j];
          float residualCorrection = ((par.residualWeightFile=="")||par.isGenZ==1)? 1 : corrector->GetCorrectionFactor(trackPt, trackEta, trackPhi);
-         float weight = eventWeightSignal;
-         //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
+          float weight = eventWeightSignal;
          weight*= (*MZSignal->trackWeight)[j];
          if (par.useResidualWeight) weight*= residualCorrection;  
          if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Fill(trackPt, trackEta, trackPhi, weight);
@@ -326,6 +403,14 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                mix_i = (mix_i + 1);
                if (mix_i >= MMix->GetEntries()) mix_i = 0;
                if (mixstart_i == mix_i) break;
+
+                if (useFastMixingCache) {
+                   if (mixEventPass[mix_i] == 0) continue;
+                   if (mixEventZPtBin[mix_i] != zPtBin) continue;
+                   if (i != mix_i) foundMix = true;
+                   continue;
+               }
+
                MMix->GetEntry(mix_i);
 
                // add epos particles if needed
@@ -336,9 +421,6 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
                // event selection
                if (!eventSelection(MMix, par)) continue;
-
-               // only mix PPb with PPb and PbP with PbP
-               if (!par.isPP && par.isData && isPPbEvent(MZSignal) != isPPbEvent(MMix)) continue;
 
                // only mix with Z events of similar Z pT
                float mix_zPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]); 
@@ -365,24 +447,22 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             float zPhiMix = (par.isGenZ ? (*MMix->genZPhi)[0] : (*MMix->zPhi)[0]);
             if (zPhiMix < 0) zPhiMix += 2 * M_PI;
             float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, zPhiMix) : 1;
+            if (par.ExtraZWeight >= 0) ZWeightMix *= MMix->ExtraZWeight[par.ExtraZWeight];
+            else if (par.isData) ZWeightMix *= MMix->ZWeight;
             
-            float eventWeightMix = 1;
-            if (par.useEventWeight) eventWeightMix *= MMix->EventWeight;
-            if (par.useVZWeight) {
-               if (par.VZWeightFile != "") {
-                  float vzCorrectionFactorMix = vzCorrector->GetCorrectionFactor(MMix->VZ);
-                  eventWeightMix *= vzCorrectionFactorMix;
-               } else {
-                  eventWeightMix *= MMix->VZWeight;
-               }
-            }
-            if (par.useZWeight) eventWeightMix *= ZWeightMix;
+            float computedMixWeight = 1;
+            if (par.useEventWeight) computedMixWeight *= MMix->EventWeight;
+            if (par.useVZWeight)
+               computedMixWeight *= vzCorrector->GetCorrectionFactor(MMix->VZ);
+            if (par.useZWeight) computedMixWeight *= ZWeightMix;
 
             // energy extrapolation
             if (par.EnergyExtraFile != "" && par.isPP) {
                float energyExtrapolationWeightMix = EnergyCorrector->GetCorrectionFactor(zPtMix, 1, 1);
-               eventWeightMix *= energyExtrapolationWeightMix;
+               computedMixWeight *= energyExtrapolationWeightMix;
             }
+            eventWeightMix = computedMixWeight;
+
          }
 
          nZ += (par.mix) ? eventWeightMix : eventWeightSignal;
@@ -390,10 +470,12 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          //==================================================//
          // loop over tracks
          //==================================================//
+         ZHadronMessenger *currentEvent = (par.mix ? MMix : MZSignal);
+         pair<int, int> currentClosestMuonTracks = findClosestMuonTracks(currentEvent, par);
          for (unsigned long j = 0; j < (par.mix ? MMix->trackPhi->size() : MZSignal->trackPhi->size()); j++) {
 
             // Check if the event passes the selection criteria
-            if (!trackSelection((par.mix ? MMix : MZSignal), par, j)) continue;
+            if (!trackSelection(currentEvent, par, j, currentClosestMuonTracks)) continue;
             
             float trackDphi  = par.mix ? DeltaPhi((*MMix->trackPhi)[j], zPhi)
                                        : DeltaPhi((*MZSignal->trackPhi)[j], zPhi);
@@ -432,6 +514,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                } else {
                   this_trackWeight *= (*MZSignal->trackWeight)[j];
                }
+               this_trackWeight *= par.TrackExtraWeight;
             }
             
             // track residual weight
@@ -487,17 +570,17 @@ public:
    string title;
    TH3D* hTrkResidualCorrectionPtEtaPhi;
 
-   DataAnalyzer(const char* filename, const char* mixFilename, const char* outFilename, const char* filenameUE, const char* mytitle = "Data", bool useEPOSFile = false) :
+   DataAnalyzer(const char* filename, const char* mixFilename, const char* outFilename, const char* filenameUE, const char* mytitle = "Data", bool useEPOSFile = false, const char* treeName = "Tree") :
       inf(new TFile(filename)),
-      MZHadron(new ZHadronMessenger(*inf, string("Tree"))),
+      MZHadron(new ZHadronMessenger(*inf, string(treeName))),
       mixFile(new TFile(mixFilename)),
       mixFileClone(new TFile(mixFilename)),
-      MMix(new ZHadronMessenger(*mixFile, string("Tree"))),
+      MMix(new ZHadronMessenger(*mixFile, string(treeName))),
       title(mytitle),
       outf(new TFile(outFilename, "recreate")) {
       if (useEPOSFile) {
          infUE = new TFile(filenameUE);
-         MZHadronUE = new ZHadronMessenger(*infUE, string("Tree"));
+         MZHadronUE = new ZHadronMessenger(*infUE, string(treeName));
       }
       outf->cd();
    }
@@ -646,9 +729,12 @@ int main(int argc, char *argv[])
    par.output        = CL.Get      ("Output",  "output.root");                               // Output file
    par.isSelfMixing  = CL.GetBool  ("IsSelfMixing", true);   // Determine if the analysis is self-mixing
    par.isGenZ        = CL.GetBool  ("IsGenZ", false);        // Determine if the analysis is using Gen level Z     
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);     // Flag to reject PU sample for systemaitcs.
+   par.isPUReject    = CL.GetBool  ("IsPUReject", false);    // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);     // Default is true
+   par.TrackMuDR     = CL.GetDouble("TrackMuDR", -1);
+   par.TrackMuClosest = CL.GetBool ("TrackMuClosest", false);
    par.useTrackWeight   = CL.GetBool  ("UseTrackWeight", true);     // Default is true
+   par.TrackExtraWeight = CL.GetDouble("TrackExtraWeight", 1.0);
    par.useEventWeight   = CL.GetBool  ("UseEventWeight", false);     // Default is false
    par.useZWeight       = CL.GetBool  ("UseZWeight", false);         // Default is false
    par.ZWeightFile     = CL.Get      ("ZWeightFile", "");           // Z weight file
@@ -656,7 +742,13 @@ int main(int argc, char *argv[])
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
-   par.useVZWeight       = CL.GetBool  ("UseVZWeight", true);
+   par.useVZWeight       = CL.GetBool  ("UseVZWeight", false);
+   par.useVZWindow       = CL.GetBool  ("UseVZWindow", true);
+   par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
+   par.TrackSelectionMode = CL.Get      ("TrackSelectionMode", "Nominal");
+   par.TrackTreeName   = "Tree";
+   if (par.TrackSelectionMode == "Loose")   par.TrackTreeName = "TreeLoose";
+   if (par.TrackSelectionMode == "Tight")   par.TrackTreeName = "TreeTight";
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);       // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);           // The number of threads to be used for parallel processing.
    par.nChunk        = CL.GetInt   ("nChunk", 1);            // Specifies which chunk (segment) of the data to process, used in parallel processing.
@@ -676,7 +768,7 @@ int main(int argc, char *argv[])
    if (checkError(par)) return -1;
           
    // Analyze Data
-   DataAnalyzer analyzer(par.input.c_str(), par.mixFile.c_str(), par.output.c_str(), par.EPOSFile.c_str(), "Data", par.useEPOSFile);
+   DataAnalyzer analyzer(par.input.c_str(), par.mixFile.c_str(), par.output.c_str(), par.EPOSFile.c_str(), "Data", par.useEPOSFile, par.TrackTreeName.c_str());
    analyzer.analyze(par);
    analyzer.writeHistograms(analyzer.outf);
    saveParametersToHistograms(par, analyzer.outf);

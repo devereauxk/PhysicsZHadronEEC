@@ -1,26 +1,50 @@
+#!/bin/bash
+
+set -e
+
+THISDIR=$(cd "$(dirname "$0")" && pwd)
+cd "$THISDIR"
+
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+
 #source ./clean.sh
 make ExecuteCentralCombinedPlot
 
 
-# input your Z and track selections here
-ZPT_RANGES=("5_500")
-PT_RANGES=("0.5_500")
+PP_TAG="$OFFICIAL_TAG_PP"
+PPB_TAG="$OFFICIAL_TAG_PPB"
+PLOT_OUTPUT_BASE="${PLOT_OUTPUT_BASE:-plots/central_combined}"
+RUN_COMBINED="${RUN_COMBINED:-1}"
+RUN_SINGLE="${RUN_SINGLE:-1}"
+PLOT_INCLUDE_MC="${PLOT_INCLUDE_MC:-true}"
 
-PP_TAG="ZV5_trkV23_nmix10"
-PPB_TAG="ZV5_trkV23_nmix10"
+run_one() {
+    local ZPT=$1
+    local TRKPT=$2
+    if [ "$RUN_COMBINED" != "0" ]; then
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG" --doCombine true --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
+    fi
+    if [ "$RUN_SINGLE" != "0" ]; then
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG" --doCombine false --collisionType pPb --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG" --doCombine false --collisionType PbP --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
+    fi
+}
 
-for zPtRange in "${ZPT_RANGES[@]}"
-do
-    for trkPtRange in "${PT_RANGES[@]}"
-    do
-        echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
-
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine true
-
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine false --collisionType pPb
-        ./ExecuteCentralCombinedPlot --zPtRange $zPtRange --trkPtRange $trkPtRange --pPbtag $PPB_TAG --pptag $PP_TAG --doCombine false --collisionType PbP
+if [ -n "${CONFIG_FILE:-}" ]; then
+    source "$CONFIG_FILE"
+    for ZPT in "${ZPT_RANGES[@]}"; do
+        for TRKPT in "${PT_RANGES[@]}"; do
+            run_one "$ZPT" "$TRKPT"
+        done
     done
-done
+else
+    run_one 0_30 0.5_2
+    run_one 0_30 2_4
+    run_one 0_30 4_15
+    run_one 30_500 0.5_2
+    run_one 30_500 2_4
+    run_one 30_500 4_15
+    run_one 0_500 0.5_15
+fi
 
 exit
-

@@ -26,10 +26,12 @@ int printHelpMessage(int argc, char *argv[]) {
               << "  --IsSelfMixing         Flag to enable/disable self-mixing.\n"
               << "  --IsGenZ               Flag to use generated level Z information.\n"
               << "  --IsData               Flag to specify if the input is real data.\n"
-              << "  --IsPP                 Flag for Proton-Proton collision data.\n"
-              << "  --IsJewel              Flag for Jewel analysis.\n"
-              << "  --IsMuTagged           Flag for doing Z decay muon matching.\n"
-              << "  --IsPUReject           Flag to reject PU sample for systematics.\n"
+               << "  --IsPP                 Flag for Proton-Proton collision data.\n"
+               << "  --IsJewel              Flag for Jewel analysis.\n"
+               << "  --IsMuTagged           Flag for doing Z decay muon matching.\n"
+               << "  --TrackMuDR <value>    Reject tracks with non-negative trackMuDR below this threshold.\n"
+               << "  --TrackMuClosest       Reject the two closest tracks with non-negative trackMuDR.\n"
+               << "  --IsPUReject           Flag to reject PU sample for systematics.\n"
               << "  --Fraction <value>     Fraction of event to be processed.\n"
               << "  --nThread <value>      Number of threads for parallel processing.\n"
               << "  --nChunk <value>       Specifies which chunk of the data to process.\n"
@@ -45,5 +47,4 @@ int printHelpMessage(int argc, char *argv[]) {
     }
     return 0;  
 }
-
 

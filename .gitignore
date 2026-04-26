@@ -1,7 +1,7 @@
 *.root
 *.png
 *.pdf
+*.log
 Execute*
 CommonCode/binary
 CommonCode/library
-.github

@@ -25,15 +25,23 @@ public:
     TH1D *hShift;
     bool isGen;     // isGen flag
     bool isAddUE;     // isAddUE flag
-    bool isGenZ;           // isGenZ flag
-    bool isMuTagged;       // Flag to enable/disable muon tagging requirement
-    bool isPUReject;       // Flag to reject PU sample for systemaitcs.
-    bool isPP;             // Flag to check if this is a PP analysis
-    bool isOO;
-    bool isJewel;             // Flag to check if this is a Jewel analysis
-    int ExtraZWeight;
-    string VZWeightFile;
-    bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
+     bool isGenZ;           // isGenZ flag
+     bool isMuTagged;       // Flag to enable/disable muon tagging requirement
+     float TrackMuDR;       // Track-muon rejection radius override
+     bool TrackMuClosest;   // Reject the two closest tracks to a muon
+     bool isPUReject;       // Flag to reject PU sample for systemaitcs.
+     bool isPP;             // Flag to check if this is a PP analysis
+     bool isData;           // Flag to check if this is a Data analysis
+     bool isOO;
+     bool isJewel;             // Flag to check if this is a Jewel analysis
+     bool useVZWeight;       // Flag to check if VZ reweighting should be applied
+     bool useVZWindow;       // Apply the analysis |vz| < 15 requirement
+     int ExtraZWeight;
+     string VZWeightFile;
+     string TrackSelectionMode;
+     string TrackTreeName;
+     bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
+     float TrackExtraWeight; // Extra multiplicative factor for per-track efficiency weights
 
    void printParameters() const {
        cout << "Input file: " << input << endl;
@@ -48,19 +56,27 @@ public:
        cout << "MinTrackPT: " << MinTrackPT << " GeV/c" << endl;
        cout << "MaxTrackPT: " << MaxTrackPT << " GeV/c" << endl;
        cout << "isGen: " << (isGen ? "true" : "false") << endl;
-       cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
-       cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
-       cout << "isPP: " << (isPP ? "true" : "false") << endl;
-       cout << "isOO: " << (isOO ? "true" : "false") << endl;
-       cout << "Scale factor: " << scaleFactor << endl;
+        cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
+         cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
+         cout << "isPP: " << (isPP ? "true" : "false") << endl;
+          cout << "isOO: " << (isOO ? "true" : "false") << endl;
+          cout << "isData: " << (isData ? "true" : "false") << endl;
+          cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
+          cout << "UseVZWindow: " << (useVZWindow ? "true" : "false") << endl;
+          cout << "TrackSelectionMode: " << TrackSelectionMode << endl;
+          cout << "TrackTreeName: " << TrackTreeName << endl;
+          cout << "TrackExtraWeight: " << TrackExtraWeight << endl;
+          cout << "Scale factor: " << scaleFactor << endl;
        cout << "SumHF shift: " << shift << endl;
        cout << "Number of Threads: " << nThread << endl;
        cout << "Process the Nth chunk: " << nChunk << endl;
        cout << "Mix flag: " << (mix ? "true" : "false") << endl;
-       cout << "Number of mixed events: " << nMix << endl;
-       cout << "Muon Tagging Enabled: " << (isMuTagged ? "true" : "false") << endl;
-       cout << "PU rejection: " << (isPUReject ? "true" : "false") << endl;
-       if (mix) cout << "Event mixing!" << endl;
+        cout << "Number of mixed events: " << nMix << endl;
+        cout << "Muon Tagging Enabled: " << (isMuTagged ? "true" : "false") << endl;
+        cout << "TrackMuDR: " << TrackMuDR << endl;
+        cout << "TrackMuClosest: " << (TrackMuClosest ? "true" : "false") << endl;
+        cout << "PU rejection: " << (isPUReject ? "true" : "false") << endl;
+        if (mix) cout << "Event mixing!" << endl;
    }
 };
 
@@ -108,6 +124,12 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     
     TH1D* hIsMuTagged = new TH1D("parIsMuTagged", "parIsMuTagged", 1, 0, 1);
     hIsMuTagged->SetBinContent(1, par.isMuTagged);
+
+    TH1D* hTrackMuDR = new TH1D("parTrackMuDR", "parTrackMuDR", 1, 0, 1);
+    hTrackMuDR->SetBinContent(1, par.TrackMuDR);
+
+    TH1D* hTrackMuClosest = new TH1D("parTrackMuClosest", "parTrackMuClosest", 1, 0, 1);
+    hTrackMuClosest->SetBinContent(1, par.TrackMuClosest);
     
     TH1D* hIsPUReject = new TH1D("parIsPUReject", "parIsPUReject", 1, 0, 1);
     hIsPUReject->SetBinContent(1, par.isPUReject);
@@ -135,6 +157,8 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     hisGen->Write();
     hIsGenZ->Write();
     hIsMuTagged->Write();
+    hTrackMuDR->Write();
+    hTrackMuClosest->Write();
     hIsPUReject->Write();
     hIsPP->Write();
     hMinZY->Write();
@@ -154,6 +178,8 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     delete hisGen;
     delete hIsGenZ;
     delete hIsMuTagged;
+    delete hTrackMuDR;
+    delete hTrackMuClosest;
     delete hIsPUReject;
     delete hIsPP;
     delete hMinZY;

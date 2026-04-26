@@ -3,6 +3,7 @@
 #include <TH2D.h>
 #include <TH3D.h>
 #include <TF1.h>
+#include <TSystem.h>
 #include <iostream>
 using namespace std;
 
@@ -13,6 +14,23 @@ using namespace std;
 
 #include <vector>
 #include <string>
+#include <cmath>
+
+TH1D *LoadSystematicHistogram(const string &fileName, const string &histogramName,
+    const string &cloneName)
+{
+    TFile input(fileName.c_str(), "READ");
+    if (input.IsZombie())
+        return nullptr;
+
+    TH1D *histogram = (TH1D *)input.Get(histogramName.c_str());
+    if (histogram == nullptr)
+        return nullptr;
+
+    histogram = (TH1D *)histogram->Clone(cloneName.c_str());
+    histogram->SetDirectory(nullptr);
+    return histogram;
+}
 
 
 int main(int argc, char *argv[]) {
@@ -24,7 +42,11 @@ int main(int argc, char *argv[]) {
     string tag = CL.Get("pPbtag", "V16_nmix5");
     string tag_pp = CL.Get("pptag", "V16_nmix5");
     bool doCombine = CL.GetBool("doCombine", false);
+    bool includeMC = CL.GetBool("includeMC", true);
     string collisionType = CL.Get("collisionType", "pPb");
+    string outputBase = CL.Get("outputBase", "plots/central_combined");
+    string systematicsDir = CL.Get("systematicsDir",
+        "/home/kdeverea/PhysicsZHadronEEC/Systematics/20260329_pPbSystematics/output");
 
     cout<<"=================================================="<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -33,28 +55,26 @@ int main(int argc, char *argv[]) {
     cout<<"pp Tag: "<<tag_pp<<endl;
 
     // files to load
-    string input_ZPT_files_pp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EExtrapolation_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str());
+    string input_ZPT_files_pp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str());
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     vector<string> input_ZPT_files_pbp = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
+    if (includeMC) {
+        input_ZPT_files.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()));
+        input_ZPT_files_pbp.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()));
+    }
     vector<string> labels = {
         "pp",
-        Form("%s", collisionType.c_str()),
-        //"  & Z correction",
-        //"  & Z + track correction",
-        "Powheg+EPOS"
+        Form("%s", collisionType.c_str())
     };
+    if (includeMC)
+        labels.push_back("Powheg+EPOS");
     string file_tag = (doCombine) ? "all" : collisionType;
-    string output = Form("plots/central_combined/%s/%s_ZPT%s_trkPT%s_%s", tag_pp.c_str(), file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
+    gSystem->mkdir(Form("%s/%s", outputBase.c_str(), tag_pp.c_str()), true);
+    string output = Form("%s/%s/%s_ZPT%s_trkPT%s_%s", outputBase.c_str(), tag_pp.c_str(), file_tag.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     // plotted histograms
     vector<TH1*> hDeltaEta_combined;
@@ -238,9 +258,6 @@ int main(int argc, char *argv[]) {
     vector<int> lineColors = {cmsBlue, cmsRed, kSpring-8, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
     vector<int> lineStyles = {0, 0, 1};
 
-    float diffMin = (trkPtRange == "4_500") ? -0.1 : -0.35;
-    float diffMax = (trkPtRange == "4_500") ? 0.1 : 0.35;
-
     // ===========================================
     // results
     // ===========================================
@@ -254,25 +271,52 @@ int main(int argc, char *argv[]) {
     pair<string, string> zRange = ParseRange(zPtRange);
     pair<string, string> trkRange = ParseRange(trkPtRange);
 
+    string currentSystem = doCombine ? "pPbPbp" : collisionType;
+    string ppSystematicsFile = Form("%s/pp_%s_ZPT%s_trkPT%s-systematics.root",
+        systematicsDir.c_str(), tag_pp.c_str(), zPtRange.c_str(), trkPtRange.c_str());
+    string currentSystematicsFile = Form("%s/%s_%s_ZPT%s_trkPT%s-systematics.root",
+        systematicsDir.c_str(), currentSystem.c_str(), tag.c_str(), zPtRange.c_str(), trkPtRange.c_str());
+
+    vector<TH1 *> topSystematicsEta = {
+        LoadSystematicHistogram(ppSystematicsFile, "Total_DeltaEta", "PPSystematicsEta"),
+        LoadSystematicHistogram(currentSystematicsFile, "Total_DeltaEta", "CurrentSystematicsEta")
+    };
+    vector<TH1 *> topSystematicsPhi = {
+        LoadSystematicHistogram(ppSystematicsFile, "Total_DeltaPhi", "PPSystematicsPhi"),
+        LoadSystematicHistogram(currentSystematicsFile, "Total_DeltaPhi", "CurrentSystematicsPhi")
+    };
+    vector<TH1 *> differenceSystematicsEta = {
+        nullptr,
+        doCombine ? LoadSystematicHistogram(currentSystematicsFile, "DifferenceTotal_DeltaEta", "DifferenceSystematicsEta") : nullptr
+    };
+    vector<TH1 *> differenceSystematicsPhi = {
+        nullptr,
+        doCombine ? LoadSystematicHistogram(currentSystematicsFile, "DifferenceTotal_DeltaPhi", "DifferenceSystematicsPhi") : nullptr
+    };
+    if (includeMC) {
+        topSystematicsEta.push_back(nullptr);
+        topSystematicsPhi.push_back(nullptr);
+        differenceSystematicsEta.push_back(nullptr);
+        differenceSystematicsPhi.push_back(nullptr);
+    }
+
+    string differenceLabel = doCombine ? "pPb - pp" : Form("%s - pp", collisionType.c_str());
+    string lumiLabel = doCombine ? "pPb, pp" : Form("%s, pp", collisionType.c_str());
+
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
-    TPad* pResult1 = (TPad*) plotCMSDiff(
-        hDeltaEta_combined, "", labels,
+    TPad* pResult1 = (TPad*) PlotCMSDiffResult(
+        hDeltaEta_combined, topSystematicsEta, differenceSystematicsEta, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "pPb - pp", diffMin, diffMax,
+        differenceLabel.c_str(), -1, -1,
         0,
         false, false, true,
         0.2
     );
 
-    AddCMSHeader(
-        pResult1,
-        "Internal",
-        false
-    );
-    AddUPCHeader(pResult1, "8.16 TeV", Form("%s, pp", collisionType.c_str()));
+    AddUPCHeader(pResult1, "8.16 TeV", lumiLabel.c_str());
 
     // Top-right eta-plot label
     pResult1->cd();
@@ -288,24 +332,19 @@ int main(int argc, char *argv[]) {
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
     TCanvas* cResult2 = new TCanvas("cResult2", "cResult2", 600, 600);
-    TPad* pResult2 = (TPad*) plotCMSDiff(
-        hDeltaPhi_combined, "", labels,
+    TPad* pResult2 = (TPad*) PlotCMSDiffResult(
+        hDeltaPhi_combined, topSystematicsPhi, differenceSystematicsPhi, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "#Delta#varphi_{ch,Z}", -1.5707, 4.7123,
         "d#LT#DeltaN_{ch}#GT/d#Delta#varphi_{ch,Z}", -1, -1,
-        "pPb - pp", diffMin, diffMax,
+        differenceLabel.c_str(), -1, -1,
         0,
         false, false, true,
         0.2
     );
 
-    AddCMSHeader(
-        pResult2,
-        "Internal",
-        false
-    );
-    AddUPCHeader(pResult2, "8.16 TeV", Form("%s, pp", collisionType.c_str()));
+    AddUPCHeader(pResult2, "8.16 TeV", lumiLabel.c_str());
 
     // Phi-plot labels (lowest line at x=0.5, y=0.3)
     pResult2->cd();

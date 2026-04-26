@@ -14,6 +14,17 @@ using namespace std;
 #include <vector>
 #include <string>
 
+static string ReplaceAll(string Value, const string &Needle, const string &Replacement)
+{
+    size_t Position = 0;
+    while((Position = Value.find(Needle, Position)) != string::npos)
+    {
+        Value.replace(Position, Needle.size(), Replacement);
+        Position += Replacement.size();
+    }
+    return Value;
+}
+
 int main(int argc, char *argv[]) {
 
     CommandLine CL(argc, argv);
@@ -22,19 +33,33 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
+    string inputTag = CL.Get("inputTag", "");
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
-    string mctag = (collisionType == "pp" ? "pythia" : collisionType);
-
-    // files to load
-    vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
-    };
+    vector<string> inputNosubFiles;
+    bool UseWorkflowInputs = (inputTag.empty() == false);
+    if(UseWorkflowInputs == true)
+    {
+        string zPtRangeDash = ReplaceAll(zPtRange, "_", "-");
+        string base = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20251211_ResidualCorrection/workflow/output/closure_inputs";
+        inputNosubFiles = {
+            Form("%s/%s_%s_zPt%s_gen.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
+            Form("%s/%s_%s_zPt%s_reco.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
+            Form("%s/%s_%s_zPt%s_corrected.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str())
+        };
+    }
+    else
+    {
+        string mctag = (collisionType == "pp" ? "pythia" : collisionType);
+        inputNosubFiles = {
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str())
+        };
+    }
     vector<string> labels = {
         "MC DY-GEN",
         "MC DY-RECO",
@@ -47,31 +72,56 @@ int main(int argc, char *argv[]) {
     vector<TH1*> hTrkPhi;
     vector<TH1*> hDeltaEta_all;
     vector<TH1*> hDeltaPhi_all;
-
-    vector<TH1*> hMixData;
     vector<TH1*> hDeltaEta_mix;
     vector<TH1*> hDeltaPhi_mix;
-
     vector<TH1*> hDeltaEta_my;
     vector<TH1*> hDeltaPhi_my;
-
+    vector<TH1*> hDeltaEta;
+    vector<TH1*> hDeltaPhi;
     // Loop over nosub files
     int i = 0;
-    for (const auto& input_ZPT : input_ZPT_files) {
+    for (const auto& inputFile : inputNosubFiles) {
 
-        cout<<"opening file: "<<Form("%s-nosub.root", input_ZPT.c_str())<<endl;
+        cout<<"opening file: "<<inputFile<<endl;
 
-        TFile* fin = TFile::Open(Form("%s-nosub.root", input_ZPT.c_str()), "READ");
+        TFile* fin = TFile::Open(inputFile.c_str(), "READ");
         if (!fin || fin->IsZombie()) {
-            std::cerr << "Error: Unable to open file " << input_ZPT << std::endl;
+            std::cerr << "Error: Unable to open file " << inputFile << std::endl;
             continue;
         }
 
         // track pt eta phi
-        TH3D* this_hTrkPtEtaPhi = (TH3D*)fin->Get(Form("hTrkPtEtaPhiData_%s", trkPtRange.c_str()));
+        TH3D* this_hTrkPtEtaPhi = nullptr;
+        TH1D* hNZ = nullptr;
+        if(UseWorkflowInputs == true)
+        {
+            this_hTrkPtEtaPhi = (TH3D*)fin->Get("h3D");
+            hNZ = (TH1D*)fin->Get("hNZ");
+        }
+        else
+        {
+            this_hTrkPtEtaPhi = (TH3D*)fin->Get(Form("hTrkPtEtaPhiData_%s", trkPtRange.c_str()));
+            hNZ = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
+        }
+        if(this_hTrkPtEtaPhi == nullptr || hNZ == nullptr)
+        {
+            cerr << "Missing closure histograms in " << inputFile << endl;
+            continue;
+        }
         TH1D* this_hTrkPt = this_hTrkPtEtaPhi->ProjectionX(Form("trkPt_%d", i));
         TH1D* this_hTrkEta = this_hTrkPtEtaPhi->ProjectionY(Form("trkEta_%d", i));
         TH1D* this_hTrkPhi = this_hTrkPtEtaPhi->ProjectionZ(Form("trkPhi_%d", i));
+
+        if(UseWorkflowInputs == true)
+        {
+            double NZ = hNZ->GetBinContent(1);
+            if(NZ > 0)
+            {
+                this_hTrkPt->Scale(1.0 / NZ);
+                this_hTrkEta->Scale(1.0 / NZ);
+                this_hTrkPhi->Scale(1.0 / NZ);
+            }
+        }
 
         divideByWidth(this_hTrkPt);
         divideByWidth(this_hTrkEta);
@@ -81,64 +131,20 @@ int main(int argc, char *argv[]) {
         hTrkEta.push_back(this_hTrkEta);
         hTrkPhi.push_back(this_hTrkPhi);
 
-        // delta phi, delta eta
-        TH1D* this_hDeltaEta_all = (TH1D*)fin->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
-        this_hDeltaEta_all->SetName(Form("DeltaEta_all_%d", i));
-        TH1D* this_hDeltaPhi_all = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
-        this_hDeltaPhi_all->SetName(Form("DeltaPhi_all_%d", i));
-
-        hDeltaEta_all.push_back(this_hDeltaEta_all); 
-        hDeltaPhi_all.push_back(this_hDeltaPhi_all);
-
-        // mixed
-        TH2D* this_hMixData2D = (TH2D*)fin->Get(Form("hMixData_%s", trkPtRange.c_str()));
-        TH1D* this_hDeltaPhi_mix = this_hMixData2D->ProjectionY(Form("hMixPhi_%d", i), 0, 10);
-        TH1D* this_hDeltaEta_mix = this_hMixData2D->ProjectionX(Form("hMixEta_%d", i), 6, 10);
-
-        divideByWidth(this_hDeltaPhi_mix);
-        divideByWidth(this_hDeltaEta_mix);
-
-        hMixData.push_back(this_hMixData2D);
-        hDeltaEta_mix.push_back(this_hDeltaEta_mix);
-        hDeltaPhi_mix.push_back(this_hDeltaPhi_mix);
-
-        // my calculation
-        TH2D* this_hData2D = (TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str()));
-        TH2D* this_myResult2D = (TH2D*)this_hData2D->Clone(Form("myResult2D_%d", i));
-        this_myResult2D->Add(this_hMixData2D, -1);
-
-        TH1D* this_hDeltaPhi_my = this_myResult2D->ProjectionY(Form("DeltaPhi_my_%d", i), 0, 10);
-        TH1D* this_hDeltaEta_my = this_myResult2D->ProjectionX(Form("DeltaEta_my_%d", i), 6, 10);
-
-        divideByWidth(this_hDeltaPhi_my);
-        divideByWidth(this_hDeltaEta_my);
-
-        hDeltaEta_my.push_back(this_hDeltaEta_my);
-        hDeltaPhi_my.push_back(this_hDeltaPhi_my);
-
         i++;
     }
 
     // read results file
-    vector<TH1*> hDeltaEta;
-    vector<TH1*> hDeltaPhi;
+    if(UseWorkflowInputs == false)
+    for (const auto& inputFile : inputNosubFiles) {
 
-    for (const auto& input_ZPT : input_ZPT_files) {
-
-        TFile* fin = TFile::Open(Form("%s-result.root", input_ZPT.c_str()), "READ");
+        string resultFile = ReplaceAll(inputFile, "-nosub.root", "-result.root");
+        TFile* fin = TFile::Open(resultFile.c_str(), "READ");
         
         if (!fin || fin->IsZombie()) {
-            std::cerr << "Error: Unable to open file " << input_ZPT << std::endl;
+            std::cerr << "Error: Unable to open file " << resultFile << std::endl;
             continue;
         }
-
-        TH1D* this_hDeltaEta = (TH1D*)fin->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
-        this_hDeltaEta->SetName(Form("DeltaEta_%d", i));
-        TH1D* this_hDeltaPhi = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
-        this_hDeltaPhi->SetName(Form("DeltaPhi_%d", i));
-
-        hDeltaEta.push_back(this_hDeltaEta);
-        hDeltaPhi.push_back(this_hDeltaPhi);
 
         i++;
         
@@ -157,7 +163,7 @@ int main(int argc, char *argv[]) {
         hTrkPt, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "p_{T}^{ch}", 0, 10,
+        "p_{T}^{ch}", 0, 15,
         "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", (collisionType == "pp" ? 0 : 0), (collisionType == "pp" ? 100 : 150),
         "Ratio to GEN", 0.9, 1.1,
         0,

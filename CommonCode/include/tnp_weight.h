@@ -1607,4 +1607,6 @@ double tnp_weight_L3Mu12_double_pp(double eta1, double eta2, int idx)
    return (1 - (1 - Eff1Data) * (1 - Eff2Data) / (1 - (1 - Eff1MC) * (1 - Eff2MC)));
 }
 
+#include "tnp_weight_pPb.h"
+
 #endif //#ifndef tnp_weight_h

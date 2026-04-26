@@ -9,6 +9,7 @@
 #include <TFile.h>
 
 #include <iostream>
+#include <utility>
 
 using namespace std;
 #include "utilities.h"             // Yen-Jie's random utility functions
@@ -19,13 +20,39 @@ using namespace std;
 #include "ProgressBar.h"           // Yi's fish progress bar
 #include "TrackResidualCorrector.h" // Residual correction
 
+bool validateVZConfiguration(const Parameters& par) {
+   if (par.isData) {
+      if (par.useVZWeight) {
+         cerr << "Error! Data stages must run with UseVZWeight=false." << endl;
+         return false;
+      }
+      if (par.VZWeightFile != "") {
+         cerr << "Error! Data stages must not receive VZWeightFile." << endl;
+         return false;
+      }
+   }
+
+   if (par.useVZWeight && par.VZWeightFile == "") {
+      cerr << "Error! UseVZWeight=true requires an explicit external VZWeightFile for MC stages." << endl;
+      return false;
+   }
+
+   if (!par.useVZWeight && par.VZWeightFile != "") {
+      cerr << "Error! VZWeightFile was provided but UseVZWeight=false. Pass both explicitly for MC VZ weighting." << endl;
+      return false;
+   }
+
+   return true;
+}
+
 
 //======= eventSelection =====================================//
 // Check if the event mass eventSelection criteria
 // MinZPT < zPt < MaxZPT
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
-   if (par.isPUReject && par.isPP && b->NVertex!=1) return 0;    // Only apply PU rejection (single vertex requirement) in pp analysis
+   if (par.isPUReject && par.isData && b->NVertex!=1) return 0;
+   if (par.useVZWindow && fabs(b->VZ) >= 15) return 0;
 
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size())==0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0])<60) return 0;
@@ -48,13 +75,59 @@ bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    return 1;
 }
 
+pair<int, int> findClosestMuonTracks(ZHadronMessenger *b, const Parameters &par)
+{
+   if(par.TrackMuClosest == false)
+      return {-1, -1};
+
+   int closestTrack = -1;
+   int secondClosestTrack = -1;
+   float closestDR = -1;
+   float secondClosestDR = -1;
+
+   for(unsigned int i = 0; i < b->trackMuDR->size(); i++)
+   {
+      float trackMuDR = (*b->trackMuDR)[i];
+      if(trackMuDR < 0)
+         continue;
+
+      if(closestTrack < 0 || trackMuDR < closestDR)
+      {
+         secondClosestTrack = closestTrack;
+         secondClosestDR = closestDR;
+         closestTrack = i;
+         closestDR = trackMuDR;
+      }
+      else if(secondClosestTrack < 0 || trackMuDR < secondClosestDR)
+      {
+         secondClosestTrack = i;
+         secondClosestDR = trackMuDR;
+      }
+   }
+
+   return {closestTrack, secondClosestTrack};
+}
+
+bool rejectMuonMatchedTrack(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1})
+{
+   if(par.TrackMuDR >= 0)
+      return ((*b->trackMuDR)[j] >= 0 && (*b->trackMuDR)[j] < par.TrackMuDR);
+
+   if(par.TrackMuClosest)
+      return (j == closestMuonTracks.first || j == closestMuonTracks.second);
+
+   return (par.isMuTagged && (*b->trackMuTagged)[j]);
+}
+
 //======= trackSelection =====================================//
 // Check if the track pass selection criteria
 //============================================================//
-bool trackSelection(ZHadronMessenger *b, Parameters par, int j) {
-    if (par.isMuTagged && (*b->trackMuTagged)[j]) return false; 
-    if ((*b->trackPt)[j]>par.MaxTrackPT) return false;  
-    if ((*b->trackPt)[j]<par.MinTrackPT) return false;
+bool trackSelection(ZHadronMessenger *b, const Parameters &par, int j,
+   const pair<int, int> &closestMuonTracks = {-1, -1}) {
+    if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
+    if ((*b->trackPt)[j] >= 15) return false;
+    if ((*b->trackPt)[j] < 0.5) return false;
     if ((!par.includeHole)&&(*b->trackWeight)[j]<0) return false;
     if ((*b->trackEta)[j] > 2.4) return false;
     if ((*b->trackEta)[j] < -2.4) return false;
@@ -70,8 +143,9 @@ bool matching(ZHadronMessenger *a, ZHadronMessenger *b, double shift) {
 
 float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
     float mult = 0;
+    pair<int, int> closestMuonTracks = findClosestMuonTracks(b, par);
     for (unsigned long j = 0; j < b->trackPt->size(); j++) {
-        if (!trackSelection(b, par, j)) continue;
+        if (!trackSelection(b, par, j, closestMuonTracks)) continue;
         float trackWeight = (*b->trackWeight)[j];
         mult += trackWeight;
     }
@@ -112,8 +186,8 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
    }
 
    // open VZ correction if needed
-   VZCorrector *vzCorrector;
-   if (par.VZWeightFile != "") {
+   VZCorrector *vzCorrector = nullptr;
+   if (par.useVZWeight) {
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
    }
 
@@ -141,16 +215,13 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
       ZWeight *= (par.isOO) ? MZSignal->ZWeight : 1; // for OO, weights already in skim
 
       // hard coded since SIM should have event weights of 1, for pp pythia+MADGRAPH for some reason they aren't
-      float this_eventWeight = ZWeight; // * MZSignal->EventWeight; 
-      if (par.VZWeightFile != "") {
-         float vzCorrectionFactor = vzCorrector->GetCorrectionFactor(MZSignal->VZ);
-         this_eventWeight *= vzCorrectionFactor;
-      } else {
-         this_eventWeight *= MZSignal->VZWeight;
-      }
+      float this_eventWeight = ZWeight * MZSignal->EventWeight; 
+      if (par.useVZWeight)
+         this_eventWeight *= vzCorrector->GetCorrectionFactor(MZSignal->VZ);
+      pair<int, int> signalClosestMuonTracks = findClosestMuonTracks(MZSignal, par);
 
       for (unsigned long j = 0; j < MZSignal->trackPhi->size(); j++) {
-         if (!trackSelection(MZSignal, par, j)) continue;
+         if (!trackSelection(MZSignal, par, j, signalClosestMuonTracks)) continue;
          float trackPhi  = (*MZSignal->trackPhi)[j];
          if (trackPhi<0) trackPhi+= 2 * M_PI;
          float trackEta  = (*MZSignal->trackEta)[j];
@@ -159,12 +230,14 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
          float weight = this_eventWeight;
          //weight*= MZSignal->ExtraZWeight[par.ExtraZWeight];
          weight*= (*MZSignal->trackWeight)[j];
+         weight*= par.TrackExtraWeight;
          weight*= residualCorrection;     
          h->Fill( trackPt, trackEta, trackPhi, weight);
       }
       if (par.isAddUE) {
+         pair<int, int> ueClosestMuonTracks = findClosestMuonTracks(MZUE, par);
          for (unsigned long j = 0; j < MZUE->trackPhi->size(); j++) {
-            if (!trackSelection(MZUE, par, j)) continue;
+            if (!trackSelection(MZUE, par, j, ueClosestMuonTracks)) continue;
             float trackPhi  = (*MZUE->trackPhi)[j];
             if (trackPhi<0) trackPhi+= 2 * M_PI;
             float trackEta  = (*MZUE->trackEta)[j];
@@ -173,6 +246,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
             float weight = this_eventWeight; // / MZSignal->VZWeight; // scale by UE VZ weight
             //weight*= MZUE->ExtraZWeight[par.ExtraZWeight];
             weight*= (*MZUE->trackWeight)[j];
+            weight*= par.TrackExtraWeight;
             weight*= residualCorrection;    
             h->Fill( trackPt, trackEta, trackPhi, weight);
          }
@@ -187,9 +261,9 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
 
 class DataAnalyzer {
 public:
-  DataAnalyzer(const char* filename, const char* filenameUE, const char* residualFilename, const char* outFilename, const char *mytitle = "Data", bool doUE = false) :
+  DataAnalyzer(const char* filename, const char* filenameUE, const char* residualFilename, const char* outFilename, const char *mytitle = "Data", bool doUE = false, const char *trackTreeName = "Tree") :
      inf(new TFile(filename)),  
-     MZHadron(new ZHadronMessenger(*inf,string("Tree"))), 
+     MZHadron(new ZHadronMessenger(*inf,string(trackTreeName))), 
      title(mytitle), outf(new TFile(outFilename, "recreate"))  {
      if (doUE) {
         infUE = new TFile(filenameUE);
@@ -208,14 +282,13 @@ public:
   void analyze(Parameters& par) {
     // First histogram with mix=false
     par.mix = false;
-    const int nbinsX = 25;
+    const int nbinsX = 26;
     const double xMin = 0.5;
-    const double xMax = 10;
+    const double xMax = 15;
     std::vector<double> binEdgesX(nbinsX + 1);
     
 
     for (int i = 0; i <= nbinsX; ++i) binEdgesX[i] = xMin * std::pow(xMax / xMin, double(i) / nbinsX);
-    binEdgesX[nbinsX]=200;
 
     const int nbinsY = 50;
     const double yMin = -2.4;
@@ -268,23 +341,26 @@ int main(int argc, char *argv[])
    CommandLine CL(argc, argv);
    float MinZPT      = CL.GetDouble("MinZPT", 40);         // Minimum Z particle transverse momentum threshold for event selection.
    float MaxZPT      = CL.GetDouble("MaxZPT", 200);        // Maximum Z particle transverse momentum threshold for event selection.
-   float MinTrackPT  = CL.GetDouble("MinTrackPT", 1);      // Minimum track transverse momentum threshold for track selection.
-   float MaxTrackPT  = CL.GetDouble("MaxTrackPT", 2);      // Maximum track transverse momentum threshold for track selection.
    bool  IsData      = CL.GetBool  ("IsData", false);      // Determines whether the analysis is being run on actual data.
    bool  IsPP        = CL.GetBool  ("IsPP", false);        // Flag to indicate if the analysis is for Proton-Proton collisions.
    bool  IsJewel     = CL.GetBool  ("IsJewel", false);     // Flag to indicate if the analysis is for Jewel since the hole for Jewel is not hadronized
 
-   Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT);
+   Parameters par(MinZPT, MaxZPT, 0.5, 15);
    par.input         = CL.Get      ("Input",   "mergedSample/HISingleMuon-v5.root");            // Input file
    par.inputUE       = CL.Get      ("InputUE", "");                                             // Input file for UE
    par.residualFile  = CL.Get      ("residualFile", "");            // Input Mix file
-   par.VZWeightFile   = CL.Get      ("VZWeightFile", "");           // Input VZ weight file
+    par.VZWeightFile   = CL.Get      ("VZWeightFile", "");           // Input VZ weight file
+    par.useVZWeight    = CL.GetBool  ("UseVZWeight", false);
+   par.useVZWindow    = CL.GetBool  ("UseVZWindow", true);
    par.output        = CL.Get      ("Output",  "output.root");                             	// Output file
    par.isGen         = CL.GetBool  ("IsGen", false); // Determine if the analysis is gen level
    par.isGenZ        = CL.GetBool  ("IsGenZ", true);      // Determine if the analysis is using Gen level Z     
+   par.isData        = IsData;
    par.isOO          = CL.GetBool  ("IsOO", false);        // Flag to check if this is an OO analysis 
-   par.isPUReject    = CL.GetBool  ("IsPUReject", true);  // Flag to reject PU sample for systemaitcs.
+   par.isPUReject    = CL.GetBool  ("IsPUReject", false); // Flag to reject PU sample for systemaitcs.
    par.isMuTagged    = CL.GetBool  ("IsMuTagged", true);   // Default is true
+   par.TrackMuDR     = CL.GetDouble("TrackMuDR", -1);
+   par.TrackMuClosest = CL.GetBool ("TrackMuClosest", false);
    par.ZWeightFile   = CL.Get      ("ZWeightFile", "");           // Z weight file
    par.scaleFactor   = CL.GetDouble("Fraction", 1.00);     // Fraction of event processed in the sample
    par.nThread       = CL.GetInt   ("nThread", 1);         // The number of threads to be used for parallel processing.
@@ -294,15 +370,22 @@ int main(int argc, char *argv[])
    par.MinZY         = CL.GetDouble("MinZY", 0);           // Minimum Z particle rapidity threshold for event selection.
    par.MaxZY         = CL.GetDouble("MaxZY", 200);         // Maximum Z particle rapidity threshold for event selection.
    par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);    // Do Muon systematics, -1 means no extraweight.
+    par.TrackExtraWeight = CL.GetDouble("TrackExtraWeight", 1.0);
+    par.TrackSelectionMode = CL.Get      ("TrackSelectionMode", "Nominal");
+   par.TrackTreeName = "Tree";
+   if (par.TrackSelectionMode == "Loose")   par.TrackTreeName = "TreeLoose";
+   if (par.TrackSelectionMode == "Tight")   par.TrackTreeName = "TreeTight";
+   if (par.isGen) par.TrackTreeName = "Tree";
    par.includeHole   = CL.GetBool  ("includeHole",true);   // Include hole particle or not
    par.mix = 0;
    par.isPP = IsPP;
    par.isJewel = IsJewel;
    
-   if (par.inputUE=="") par.isAddUE = false; else par.isAddUE = true;
+    if (par.inputUE=="") par.isAddUE = false; else par.isAddUE = true;
+    if (!validateVZConfiguration(par)) return -1;
           
    // Analyze Data
-   DataAnalyzer analyzer(par.input.c_str(), par.inputUE.c_str(), par.residualFile.c_str(), par.output.c_str(), "Data", par.isAddUE);
+   DataAnalyzer analyzer(par.input.c_str(), par.inputUE.c_str(), par.residualFile.c_str(), par.output.c_str(), "Data", par.isAddUE, par.TrackTreeName.c_str());
    analyzer.analyze(par);
    analyzer.writeHistograms(analyzer.outf);
    saveParametersToHistograms(par, analyzer.outf);

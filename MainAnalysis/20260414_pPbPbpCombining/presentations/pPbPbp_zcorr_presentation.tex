@@ -1,0 +1,131 @@
+\documentclass[aspectratio=169]{beamer}
+
+\setbeamersize{text margin left=0.15cm, text margin right=0.15cm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+
+\title{pPb vs Pbp: with pPb$\to$Pbp Z correction}
+\date{}
+
+\newcommand{\plotpanel}[2]{%
+  \begin{minipage}[t]{0.327\textwidth}
+    \centering
+    {\tiny #1\par}
+    \vspace{0.2em}
+    \includegraphics[width=\linewidth]{#2}
+  \end{minipage}%
+}
+
+\newcommand{\plotslideA}[3]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{../plots/zcorr_#2_raw#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{../plots/zcorr_#2_VZ#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{../plots/zcorr_#2_VZ_Z#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideB}[3]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{../plots/zcorr_#2_VZ_Z_ZSF#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{../plots/zcorr_#2_VZ_Z_ZSF_trk#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{../plots/zcorr_#2_VZ_Z_ZSF_trk_res#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\ratioheatmapslideA}[3]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{../plots/zcorr_#2_raw#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{../plots/zcorr_#2_VZ#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{../plots/zcorr_#2_VZ_Z#3.pdf}
+  \end{frame}
+}
+
+\newcommand{\ratioheatmapslideB}[3]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{../plots/zcorr_#2_VZ_Z_ZSF#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{../plots/zcorr_#2_VZ_Z_ZSF_trk#3.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{../plots/zcorr_#2_VZ_Z_ZSF_trk_res#3.pdf}
+  \end{frame}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[t]{Z correction: pPb$\to$Pbp}
+  \small
+  \textbf{Method:} iterative 3D ($p_T$, $y_\text{CM}$, $\phi$) reweighting of pPb Z kinematics to match Pbp\par
+  \vspace{0.3em}
+  \textbf{Iterations:} 3 (corrections converge to $\sim$1.0 by iter 3)\par
+  \vspace{0.3em}
+  \textbf{pPb data:} Z correction applied multiplicatively to eventWeight\par
+  \textbf{Pbp data:} unchanged (target distribution)\par
+  \vspace{0.3em}
+  \textbf{Binning:} $p_T$: 50 log bins [0.5, 100]~GeV;\ $y_\text{CM}$: 12 bins [$-3.5$, 2.5];\ $\phi$: 12 bins [0, $2\pi$]\par
+  \vspace{0.3em}
+  \textbf{Empty-bin protection:} bins with $<1$ event in denominator set to 1.0\par
+  \vspace{0.5em}
+  {\scriptsize
+  \begin{tabular}{l r r}
+              & pPb NZ    & Pbp NZ \\
+  raw         & 6742      & 6742 \\
+  +VZ         & 7027      & 7035 \\
+  +VZ+Z       & 6017      & 6024 \\
+  +VZ+Z+ZSF   & 5937      & 5943 \\
+  +VZ+Z+ZSF+trk     & 5937      & 5943 \\
+  +VZ+Z+ZSF+trk+res & 5937      & 5943 \\
+  \end{tabular}}
+\end{frame}
+
+\plotslideA{trkPt (Zcorr)}{trkPt}{}
+\plotslideB{trkPt (Zcorr)}{trkPt}{}
+\plotslideA{trkPt + PUReject (Zcorr)}{trkPt}{_PUReject}
+\plotslideB{trkPt + PUReject (Zcorr)}{trkPt}{_PUReject}
+\plotslideA{trkEta (Zcorr)}{trkEta}{}
+\plotslideB{trkEta (Zcorr)}{trkEta}{}
+\plotslideA{trkEta + PUReject (Zcorr)}{trkEta}{_PUReject}
+\plotslideB{trkEta + PUReject (Zcorr)}{trkEta}{_PUReject}
+\plotslideA{ZPt (Zcorr)}{ZPt}{}
+\plotslideB{ZPt (Zcorr)}{ZPt}{}
+\plotslideA{ZPt + PUReject (Zcorr)}{ZPt}{_PUReject}
+\plotslideB{ZPt + PUReject (Zcorr)}{ZPt}{_PUReject}
+\plotslideA{Zy (Zcorr)}{Zy}{}
+\plotslideB{Zy (Zcorr)}{Zy}{}
+\plotslideA{Zy + PUReject (Zcorr)}{Zy}{_PUReject}
+\plotslideB{Zy + PUReject (Zcorr)}{Zy}{_PUReject}
+\plotslideA{Multiplicity (Zcorr)}{Mult}{}
+\plotslideB{Multiplicity (Zcorr)}{Mult}{}
+\plotslideA{Multiplicity + PUReject (Zcorr)}{Mult}{_PUReject}
+\plotslideB{Multiplicity + PUReject (Zcorr)}{Mult}{_PUReject}
+\plotslideA{$|\Delta\eta|$ (Zcorr)}{DEta}{}
+\plotslideB{$|\Delta\eta|$ (Zcorr)}{DEta}{}
+\plotslideA{$|\Delta\eta|$ + PUReject (Zcorr)}{DEta}{_PUReject}
+\plotslideB{$|\Delta\eta|$ + PUReject (Zcorr)}{DEta}{_PUReject}
+\plotslideA{$|\Delta\phi|$ (Zcorr)}{DPhi}{}
+\plotslideB{$|\Delta\phi|$ (Zcorr)}{DPhi}{}
+\plotslideA{$|\Delta\phi|$ + PUReject (Zcorr)}{DPhi}{_PUReject}
+\plotslideB{$|\Delta\phi|$ + PUReject (Zcorr)}{DPhi}{_PUReject}
+\ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio (Zcorr)}{DEtaDPhi_ratio}{}
+\ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio (Zcorr)}{DEtaDPhi_ratio}{}
+\ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject (Zcorr)}{DEtaDPhi_ratio}{_PUReject}
+\ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject (Zcorr)}{DEtaDPhi_ratio}{_PUReject}
+
+\end{document}

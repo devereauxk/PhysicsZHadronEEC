@@ -1,19 +1,33 @@
-make
+#!/bin/bash
 
-ZPT_RANGES=("0_10" "10_20" "20_40" "40_500")
-PT_RANGES=("0.5_500")
+set -euo pipefail
 
-for zPtRange in "${ZPT_RANGES[@]}"
-do
-    for trkPtRange in "${PT_RANGES[@]}"
-    do
-        echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+make ExecuteClosureTest
 
-        #./ExecuteClosureTest --collisionType pp --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV5_trkV23_nmix10
-        ./ExecuteClosureTest --collisionType pPb --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV6_trkV24_nmix10
-        ./ExecuteClosureTest --collisionType PbP --zPtRange $zPtRange --trkPtRange $trkPtRange --tag ZV6_trkV24_nmix10
-    
+PPB_TAG="${OFFICIAL_TAG_PPB}"
+PP_TAG="${OFFICIAL_TAG_PP}"
+
+run_one() {
+    local ZPT=$1
+    local TRKPT=$2
+    ./ExecuteClosureTest --collisionType pp --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PP_TAG"
+    ./ExecuteClosureTest --collisionType pPb --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PPB_TAG"
+    ./ExecuteClosureTest --collisionType PbP --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PPB_TAG"
+}
+
+if [ -n "${CONFIG_FILE:-}" ]; then
+    source "$CONFIG_FILE"
+    for ZPT in "${ZPT_RANGES[@]}"; do
+        for TRKPT in "${PT_RANGES[@]}"; do
+            run_one "$ZPT" "$TRKPT"
+        done
     done
-done
+else
+    run_one "0_10" "0.5_15"
+    run_one "10_20" "0.5_15"
+    run_one "20_40" "0.5_15"
+    run_one "40_500" "0.5_15"
+fi
 
 exit

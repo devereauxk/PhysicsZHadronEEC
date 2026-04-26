@@ -26,6 +26,8 @@ public:
    bool isSelfMixing;     // isSelfMixing flag
    bool isGenZ;           // isGenZ flag
    bool isMuTagged;       // Flag to enable/disable muon tagging requirement
+   float TrackMuDR;       // DeltaR threshold for muon-matched track rejection
+   bool TrackMuClosest;   // Reject the two closest tracks to the muons
    bool isPUReject;       // Flag to reject PU sample for systemaitcs.
    bool isPP;             // Flag to check if this is a PP analysis
    bool isData;           // Flag to check if this is a Data analysis
@@ -72,6 +74,8 @@ public:
       cout << "Mix flag: " << (mix ? "true" : "false") << endl;
       cout << "Number of mixed events: " << nMix << endl;
       cout << "Muon Tagging Enabled: " << (isMuTagged ? "true" : "false") << endl;
+      cout << "TrackMuDR: " << TrackMuDR << endl;
+      cout << "TrackMuClosest: " << (TrackMuClosest ? "true" : "false") << endl;
       cout << "PU rejection: " << (isPUReject ? "true" : "false") << endl;
       cout << "yBoost: " << yBoost << endl;
       if (mix) cout << "Event mixing!" << endl;
@@ -122,6 +126,12 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     
    TH1D* hIsMuTagged = new TH1D("parIsMuTagged", "parIsMuTagged", 1, 0, 1);
    hIsMuTagged->SetBinContent(1, par.isMuTagged);
+
+   TH1D* hTrackMuDR = new TH1D("parTrackMuDR", "parTrackMuDR", 1, 0, 1);
+   hTrackMuDR->SetBinContent(1, par.TrackMuDR);
+
+   TH1D* hTrackMuClosest = new TH1D("parTrackMuClosest", "parTrackMuClosest", 1, 0, 1);
+   hTrackMuClosest->SetBinContent(1, par.TrackMuClosest);
     
    TH1D* hIsPUReject = new TH1D("parIsPUReject", "parIsPUReject", 1, 0, 1);
    hIsPUReject->SetBinContent(1, par.isPUReject);
@@ -149,6 +159,8 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
    hIsSelfMixing->Write();
    hIsGenZ->Write();
    hIsMuTagged->Write();
+   hTrackMuDR->Write();
+   hTrackMuClosest->Write();
    hIsPUReject->Write();
    hIsPP->Write();
    hMinZY->Write();
@@ -168,6 +180,8 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
    delete hIsSelfMixing;
    delete hIsGenZ;
    delete hIsMuTagged;
+   delete hTrackMuDR;
+   delete hTrackMuClosest;
    delete hIsPUReject;
    delete hIsPP;
    delete hMinZY;

@@ -1,0 +1,108 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{graphicx}
+\usepackage{array}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+\setbeamertemplate{headline}{}
+\setbeamersize{text margin left=1mm,text margin right=1mm}
+\setlength{\tabcolsep}{0pt}
+\newcommand{\scanimage}[1]{\includegraphics[width=0.331\textwidth,height=0.78\textheight,keepaspectratio]{#1}}
+\newcommand{\scanrow}[3]{%
+\centering
+\vspace{-0.6em}
+\makebox[\textwidth][c]{\scanimage{#1}\hspace{0.003\textwidth}\scanimage{#2}\hspace{0.003\textwidth}\scanimage{#3}}%
+}
+\begin{document}
+\begin{frame}[plain]
+\centering
+{\LARGE Central scan: combined pp and pPb+PbP}\\[0.8em]
+{\large EEV4\_ZV7\_trkV25\_nmix10}
+\end{frame}
+\begin{frame}[plain]{Scan metadata}
+\scriptsize
+\texttt{central.sh} with external \texttt{CONFIG\_FILE}; maintained combined plotter \texttt{plot\_central\_combined.cpp}.\\[0.2em]
+pp: corrected data with energy extrapolation; pPb/PbP: corrected data combined on plotting side with \texttt{--doCombine true}; presentation scan uses the data-only plotting mode \texttt{PLOT\_INCLUDE\_MC=false}.\\[0.2em]
+Z-pt bins: 0\_5, 0\_10, 0\_20, 0\_30, 5\_10, 10\_20, 20\_30, 20\_40, 30\_40, 30\_500, 40\_60, 40\_500, 60\_500.\\[0.2em]
+Track-pt bins: 0.5\_2, 2\_4, 4\_500; \texttt{nmix=10}; \texttt{NTHREAD=20}.\\[0.2em]
+Official tags: pp \texttt{EEV4\_ZV7\_trkV25\_nmix10}, pPb/PbP \texttt{ZV7\_trkV25\_nmix10}.\\[0.2em]
+Weights from \texttt{OfficialWeightDictionary.sh}: \texttt{EEWeightFile\_PP}, \texttt{ZWeightFile\_\{PP,PPb,PbP\}}, \texttt{RWeightFile\_\{PP,PPb,PbP\}}, \texttt{VZWeightFile\_\{PP,PPb,PbP\}}.
+\end{frame}
+\begin{frame}[plain]{$ 0 < p_{T}^{Z} < 5 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_5_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_5_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_5_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 0 < p_{T}^{Z} < 5 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_5_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_5_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_5_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 0 < p_{T}^{Z} < 10 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_10_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_10_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_10_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 0 < p_{T}^{Z} < 10 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_10_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_10_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_10_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 0 < p_{T}^{Z} < 20 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_20_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_20_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_20_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 0 < p_{T}^{Z} < 20 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_20_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_20_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_20_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 0 < p_{T}^{Z} < 30 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_30_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_30_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_30_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 0 < p_{T}^{Z} < 30 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_30_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_30_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT0_30_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 5 < p_{T}^{Z} < 10 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT5_10_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT5_10_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT5_10_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 5 < p_{T}^{Z} < 10 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT5_10_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT5_10_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT5_10_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 10 < p_{T}^{Z} < 20 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT10_20_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT10_20_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT10_20_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 10 < p_{T}^{Z} < 20 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT10_20_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT10_20_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT10_20_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 20 < p_{T}^{Z} < 30 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_30_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_30_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_30_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 20 < p_{T}^{Z} < 30 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_30_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_30_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_30_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 20 < p_{T}^{Z} < 40 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_40_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_40_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_40_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 20 < p_{T}^{Z} < 40 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_40_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_40_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT20_40_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 30 < p_{T}^{Z} < 40 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_40_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_40_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_40_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 30 < p_{T}^{Z} < 40 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_40_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_40_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_40_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 30 < p_{T}^{Z} < 500 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_500_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_500_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_500_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 30 < p_{T}^{Z} < 500 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_500_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_500_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT30_500_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 40 < p_{T}^{Z} < 60 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_60_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_60_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_60_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 40 < p_{T}^{Z} < 60 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_60_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_60_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_60_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 40 < p_{T}^{Z} < 500 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_500_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_500_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_500_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 40 < p_{T}^{Z} < 500 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_500_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_500_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT40_500_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 60 < p_{T}^{Z} < 500 GeV $ $\Delta\eta$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT60_500_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT60_500_trkPT2_4_ZV7_trkV25_nmix10-DeltaEta-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT60_500_trkPT4_500_ZV7_trkV25_nmix10-DeltaEta-result.pdf}
+\end{frame}
+\begin{frame}[plain]{$ 60 < p_{T}^{Z} < 500 GeV $ $\Delta\phi$}
+\scanrow{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT60_500_trkPT0.5_2_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT60_500_trkPT2_4_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}{../plots/EEV4_ZV7_trkV25_nmix10/all_ZPT60_500_trkPT4_500_ZV7_trkV25_nmix10-DeltaPhi-result.pdf}
+\end{frame}
+\end{document}

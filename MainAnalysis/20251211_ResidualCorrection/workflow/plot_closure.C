@@ -68,12 +68,14 @@ void plot_closure(const char* output = "plots/isPbP") {
 
     // make canvas
     TCanvas* cTrk1 = new TCanvas("cTrk", "cTrk", 600, 600);
+    double trkPtMin = hTrkPt[0]->GetXaxis()->GetBinLowEdge(1);
+    double trkPtMax = hTrkPt[0]->GetXaxis()->GetBinUpEdge(hTrkPt[0]->GetNbinsX());
 
     TPad* pTrk1 = (TPad*) plotCMSRatio(
         hTrkPt, "", labels,
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "p_{T}^{ch}", 0, 10,
+        "p_{T}^{ch}", trkPtMin, trkPtMax,
         "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -1, -1,
         "Ratio to GEN", 0.9, 1.1,
         0,

@@ -1,0 +1,38 @@
+
+Processing output/validation_20260330/check_weights.C+...
+[ppData] total_entries=3223 selected_z=9
+  ZWeight: finite_min=0.978126 finite_max=0.990482 zeros=0 ones=0 nans=0
+  ExtraZWeight[0]: finite_min=1.00475 finite_max=1.01187 zeros=0 ones=0 nans=0
+  ExtraZWeight[1]: finite_min=0.988075 finite_max=0.995102 zeros=0 ones=0 nans=0
+  ExtraZWeight[2]: finite_min=1.00011 finite_max=1.00044 zeros=0 ones=0 nans=0
+  ExtraZWeight[3]: finite_min=0.99953 finite_max=0.999873 zeros=0 ones=0 nans=0
+[ppMC] total_entries=5548 selected_z=2660
+  ZWeight: finite_min=1 finite_max=1 zeros=0 ones=2660 nans=0
+  ExtraZWeight[0]: finite_min=1 finite_max=1 zeros=0 ones=2660 nans=0
+  ExtraZWeight[1]: finite_min=1 finite_max=1 zeros=0 ones=2660 nans=0
+  ExtraZWeight[2]: finite_min=1 finite_max=1 zeros=0 ones=2660 nans=0
+  ExtraZWeight[3]: finite_min=1 finite_max=1 zeros=0 ones=2660 nans=0
+[pPbData] total_entries=6966 selected_z=19
+  ZWeight: finite_min=0.976725 finite_max=0.997394 zeros=0 ones=0 nans=0
+  ExtraZWeight[0]: finite_min=1.00046 finite_max=1.0061 zeros=0 ones=0 nans=0
+  ExtraZWeight[1]: finite_min=0.993134 finite_max=0.999139 zeros=0 ones=0 nans=0
+  ExtraZWeight[2]: finite_min=1.00045 finite_max=1.00169 zeros=0 ones=0 nans=0
+  ExtraZWeight[3]: finite_min=0.998105 finite_max=0.999323 zeros=0 ones=0 nans=0
+[pPbMC] total_entries=1359 selected_z=637
+  ZWeight: finite_min=1 finite_max=1 zeros=0 ones=637 nans=0
+  ExtraZWeight[0]: finite_min=1 finite_max=1 zeros=0 ones=637 nans=0
+  ExtraZWeight[1]: finite_min=1 finite_max=1 zeros=0 ones=637 nans=0
+  ExtraZWeight[2]: finite_min=1 finite_max=1 zeros=0 ones=637 nans=0
+  ExtraZWeight[3]: finite_min=1 finite_max=1 zeros=0 ones=637 nans=0
+[PbPData] total_entries=168 selected_z=1
+  ZWeight: finite_min=0.977869 finite_max=0.977869 zeros=0 ones=0 nans=0
+  ExtraZWeight[0]: finite_min=1.00342 finite_max=1.00342 zeros=0 ones=0 nans=0
+  ExtraZWeight[1]: finite_min=0.995535 finite_max=0.995535 zeros=0 ones=0 nans=0
+  ExtraZWeight[2]: finite_min=1.00105 finite_max=1.00105 zeros=0 ones=0 nans=0
+  ExtraZWeight[3]: finite_min=0.998732 finite_max=0.998732 zeros=0 ones=0 nans=0
+[PbPMC] total_entries=3686 selected_z=1781
+  ZWeight: finite_min=1 finite_max=1 zeros=0 ones=1781 nans=0
+  ExtraZWeight[0]: finite_min=1 finite_max=1 zeros=0 ones=1781 nans=0
+  ExtraZWeight[1]: finite_min=1 finite_max=1 zeros=0 ones=1781 nans=0
+  ExtraZWeight[2]: finite_min=1 finite_max=1 zeros=0 ones=1781 nans=0
+  ExtraZWeight[3]: finite_min=1 finite_max=1 zeros=0 ones=1781 nans=0
