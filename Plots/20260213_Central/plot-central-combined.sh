@@ -11,8 +11,11 @@ source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 make ExecuteCentralCombinedPlot
 
 
-PP_TAG="$OFFICIAL_TAG_PP"
-PPB_TAG="$OFFICIAL_TAG_PPB"
+PP_TAG="${PP_TAG:-$OFFICIAL_TAG_PP}"
+PP_SYSTEMATICS_TAG="${PP_SYSTEMATICS_TAG:-$PP_TAG}"
+PPB_TAG="${PPB_TAG:-$OFFICIAL_TAG_PPB}"
+PPB_MC_TAG="${PPB_MC_TAG:-$PPB_TAG}"
+PPB_SYSTEMATICS_TAG="${PPB_SYSTEMATICS_TAG:-$PPB_TAG}"
 PLOT_OUTPUT_BASE="${PLOT_OUTPUT_BASE:-plots/central_combined}"
 RUN_COMBINED="${RUN_COMBINED:-1}"
 RUN_SINGLE="${RUN_SINGLE:-1}"
@@ -22,11 +25,11 @@ run_one() {
     local ZPT=$1
     local TRKPT=$2
     if [ "$RUN_COMBINED" != "0" ]; then
-        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG" --doCombine true --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine true --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
     fi
     if [ "$RUN_SINGLE" != "0" ]; then
-        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG" --doCombine false --collisionType pPb --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
-        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pptag "$PP_TAG" --doCombine false --collisionType PbP --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine false --collisionType pPb --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine false --collisionType PbP --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
     fi
 }
 

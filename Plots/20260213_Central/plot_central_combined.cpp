@@ -4,6 +4,7 @@
 #include <TH3D.h>
 #include <TF1.h>
 #include <TSystem.h>
+#include <TTree.h>
 #include <iostream>
 using namespace std;
 
@@ -32,6 +33,123 @@ TH1D *LoadSystematicHistogram(const string &fileName, const string &histogramNam
     return histogram;
 }
 
+struct JackknifeProjectionContribution {
+    double SignalNZ = 0;
+    double MixNZ = 0;
+    vector<float> SignalEta;
+    vector<float> MixEta;
+    vector<float> SignalPhi;
+    vector<float> MixPhi;
+};
+
+void AppendJackknifeProjectionContributions(TFile *file, const string &treeName,
+    vector<JackknifeProjectionContribution> &events)
+{
+    if (file == nullptr)
+        return;
+
+    TTree *tree = (TTree *)file->Get(treeName.c_str());
+    if (tree == nullptr)
+        return;
+
+    double signalNZ = 0;
+    double mixNZ = 0;
+    vector<float> *signalEta = nullptr;
+    vector<float> *mixEta = nullptr;
+    vector<float> *signalPhi = nullptr;
+    vector<float> *mixPhi = nullptr;
+
+    tree->SetBranchAddress("SignalNZ", &signalNZ);
+    tree->SetBranchAddress("MixNZ", &mixNZ);
+    tree->SetBranchAddress("SignalEta", &signalEta);
+    tree->SetBranchAddress("MixEta", &mixEta);
+    tree->SetBranchAddress("SignalPhi", &signalPhi);
+    tree->SetBranchAddress("MixPhi", &mixPhi);
+
+    Long64_t entryCount = tree->GetEntries();
+    for (Long64_t entry = 0; entry < entryCount; ++entry) {
+        tree->GetEntry(entry);
+        JackknifeProjectionContribution current;
+        current.SignalNZ = signalNZ;
+        current.MixNZ = mixNZ;
+        current.SignalEta = *signalEta;
+        current.MixEta = *mixEta;
+        current.SignalPhi = *signalPhi;
+        current.MixPhi = *mixPhi;
+        events.push_back(current);
+    }
+}
+
+vector<double> ComputeProjectedJackknifeSigma(const vector<JackknifeProjectionContribution> &events,
+    const TH1D *fullHistogram, bool useEta)
+{
+    vector<double> sigma(fullHistogram->GetNbinsX(), 0);
+    if (events.size() < 2)
+        return sigma;
+
+    double totalSignalNZ = 0;
+    double totalMixNZ = 0;
+    vector<double> fullSignal(fullHistogram->GetNbinsX(), 0);
+    vector<double> fullMix(fullHistogram->GetNbinsX(), 0);
+    for (const JackknifeProjectionContribution &event : events) {
+        totalSignalNZ += event.SignalNZ;
+        totalMixNZ += event.MixNZ;
+        for (int i = 0; i < fullHistogram->GetNbinsX(); ++i) {
+            fullSignal[i] += (useEta ? event.SignalEta[i] : event.SignalPhi[i]);
+            fullMix[i] += (useEta ? event.MixEta[i] : event.MixPhi[i]);
+        }
+    }
+
+    int validEvents = 0;
+    for (const JackknifeProjectionContribution &event : events) {
+        if (totalSignalNZ - event.SignalNZ <= 0)
+            continue;
+        if (totalMixNZ - event.MixNZ <= 0)
+            continue;
+        validEvents = validEvents + 1;
+    }
+    if (validEvents < 2)
+        return sigma;
+
+    for (int i = 1; i <= fullHistogram->GetNbinsX(); ++i) {
+        double fullValue = fullSignal[i - 1] / totalSignalNZ - fullMix[i - 1] / totalMixNZ;
+        double varianceSum = 0;
+        for (const JackknifeProjectionContribution &event : events) {
+            if (totalSignalNZ - event.SignalNZ <= 0)
+                continue;
+            if (totalMixNZ - event.MixNZ <= 0)
+                continue;
+
+            double signalWithoutEvent = (fullSignal[i - 1] - (useEta ? event.SignalEta[i - 1] : event.SignalPhi[i - 1]))
+                / (totalSignalNZ - event.SignalNZ);
+            double mixWithoutEvent = (fullMix[i - 1] - (useEta ? event.MixEta[i - 1] : event.MixPhi[i - 1]))
+                / (totalMixNZ - event.MixNZ);
+            double valueWithoutEvent = signalWithoutEvent - mixWithoutEvent;
+            double delta = valueWithoutEvent - fullValue;
+            varianceSum += delta * delta;
+        }
+
+        sigma[i - 1] = std::sqrt((validEvents - 1.0) / validEvents * varianceSum);
+    }
+
+    return sigma;
+}
+
+void ApplyProjectedJackknifeErrors(TH1D *etaHistogram, TH1D *phiHistogram,
+    const vector<JackknifeProjectionContribution> &events)
+{
+    if (events.size() < 2)
+        return;
+
+    vector<double> etaSigma = ComputeProjectedJackknifeSigma(events, etaHistogram, true);
+    vector<double> phiSigma = ComputeProjectedJackknifeSigma(events, phiHistogram, false);
+
+    for (int i = 1; i <= etaHistogram->GetNbinsX(); ++i)
+        etaHistogram->SetBinError(i, etaSigma[i - 1]);
+    for (int i = 1; i <= phiHistogram->GetNbinsX(); ++i)
+        phiHistogram->SetBinError(i, phiSigma[i - 1]);
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -40,7 +158,10 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("pPbtag", "V16_nmix5");
+    string mcTag = CL.Get("pPbMCTag", tag);
+    string systematicsTag = CL.Get("pPbSystematicsTag", tag);
     string tag_pp = CL.Get("pptag", "V16_nmix5");
+    string systematicsTagPP = CL.Get("ppSystematicsTag", tag_pp);
     bool doCombine = CL.GetBool("doCombine", false);
     bool includeMC = CL.GetBool("includeMC", true);
     string collisionType = CL.Get("collisionType", "pPb");
@@ -63,8 +184,8 @@ int main(int argc, char *argv[]) {
         Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
     };
     if (includeMC) {
-        input_ZPT_files.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()));
-        input_ZPT_files_pbp.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()));
+        input_ZPT_files.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", mcTag.c_str(), zPtRange.c_str()));
+        input_ZPT_files_pbp.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", mcTag.c_str(), zPtRange.c_str()));
     }
     vector<string> labels = {
         "pp",
@@ -86,30 +207,24 @@ int main(int argc, char *argv[]) {
     TH1D* hDeltaEta_pp;
     TH1D* hDeltaPhi_pp;
 
-    TFile* fin_pp = TFile::Open(Form("%s-nosub.root", input_ZPT_files_pp.c_str()), "READ");
+    TFile* fin_pp = TFile::Open(Form("%s-result.root", input_ZPT_files_pp.c_str()), "READ");
     if (!fin_pp || fin_pp->IsZombie()) {
         std::cerr << "Error: Unable to open file " << input_ZPT_files_pp << std::endl;
         return 1;
     }
-    TH2D* hData_pp = (TH2D*)fin_pp->Get(Form("hData_%s", trkPtRange.c_str()));
-    TH2D* hMixData_pp = (TH2D*)fin_pp->Get(Form("hMixData_%s", trkPtRange.c_str()));
-    TH1D* hNZData_pp = (TH1D*)fin_pp->Get(Form("hNZData_%s", trkPtRange.c_str()));
-    TH1D* hNZMixData_pp = (TH1D*)fin_pp->Get(Form("hNZMixData_%s", trkPtRange.c_str()));
-    
-    hData_pp->Add(hMixData_pp, -1);
-    cout<<"pp hNZ integral: "<<hNZData_pp->Integral()<<endl;
-    cout<<"pp S-B integral: "<<hData_pp->Integral()<<endl;
-
-    cout<<"SUBTRACTION EFFICIENCY: "<<hData_pp->Integral() / hMixData_pp->Integral()<<endl;
-
-    hDeltaPhi_pp = (TH1D*) hData_pp->ProjectionY("hDeltaPhi_pp",0,10);
-    divideByWidth(hDeltaPhi_pp);
-    hDeltaPhi_pp->Scale(1./2);
+    hDeltaPhi_pp = (TH1D*)fin_pp->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
+    hDeltaEta_pp = (TH1D*)fin_pp->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
+    if (hDeltaPhi_pp == nullptr || hDeltaEta_pp == nullptr) {
+        std::cerr << "Error: Missing pp result histograms in " << input_ZPT_files_pp << std::endl;
+        return 1;
+    }
+    hDeltaPhi_pp = (TH1D*)hDeltaPhi_pp->Clone("hDeltaPhi_pp");
+    hDeltaEta_pp = (TH1D*)hDeltaEta_pp->Clone("hDeltaEta_pp");
+    hDeltaPhi_pp->SetDirectory(nullptr);
+    hDeltaEta_pp->SetDirectory(nullptr);
+    hDeltaPhi_pp->Scale(1. / 2);
+    hDeltaEta_pp->Scale(1. / 2);
     cout<<"pp DeltaPhi integral: "<<hDeltaPhi_pp->Integral()<<endl;
-
-    hDeltaEta_pp = (TH1D*) hData_pp->ProjectionX("hDeltaEta_pp",6,10);
-    divideByWidth(hDeltaEta_pp);
-    hDeltaEta_pp->Scale(1./2);
     cout<<"pp DeltaEta integral: "<<hDeltaEta_pp->Integral()<<endl;
 
     hDeltaPhi_combined.push_back(hDeltaPhi_pp);
@@ -125,6 +240,7 @@ int main(int argc, char *argv[]) {
     vector<TH2*> hMixData_ppb;
     vector<TH1*> hNZData_ppb;
     vector<TH1*> hNZMixData_ppb;
+    vector<JackknifeProjectionContribution> jackknifePPb;
     for (const auto& input_ZPT : input_ZPT_files) {
 
         TFile* fin = TFile::Open(Form("%s-nosub.root", input_ZPT.c_str()), "READ");
@@ -154,6 +270,8 @@ int main(int argc, char *argv[]) {
         hMixData_ppb.push_back(this_hMixData);
         hNZData_ppb.push_back(this_hNZData);
         hNZMixData_ppb.push_back(this_hNZMixData);
+        if (hData_ppb.size() == 1)
+            AppendJackknifeProjectionContributions(fin, Form("JackknifeProjection%s", trkPtRange.c_str()), jackknifePPb);
     }
 
     // read results file pbp
@@ -161,6 +279,7 @@ int main(int argc, char *argv[]) {
     vector<TH2*> hMixData_pbp;
     vector<TH1*> hNZData_pbp;
     vector<TH1*> hNZMixData_pbp;
+    vector<JackknifeProjectionContribution> jackknifePbP;
     for (const auto& input_ZPT : input_ZPT_files_pbp) {
 
         TFile* fin = TFile::Open(Form("%s-nosub.root", input_ZPT.c_str()), "READ");
@@ -190,6 +309,8 @@ int main(int argc, char *argv[]) {
         hMixData_pbp.push_back(this_hMixData);
         hNZData_pbp.push_back(this_hNZData);
         hNZMixData_pbp.push_back(this_hNZMixData);
+        if (hData_pbp.size() == 1)
+            AppendJackknifeProjectionContributions(fin, Form("JackknifeProjection%s", trkPtRange.c_str()), jackknifePbP);
     }
 
     // mix it up if only one of pPb or PbP
@@ -233,15 +354,22 @@ int main(int argc, char *argv[]) {
 
         // projections
         TH1D* hProjY = (TH1D*) S_combined->ProjectionY(Form("DeltaPhi_Result%i",i),0,10);
+        TH1D* hProjX = (TH1D*) S_combined->ProjectionX(Form("DeltaEta_Result%i",i),6,10);
+        if (i == 0) {
+            vector<JackknifeProjectionContribution> jackknifeEvents = jackknifePPb;
+            if (doCombine)
+                jackknifeEvents.insert(jackknifeEvents.end(), jackknifePbP.begin(), jackknifePbP.end());
+            else if (collisionType == "PbP")
+                jackknifeEvents = jackknifePbP;
+            ApplyProjectedJackknifeErrors(hProjX, hProjY, jackknifeEvents);
+        }
         divideByWidth(hProjY);
         hProjY->Scale(1./2);
-        hDeltaPhi_combined.push_back(hProjY);
-        cout<<"DeltaPhi combined integral: "<<hProjY->Integral()<<endl;
-
-        TH1D* hProjX = (TH1D*) S_combined->ProjectionX(Form("DeltaEta_Result%i",i),6,10);
         divideByWidth(hProjX);
         hProjX->Scale(1./2);
+        hDeltaPhi_combined.push_back(hProjY);
         hDeltaEta_combined.push_back(hProjX);
+        cout<<"DeltaPhi combined integral: "<<hProjY->Integral()<<endl;
         cout<<"DeltaEta combined integral: "<<hProjX->Integral()<<endl;
 
     }
@@ -273,9 +401,9 @@ int main(int argc, char *argv[]) {
 
     string currentSystem = doCombine ? "pPbPbp" : collisionType;
     string ppSystematicsFile = Form("%s/pp_%s_ZPT%s_trkPT%s-systematics.root",
-        systematicsDir.c_str(), tag_pp.c_str(), zPtRange.c_str(), trkPtRange.c_str());
+        systematicsDir.c_str(), systematicsTagPP.c_str(), zPtRange.c_str(), trkPtRange.c_str());
     string currentSystematicsFile = Form("%s/%s_%s_ZPT%s_trkPT%s-systematics.root",
-        systematicsDir.c_str(), currentSystem.c_str(), tag.c_str(), zPtRange.c_str(), trkPtRange.c_str());
+        systematicsDir.c_str(), currentSystem.c_str(), systematicsTag.c_str(), zPtRange.c_str(), trkPtRange.c_str());
 
     vector<TH1 *> topSystematicsEta = {
         LoadSystematicHistogram(ppSystematicsFile, "Total_DeltaEta", "PPSystematicsEta"),

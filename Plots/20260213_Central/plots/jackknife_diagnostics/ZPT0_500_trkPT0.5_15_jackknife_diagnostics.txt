@@ -1,0 +1,10 @@
+jackknife diagnostics for ZPT0_500 trkPT0.5_15
+
+[pPb]
+DeltaEta: max |central_jk - central_sumw2_samefile| = 0; max |central_jk - frozen_nominal| = 0.042562; sigma_JK/sigma_Sumw2 median = 1.29023, range = [1.21872, 1.39633]
+DeltaPhi: max |central_jk - central_sumw2_samefile| = 0; max |central_jk - frozen_nominal| = 0.13969; sigma_JK/sigma_Sumw2 median = 1.45209, range = [1.38255, 1.4852]
+
+[PbP]
+DeltaEta: max |central_jk - central_sumw2_samefile| = 0; max |central_jk - frozen_nominal| = 0.0721725; sigma_JK/sigma_Sumw2 median = 1.29515, range = [1.18828, 1.39435]
+DeltaPhi: max |central_jk - central_sumw2_samefile| = 0; max |central_jk - frozen_nominal| = 0.0832764; sigma_JK/sigma_Sumw2 median = 1.45867, range = [1.39447, 1.4855]
+

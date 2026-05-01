@@ -65,6 +65,16 @@ void setErrors(TH1* hRatio, TH1* num, TH1* denom){
     }
 }
 
+void setDifferenceErrors(TH1 *hDiff, TH1 *first, TH1 *second)
+{
+    for (int bin = 1; bin <= hDiff->GetNbinsX(); bin++) {
+        double error1 = first->GetBinError(bin);
+        double error2 = second->GetBinError(bin);
+        double diffError = sqrt(error1 * error1 + error2 * error2);
+        hDiff->SetBinError(bin, diffError);
+    }
+}
+
 void plotRatioLogy(vector<TH1*> hists, const char* title, vector<string> labels,
     const char* xTitle, double xmin, double xmax,
     const char* yTitle, double ymin, double ymax,
@@ -717,6 +727,7 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
         if (i != baseline) {
             TH1* hRatio = (TH1*)hist->Clone(Form("ratio_%s_%d", title, i));
             hRatio->Add(hists[baseline], -1);
+            setDifferenceErrors(hRatio, hist, hists[baseline]);
             hRatio->GetXaxis()->SetTitle(xTitle);
             hRatio->GetXaxis()->SetTitleSize(0.1);
             hRatio->GetXaxis()->SetLabelSize(0.08);
@@ -733,13 +744,11 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
             hRatio->SetLineWidth(2);
             hRatio->Draw("HIST SAME");
 
-            // Draw error bars on the ratio plot if requested
-            if (errorBars) {
-                //setErrors(hRatio, hist, hists.at(baseline));
+            // Draw statistical bars only for marker-style curves; line-style curves stay bar-free.
+            if (errorBars && (linestyles[i] == 0 || linestyles[i] == -1))
                 hRatio->Draw("E SAME");
-            } else {
+            else
                 hRatio->Draw("HIST SAME");
-            }
 
             double xlow = hRatio->GetXaxis()->GetBinLowEdge(hRatio->GetXaxis()->GetFirst());
             double xhigh = hRatio->GetXaxis()->GetBinUpEdge(hRatio->GetXaxis()->GetLast());
@@ -822,7 +831,8 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
         int binmax = hist->GetXaxis()->FindBin(x2);
         for (int i = binmin; i <= binmax; ++i) {
             double value = hist->GetBinContent(i);
-            double stat = errorBars ? hist->GetBinError(i) : 0;
+            bool drawStat = errorBars && (linestyles[ih] == 0 || linestyles[ih] == -1);
+            double stat = drawStat ? hist->GetBinError(i) : 0;
             double systError = (syst != nullptr) ? fabs(syst->GetBinContent(i)) : 0;
             global_min = min(global_min, value - max(stat, systError));
             global_max = max(global_max, value + max(stat, systError));
@@ -844,9 +854,11 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
         TH1 *syst = (i < bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
         TH1 *diff = (TH1 *)hist->Clone(Form("range_%s_%d", title, i));
         diff->Add(hists[baseline], -1);
+        setDifferenceErrors(diff, hist, hists[baseline]);
         for (int bin = 1; bin <= diff->GetNbinsX(); bin++) {
             double value = diff->GetBinContent(bin);
-            double stat = errorBars ? diff->GetBinError(bin) : 0;
+            bool drawStat = errorBars && (linestyles[i] == 0 || linestyles[i] == -1);
+            double stat = drawStat ? diff->GetBinError(bin) : 0;
             double systError = (syst != nullptr) ? fabs(syst->GetBinContent(bin)) : 0;
             updateDiffRange(value, max(stat, systError), diff_min, diff_max);
             hasDifference = true;
@@ -910,7 +922,7 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
             else hist->Draw("HIST SAME");
         }
 
-        if (errorBars == true)
+        if (errorBars == true && (linestyles[i] == 0 || linestyles[i] == -1))
             hist->Draw("E1 SAME");
 
         if (linestyles[i] == 0) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "pl");
@@ -921,6 +933,7 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
         if (i != baseline) {
             TH1* hDiff = (TH1*)hist->Clone(Form("diff_%s_%d", title, i));
             hDiff->Add(hists[baseline], -1);
+            setDifferenceErrors(hDiff, hist, hists[baseline]);
             TH1 *bottomSyst = (i < bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
             hDiff->GetXaxis()->SetTitle(xTitle);
             hDiff->GetXaxis()->SetTitleSize(0.1);
@@ -940,7 +953,8 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
             hDiff->SetMarkerStyle(markerstyles[i]);
             hDiff->SetLineWidth(2);
 
-            TString diffDrawOption = errorBars ? "E1" : "P";
+            bool drawStat = errorBars && (linestyles[i] == 0 || linestyles[i] == -1);
+            TString diffDrawOption = drawStat ? "E1" : ((linestyles[i] > 0) ? "HIST" : "P");
             if (firstDifference == false)
                 diffDrawOption += " SAME";
             hDiff->Draw(diffDrawOption);
@@ -952,8 +966,10 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
                     band->Draw("2 SAME");
             }
 
-            if (errorBars == true)
+            if (drawStat == true)
                 hDiff->Draw("E1 SAME");
+            else if (linestyles[i] > 0)
+                hDiff->Draw("HIST SAME");
             else
                 hDiff->Draw("P SAME");
 
@@ -1039,6 +1055,7 @@ TPad* PlotCMSPaperDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, ve
         TH1 *syst = (i < (int)bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
         TH1 *diff = (TH1 *)hist->Clone(Form("range_%s_%d", title, i));
         diff->Add(hists[baseline], -1);
+        setDifferenceErrors(diff, hist, hists[baseline]);
         for (int bin = 1; bin <= diff->GetNbinsX(); bin++) {
             double value = diff->GetBinContent(bin);
             double stat = errorBars ? diff->GetBinError(bin) : 0;
@@ -1108,6 +1125,7 @@ TPad* PlotCMSPaperDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, ve
         if (i != baseline) {
             TH1* hDiff = (TH1*)hist->Clone(Form("diff_%s_%d", title, i));
             hDiff->Add(hists[baseline], -1);
+            setDifferenceErrors(hDiff, hist, hists[baseline]);
             TH1 *bottomSyst = (i < (int)bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
 
             if (showXaxis) {

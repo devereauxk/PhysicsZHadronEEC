@@ -10,6 +10,8 @@ source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 nMix=10
 CONFIG_OVERRIDE=${CONFIG_FILE:-}
 CONFIG_TARGET=config.sh
+PP_TAG=${PP_TAG_OVERRIDE:-${OFFICIAL_TAG_PP}}
+PPB_TAG=${PPB_TAG_OVERRIDE:-${OFFICIAL_TAG_PPB}}
 
 PP_DATAINPUT=${PP_DATAINPUT:-${OFFICIAL_DATAINPUT_PP}}
 PPB_MCGENINPUT=${PPB_MCGENINPUT:-${OFFICIAL_MCGENINPUT_PPB}}
@@ -72,17 +74,17 @@ write_config '"0_30" "30_500"' '"0.5_2" "2_4" "4_15"'
 activate_config
 
 if [ "$DOPP" == "1" ]; then
-    TAG="${OFFICIAL_TAG_PP}"
+    TAG="${PP_TAG}"
     ./system-analysis.sh "pp_trkResidual_${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         "${COMMON_EXTRA_ARGS[@]}"
 fi
 
 if [ "$DOPPB" == "1" ]; then
-    TAG="${OFFICIAL_TAG_PPB}"
+    TAG="${PPB_TAG}"
     run_ppb_chain "pPbMC" "pPb" true         "${PPB_MCGENINPUT}"         "${PPB_EPOSINPUT}"         "${PPB_DATAINPUT}"         "${ZWeightFile_PPb}"         "${RWeightFile_PPb}"         "${VZWeightFile_PPb}"         "${TAG}"
 fi
 
 if [ "$DOPBP" == "1" ]; then
-    TAG="${OFFICIAL_TAG_PPB}"
+    TAG="${PPB_TAG}"
     run_ppb_chain "PbPMC" "PbP" false         "${PBP_MCGENINPUT}"         "${PBP_EPOSINPUT}"         "${PBP_DATAINPUT}"         "${ZWeightFile_PbP}"         "${RWeightFile_PbP}"         "${VZWeightFile_PbP}"         "${TAG}"
 fi
 
@@ -95,16 +97,16 @@ write_config '"0_500"' '"0.5_15"'
 activate_config
 
 if [ "$DOPP" == "1" ]; then
-    TAG="${OFFICIAL_TAG_PP}"
+    TAG="${PP_TAG}"
     ./system-analysis.sh "pp_trkResidual_${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         "${COMMON_EXTRA_ARGS[@]}"
 fi
 
 if [ "$DOPPB" == "1" ]; then
-    TAG="${OFFICIAL_TAG_PPB}"
+    TAG="${PPB_TAG}"
     run_ppb_chain "pPbMC" "pPb" true         "${PPB_MCGENINPUT}"         "${PPB_EPOSINPUT}"         "${PPB_DATAINPUT}"         "${ZWeightFile_PPb}"         "${RWeightFile_PPb}"         "${VZWeightFile_PPb}"         "${TAG}"
 fi
 
 if [ "$DOPBP" == "1" ]; then
-    TAG="${OFFICIAL_TAG_PPB}"
+    TAG="${PPB_TAG}"
     run_ppb_chain "PbPMC" "PbP" false         "${PBP_MCGENINPUT}"         "${PBP_EPOSINPUT}"         "${PBP_DATAINPUT}"         "${ZWeightFile_PbP}"         "${RWeightFile_PbP}"         "${VZWeightFile_PbP}"         "${TAG}"
 fi

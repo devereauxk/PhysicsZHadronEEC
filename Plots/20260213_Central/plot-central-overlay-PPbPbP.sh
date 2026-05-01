@@ -7,11 +7,12 @@ make ExecuteCentralOverlayPPbPbPPlot
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 PPB_TAG="${PPB_TAG:-$OFFICIAL_TAG_PPB}"
+PPB_MC_TAG="${PPB_MC_TAG:-$PPB_TAG}"
 
 run_one() {
     local ZPT=$1
     local TRKPT=$2
-    ./ExecuteCentralOverlayPPbPbPPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG"
+    ./ExecuteCentralOverlayPPbPbPPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG"
 }
 
 if [ -n "${CONFIG_FILE:-}" ]; then
