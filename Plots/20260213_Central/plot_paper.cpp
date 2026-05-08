@@ -9,6 +9,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <algorithm>
+#include <cmath>
 #include <cmath>
 using namespace std;
 
@@ -37,6 +39,55 @@ auto ParseRange = [](const string &range) -> pair<string, string> {
     if (pos == string::npos) return {range, ""};
     return {range.substr(0, pos), range.substr(pos + 1)};
 };
+
+struct ResultProjectionWindow {
+    int DeltaPhiXFirst = 0;
+    int DeltaPhiXLast = 0;
+    int DeltaEtaYFirst = 1;
+    int DeltaEtaYLast = 1;
+};
+
+int FindLastFullBinAtOrBelow(const TAxis *axis, double boundary)
+{
+    if (axis == nullptr)
+        return 0;
+
+    const double tolerance = std::max(1.0, std::abs(boundary)) * 1e-12;
+    int lastBin = 0;
+    for (int bin = 1; bin <= axis->GetNbins(); ++bin) {
+        if (axis->GetBinUpEdge(bin) <= boundary + tolerance)
+            lastBin = bin;
+        else
+            break;
+    }
+    return lastBin;
+}
+
+int FindFirstFullBinAbove(const TAxis *axis, double boundary)
+{
+    if (axis == nullptr)
+        return 1;
+
+    const double tolerance = std::max(1.0, std::abs(boundary)) * 1e-12;
+    for (int bin = 1; bin <= axis->GetNbins(); ++bin) {
+        if (axis->GetBinUpEdge(bin) > boundary + tolerance)
+            return bin;
+    }
+    return axis->GetNbins();
+}
+
+ResultProjectionWindow GetProjectionWindow(const TH2D *input)
+{
+    ResultProjectionWindow window;
+    if (input == nullptr)
+        return window;
+
+    window.DeltaPhiXFirst = 0;
+    window.DeltaPhiXLast = FindLastFullBinAtOrBelow(input->GetXaxis(), 0.0);
+    window.DeltaEtaYFirst = FindFirstFullBinAbove(input->GetYaxis(), 0.0);
+    window.DeltaEtaYLast = FindLastFullBinAtOrBelow(input->GetYaxis(), M_PI / 2);
+    return window;
+}
 
 struct BinResult {
     TH1D *hDeltaPhi_pp = nullptr;
@@ -72,12 +123,15 @@ BinResult LoadBin(const string &zPt, const string &trkPt,
     TH2D* hData_pp = (TH2D*)fin_pp->Get(Form("hData_%s", trkPt.c_str()));
     TH2D* hMixData_pp = (TH2D*)fin_pp->Get(Form("hMixData_%s", trkPt.c_str()));
     hData_pp->Add(hMixData_pp, -1);
+    ResultProjectionWindow ppWindow = GetProjectionWindow(hData_pp);
 
-    r.hDeltaPhi_pp = (TH1D*) hData_pp->ProjectionY(Form("phi_pp_%s_%s",zPt.c_str(),trkPt.c_str()),0,10);
+    r.hDeltaPhi_pp = (TH1D*) hData_pp->ProjectionY(Form("phi_pp_%s_%s",zPt.c_str(),trkPt.c_str()),
+        ppWindow.DeltaPhiXFirst, ppWindow.DeltaPhiXLast);
     divideByWidth(r.hDeltaPhi_pp);
     r.hDeltaPhi_pp->Scale(1./2);
 
-    r.hDeltaEta_pp = (TH1D*) hData_pp->ProjectionX(Form("eta_pp_%s_%s",zPt.c_str(),trkPt.c_str()),6,10);
+    r.hDeltaEta_pp = (TH1D*) hData_pp->ProjectionX(Form("eta_pp_%s_%s",zPt.c_str(),trkPt.c_str()),
+        ppWindow.DeltaEtaYFirst, ppWindow.DeltaEtaYLast);
     divideByWidth(r.hDeltaEta_pp);
     r.hDeltaEta_pp->Scale(1./2);
 
@@ -115,13 +169,16 @@ BinResult LoadBin(const string &zPt, const string &trkPt,
     B->Scale(1. / B_NZ);
 
     S->Add(B, -1);
+    ResultProjectionWindow combinedWindow = GetProjectionWindow(S);
 
-    TH1D* phiComb = (TH1D*) S->ProjectionY(Form("phi_comb_%s_%s",zPt.c_str(),trkPt.c_str()),0,10);
+    TH1D* phiComb = (TH1D*) S->ProjectionY(Form("phi_comb_%s_%s",zPt.c_str(),trkPt.c_str()),
+        combinedWindow.DeltaPhiXFirst, combinedWindow.DeltaPhiXLast);
     divideByWidth(phiComb);
     phiComb->Scale(1./2);
     r.hDeltaPhi.push_back(phiComb);
 
-    TH1D* etaComb = (TH1D*) S->ProjectionX(Form("eta_comb_%s_%s",zPt.c_str(),trkPt.c_str()),6,10);
+    TH1D* etaComb = (TH1D*) S->ProjectionX(Form("eta_comb_%s_%s",zPt.c_str(),trkPt.c_str()),
+        combinedWindow.DeltaEtaYFirst, combinedWindow.DeltaEtaYLast);
     divideByWidth(etaComb);
     etaComb->Scale(1./2);
     r.hDeltaEta.push_back(etaComb);
@@ -139,13 +196,16 @@ BinResult LoadBin(const string &zPt, const string &trkPt,
         float BM_NZ = mc_ppb.NZM->GetBinContent(1) + mc_pbp.NZM->GetBinContent(1);
         BM->Scale(1. / BM_NZ);
         SM->Add(BM, -1);
+        ResultProjectionWindow mcWindow = GetProjectionWindow(SM);
 
-        TH1D* phiMC = (TH1D*) SM->ProjectionY(Form("phi_mc_%s_%s",zPt.c_str(),trkPt.c_str()),0,10);
+        TH1D* phiMC = (TH1D*) SM->ProjectionY(Form("phi_mc_%s_%s",zPt.c_str(),trkPt.c_str()),
+            mcWindow.DeltaPhiXFirst, mcWindow.DeltaPhiXLast);
         divideByWidth(phiMC);
         phiMC->Scale(1./2);
         r.hDeltaPhi.push_back(phiMC);
 
-        TH1D* etaMC = (TH1D*) SM->ProjectionX(Form("eta_mc_%s_%s",zPt.c_str(),trkPt.c_str()),6,10);
+        TH1D* etaMC = (TH1D*) SM->ProjectionX(Form("eta_mc_%s_%s",zPt.c_str(),trkPt.c_str()),
+            mcWindow.DeltaEtaYFirst, mcWindow.DeltaEtaYLast);
         divideByWidth(etaMC);
         etaMC->Scale(1./2);
         r.hDeltaEta.push_back(etaMC);

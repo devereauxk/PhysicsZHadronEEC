@@ -11,6 +11,26 @@ fi
 nSlice=$((nThread * sliceFactor))
 analysisExecutable=${ANALYSIS_EXECUTABLE:-./ExecuteCorrelationAnalysis}
 
+resultDEtaBins=20
+resultDPhiBins=20
+analysisArgs=("${@:3}")
+for ((i=0; i<${#analysisArgs[@]}; i++)); do
+    case "${analysisArgs[$i]}" in
+        --ResultDEtaBins)
+            if [ $((i + 1)) -lt ${#analysisArgs[@]} ]; then
+                resultDEtaBins="${analysisArgs[$((i + 1))]}"
+                i=$((i + 1))
+            fi
+            ;;
+        --ResultDPhiBins)
+            if [ $((i + 1)) -lt ${#analysisArgs[@]} ]; then
+                resultDPhiBins="${analysisArgs[$((i + 1))]}"
+                i=$((i + 1))
+            fi
+            ;;
+    esac
+done
+
 # Array to hold the names of the output files
 declare -a outputFileNames
 
@@ -20,8 +40,8 @@ do
     outputFileName="$1-$2_${chunk}.root"
     outputFileNames+=($outputFileName)
     echo "Starting analysis of slice $chunk / $nSlice"
-    echo "$analysisExecutable" $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30} ${31} ${32} ${33} ${34} ${35} ${36} ${37} ${38} ${39} ${40} ${41} ${42} ${43} ${44} ${45} ${46} ${47} ${48} ${49} ${50} --nThread $nSlice --nChunk $chunk --Output $outputFileName
-    "$analysisExecutable" $3 $4 $5 $6 $7 $8 $9 ${10} ${11} ${12} ${13} ${14} ${15} ${16} ${17} ${18} ${19} ${20} ${21} ${22} ${23} ${24} ${25} ${26} ${27} ${28} ${29} ${30} ${31} ${32} ${33} ${34} ${35} ${36} ${37} ${38} ${39} ${40} ${41} ${42} ${43} ${44} ${45} ${46} ${47} ${48} ${49} ${50} --nThread $nSlice --nChunk $chunk --Output $outputFileName &
+    echo "$analysisExecutable" "${@:3}" --nThread $nSlice --nChunk $chunk --Output $outputFileName
+    "$analysisExecutable" "${@:3}" --nThread $nSlice --nChunk $chunk --Output $outputFileName &
     while [ "$(jobs -rp | wc -l)" -ge "$nThread" ]; do
         wait -n
     done
@@ -40,6 +60,15 @@ do
     rm -f $fileName
 done
 echo "All chunks have been processed and merged into output.root."
+projectionMacro="makeProjection.C"
+if [ "$resultDEtaBins" = "10" ] && [ "$resultDPhiBins" = "10" ]; then
+    projectionMacro="makeProjectionShifted10x10.C"
+elif [ "$resultDEtaBins" = "12" ] && [ "$resultDPhiBins" = "12" ]; then
+    projectionMacro="makeProjectionModified12x12.C"
+elif [ "$resultDEtaBins" != "20" ] || [ "$resultDPhiBins" != "20" ]; then
+    echo "Unsupported result binning: ResultDEtaBins=$resultDEtaBins ResultDPhiBins=$resultDPhiBins" >&2
+    exit 1
+fi
 
-root -l -q -b "makeProjection.C(\"$1-$2.root\",\"$1-$2-nosub.root\",\"$2\",0)"
-root -l -q -b "makeProjection.C(\"$1-$2.root\",\"$1-$2-result.root\",\"$2\", 1)"
+root -l -q -b "${projectionMacro}(\"$1-$2.root\",\"$1-$2-nosub.root\",\"$2\",0)"
+root -l -q -b "${projectionMacro}(\"$1-$2.root\",\"$1-$2-result.root\",\"$2\",1)"

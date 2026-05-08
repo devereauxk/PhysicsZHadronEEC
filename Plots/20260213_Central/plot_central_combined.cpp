@@ -16,6 +16,89 @@ using namespace std;
 #include <vector>
 #include <string>
 #include <cmath>
+#include <algorithm>
+#include <limits>
+
+struct ResultProjectionWindow {
+    int DeltaPhiXFirst = 0;
+    int DeltaPhiXLast = 0;
+    int DeltaEtaYFirst = 1;
+    int DeltaEtaYLast = 1;
+};
+
+void SetOfficial20BinProjectionWindow(ResultProjectionWindow &window)
+{
+    window.DeltaPhiXFirst = 0;
+    window.DeltaPhiXLast = 10;
+    window.DeltaEtaYFirst = 6;
+    window.DeltaEtaYLast = 10;
+}
+
+void SetShifted10x10ProjectionWindow(ResultProjectionWindow &window)
+{
+    window.DeltaPhiXFirst = 6;
+    window.DeltaPhiXLast = 10;
+    window.DeltaEtaYFirst = 4;
+    window.DeltaEtaYLast = 8;
+}
+
+void SetModified12x12ProjectionWindow(ResultProjectionWindow &window)
+{
+    window.DeltaPhiXFirst = 7;
+    window.DeltaPhiXLast = 12;
+    window.DeltaEtaYFirst = 4;
+    window.DeltaEtaYLast = 6;
+}
+
+bool AxisHasExactEdge(const TAxis *axis, double boundary)
+{
+    if(axis == nullptr)
+        return false;
+
+    double tolerance = std::max(1.0, std::abs(boundary)) * 1e-9;
+    for(int i = 0; i <= axis->GetNbins(); i++) {
+        double edge = axis->GetBinLowEdge(i + 1);
+        if(std::abs(edge - boundary) < tolerance)
+            return true;
+    }
+    return false;
+}
+
+bool ValidateShifted10x10Histogram(const TH2D *histogram)
+{
+    if(histogram == nullptr)
+        return false;
+    if(histogram->GetNbinsX() != 10 || histogram->GetNbinsY() != 10)
+        return false;
+    if(AxisHasExactEdge(histogram->GetXaxis(), 0.0) == false)
+        return false;
+    if(AxisHasExactEdge(histogram->GetXaxis(), 4.0) == false)
+        return false;
+    if(AxisHasExactEdge(histogram->GetYaxis(), 0.0) == false)
+        return false;
+    if(AxisHasExactEdge(histogram->GetYaxis(), M_PI) == false)
+        return false;
+    return true;
+}
+
+bool ValidateModified12x12Histogram(const TH2D *histogram)
+{
+    if(histogram == nullptr)
+        return false;
+    if(histogram->GetNbinsX() != 12 || histogram->GetNbinsY() != 12)
+        return false;
+    if(AxisHasExactEdge(histogram->GetXaxis(), 0.0) == false)
+        return false;
+    if(AxisHasExactEdge(histogram->GetXaxis(), 4.0) == false)
+        return false;
+    if(AxisHasExactEdge(histogram->GetYaxis(), 0.0) == false)
+        return false;
+    if(AxisHasExactEdge(histogram->GetYaxis(), M_PI / 2) == false)
+        return false;
+    if(AxisHasExactEdge(histogram->GetYaxis(), M_PI) == false)
+        return false;
+    return true;
+}
 
 TH1D *LoadSystematicHistogram(const string &fileName, const string &histogramName,
     const string &cloneName)
@@ -164,6 +247,13 @@ int main(int argc, char *argv[]) {
     string systematicsTagPP = CL.Get("ppSystematicsTag", tag_pp);
     bool doCombine = CL.GetBool("doCombine", false);
     bool includeMC = CL.GetBool("includeMC", true);
+    bool useSystematics = CL.GetBool("UseSystematics", true);
+    bool useShifted10x10 = CL.GetBool("UseShifted10x10", false);
+    bool useModified12x12 = CL.GetBool("UseModified12x12", false);
+    if(useShifted10x10 == true && useModified12x12 == true) {
+        std::cerr << "Error: UseShifted10x10 and UseModified12x12 cannot both be true." << std::endl;
+        return 1;
+    }
     string collisionType = CL.Get("collisionType", "pPb");
     string outputBase = CL.Get("outputBase", "plots/central_combined");
     string systematicsDir = CL.Get("systematicsDir",
@@ -353,8 +443,27 @@ int main(int argc, char *argv[]) {
         cout<<"SUBTRACTION EFFICIENCY: "<<S_combined->Integral() / B_combined->Integral()<<endl;
 
         // projections
-        TH1D* hProjY = (TH1D*) S_combined->ProjectionY(Form("DeltaPhi_Result%i",i),0,10);
-        TH1D* hProjX = (TH1D*) S_combined->ProjectionX(Form("DeltaEta_Result%i",i),6,10);
+        ResultProjectionWindow projectionWindow;
+        if(useModified12x12 == true) {
+            if(ValidateModified12x12Histogram(S_combined) == false) {
+                std::cerr << "Error: combined modified 12x12 histogram validation failed." << std::endl;
+                return 1;
+            }
+            SetModified12x12ProjectionWindow(projectionWindow);
+        }
+        else if(useShifted10x10 == true) {
+            if(ValidateShifted10x10Histogram(S_combined) == false) {
+                std::cerr << "Error: combined shifted 10x10 histogram validation failed." << std::endl;
+                return 1;
+            }
+            SetShifted10x10ProjectionWindow(projectionWindow);
+        }
+        else
+            SetOfficial20BinProjectionWindow(projectionWindow);
+        TH1D* hProjY = (TH1D*) S_combined->ProjectionY(Form("DeltaPhi_Result%i",i),
+            projectionWindow.DeltaPhiXFirst, projectionWindow.DeltaPhiXLast);
+        TH1D* hProjX = (TH1D*) S_combined->ProjectionX(Form("DeltaEta_Result%i",i),
+            projectionWindow.DeltaEtaYFirst, projectionWindow.DeltaEtaYLast);
         if (i == 0) {
             vector<JackknifeProjectionContribution> jackknifeEvents = jackknifePPb;
             if (doCombine)
@@ -405,31 +514,29 @@ int main(int argc, char *argv[]) {
     string currentSystematicsFile = Form("%s/%s_%s_ZPT%s_trkPT%s-systematics.root",
         systematicsDir.c_str(), currentSystem.c_str(), systematicsTag.c_str(), zPtRange.c_str(), trkPtRange.c_str());
 
-    vector<TH1 *> topSystematicsEta = {
-        LoadSystematicHistogram(ppSystematicsFile, "Total_DeltaEta", "PPSystematicsEta"),
-        LoadSystematicHistogram(currentSystematicsFile, "Total_DeltaEta", "CurrentSystematicsEta")
-    };
-    vector<TH1 *> topSystematicsPhi = {
-        LoadSystematicHistogram(ppSystematicsFile, "Total_DeltaPhi", "PPSystematicsPhi"),
-        LoadSystematicHistogram(currentSystematicsFile, "Total_DeltaPhi", "CurrentSystematicsPhi")
-    };
-    vector<TH1 *> differenceSystematicsEta = {
-        nullptr,
-        doCombine ? LoadSystematicHistogram(currentSystematicsFile, "DifferenceTotal_DeltaEta", "DifferenceSystematicsEta") : nullptr
-    };
-    vector<TH1 *> differenceSystematicsPhi = {
-        nullptr,
-        doCombine ? LoadSystematicHistogram(currentSystematicsFile, "DifferenceTotal_DeltaPhi", "DifferenceSystematicsPhi") : nullptr
-    };
-    if (includeMC) {
-        topSystematicsEta.push_back(nullptr);
-        topSystematicsPhi.push_back(nullptr);
-        differenceSystematicsEta.push_back(nullptr);
-        differenceSystematicsPhi.push_back(nullptr);
+    vector<TH1 *> topSystematicsEta(hDeltaEta_combined.size(), nullptr);
+    vector<TH1 *> topSystematicsPhi(hDeltaPhi_combined.size(), nullptr);
+    vector<TH1 *> differenceSystematicsEta(hDeltaEta_combined.size(), nullptr);
+    vector<TH1 *> differenceSystematicsPhi(hDeltaPhi_combined.size(), nullptr);
+    if (useSystematics) {
+        topSystematicsEta[0] = LoadSystematicHistogram(ppSystematicsFile, "Total_DeltaEta", "PPSystematicsEta");
+        topSystematicsPhi[0] = LoadSystematicHistogram(ppSystematicsFile, "Total_DeltaPhi", "PPSystematicsPhi");
+        if (hDeltaEta_combined.size() > 1) {
+            topSystematicsEta[1] = LoadSystematicHistogram(currentSystematicsFile, "Total_DeltaEta", "CurrentSystematicsEta");
+            topSystematicsPhi[1] = LoadSystematicHistogram(currentSystematicsFile, "Total_DeltaPhi", "CurrentSystematicsPhi");
+            if (doCombine) {
+                differenceSystematicsEta[1] = LoadSystematicHistogram(currentSystematicsFile, "DifferenceTotal_DeltaEta", "DifferenceSystematicsEta");
+                differenceSystematicsPhi[1] = LoadSystematicHistogram(currentSystematicsFile, "DifferenceTotal_DeltaPhi", "DifferenceSystematicsPhi");
+            }
+        }
     }
 
     string differenceLabel = doCombine ? "pPb - pp" : Form("%s - pp", collisionType.c_str());
     string lumiLabel = doCombine ? "pPb, pp" : Form("%s, pp", collisionType.c_str());
+
+    string deltaEtaProjectionLabel = "0 < #Delta#varphi_{ch,Z} < #pi/2";
+    if(useShifted10x10 == true)
+        deltaEtaProjectionLabel = "0 < #Delta#varphi_{ch,Z} < #pi";
 
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
     TPad* pResult1 = (TPad*) PlotCMSDiffResult(
@@ -454,7 +561,7 @@ int main(int argc, char *argv[]) {
     latex.SetTextSize(0.035);
     latex.DrawLatex(0.8, 0.82, Form("%s < p_{T}^{Z} < %s", zRange.first.c_str(), zRange.second.c_str()));
     latex.DrawLatex(0.8, 0.77, Form("%s < p_{T}^{ch} < %s", trkRange.first.c_str(), trkRange.second.c_str()));
-    latex.DrawLatex(0.8, 0.72, "|y_{Z}| < 2.4, |#Delta#varphi_{ch,Z}| < #pi/2");
+    latex.DrawLatex(0.8, 0.72, Form("|y_{Z}| < 2.4, %s", deltaEtaProjectionLabel.c_str()));
 
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
@@ -464,7 +571,7 @@ int main(int argc, char *argv[]) {
         hDeltaPhi_combined, topSystematicsPhi, differenceSystematicsPhi, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#Delta#varphi_{ch,Z}", -1.5707, 4.7123,
+        "#Delta#varphi_{ch,Z}", useShifted10x10 ? -3 * M_PI / 5 : -1.5707, useShifted10x10 ? 7 * M_PI / 5 : 4.7123,
         "d#LT#DeltaN_{ch}#GT/d#Delta#varphi_{ch,Z}", -1, -1,
         differenceLabel.c_str(), -1, -1,
         0,

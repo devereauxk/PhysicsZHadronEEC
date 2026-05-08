@@ -5,6 +5,8 @@
 #include <TPad.h>
 #include <TSystem.h>
 
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -15,6 +17,55 @@ using namespace std;
 
 #include "CommandLine.h"
 #include "SetStyle.h"
+
+struct ResultProjectionWindow {
+    int DeltaPhiXFirst = 0;
+    int DeltaPhiXLast = 0;
+    int DeltaEtaYFirst = 1;
+    int DeltaEtaYLast = 1;
+};
+
+int FindLastFullBinAtOrBelow(const TAxis *axis, double boundary)
+{
+    if (axis == nullptr)
+        return 0;
+
+    const double tolerance = std::max(1.0, std::abs(boundary)) * 1e-12;
+    int lastBin = 0;
+    for (int bin = 1; bin <= axis->GetNbins(); ++bin) {
+        if (axis->GetBinUpEdge(bin) <= boundary + tolerance)
+            lastBin = bin;
+        else
+            break;
+    }
+    return lastBin;
+}
+
+int FindFirstFullBinAbove(const TAxis *axis, double boundary)
+{
+    if (axis == nullptr)
+        return 1;
+
+    const double tolerance = std::max(1.0, std::abs(boundary)) * 1e-12;
+    for (int bin = 1; bin <= axis->GetNbins(); ++bin) {
+        if (axis->GetBinUpEdge(bin) > boundary + tolerance)
+            return bin;
+    }
+    return axis->GetNbins();
+}
+
+ResultProjectionWindow GetProjectionWindow(const TH2D *input)
+{
+    ResultProjectionWindow window;
+    if (input == nullptr)
+        return window;
+
+    window.DeltaPhiXFirst = 0;
+    window.DeltaPhiXLast = FindLastFullBinAtOrBelow(input->GetXaxis(), 0.0);
+    window.DeltaEtaYFirst = FindFirstFullBinAbove(input->GetYaxis(), 0.0);
+    window.DeltaEtaYLast = FindLastFullBinAtOrBelow(input->GetYaxis(), M_PI / 2);
+    return window;
+}
 
 int main(int argc, char *argv[])
 {
@@ -62,8 +113,11 @@ int main(int argc, char *argv[])
 
         this_hDeltaEtaAll = (TH1D *)this_hDeltaEtaAll->Clone(Form("DeltaEta_all_%s", systems[i].c_str()));
         this_hDeltaPhiAll = (TH1D *)this_hDeltaPhiAll->Clone(Form("DeltaPhi_all_%s", systems[i].c_str()));
-        TH1D *this_hDeltaEtaBkg = this_hMix2D->ProjectionX(Form("DeltaEta_bkg_%s", systems[i].c_str()), 6, 10);
-        TH1D *this_hDeltaPhiBkg = this_hMix2D->ProjectionY(Form("DeltaPhi_bkg_%s", systems[i].c_str()), 0, 10);
+        ResultProjectionWindow projectionWindow = GetProjectionWindow(this_hMix2D);
+        TH1D *this_hDeltaEtaBkg = this_hMix2D->ProjectionX(Form("DeltaEta_bkg_%s", systems[i].c_str()),
+            projectionWindow.DeltaEtaYFirst, projectionWindow.DeltaEtaYLast);
+        TH1D *this_hDeltaPhiBkg = this_hMix2D->ProjectionY(Form("DeltaPhi_bkg_%s", systems[i].c_str()),
+            projectionWindow.DeltaPhiXFirst, projectionWindow.DeltaPhiXLast);
 
         this_hDeltaEtaAll->SetDirectory(nullptr);
         this_hDeltaPhiAll->SetDirectory(nullptr);

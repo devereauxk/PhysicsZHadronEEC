@@ -20,11 +20,11 @@ for zpt_range in "${ZPT_RANGES[@]}"; do
       min_pt=${pt_range/_*/}
       max_pt=${pt_range/*_/}
 
-      echo ./threader.sh "output/${1}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" "${15}" "${16}" "${17}" "${18}" "${19}" "${20}" "${21}" "${22}" "${23}" "${24}" "${25}" "${26}" "${27}" "${28}" "${29}" "${30}" "${31}" "${32}" "${33}" "${34}" "${35}" "${36}" "${37}" "${38}" "${39}" "${40}" \
+      echo ./threader.sh "output/${1}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$@" \
          --MinTrackPT "$min_pt" --MaxTrackPT "$max_pt" \
          --MinZPT "$min_zpt" --MaxZPT "$max_zpt"
 
-      ./threader.sh "output/${1}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9" "${10}" "${11}" "${12}" "${13}" "${14}" "${15}" "${16}" "${17}" "${18}" "${19}" "${20}" "${21}" "${22}" "${23}" "${24}" "${25}" "${26}" "${27}" "${28}" "${29}" "${30}" "${31}" "${32}" "${33}" "${34}" "${35}" "${36}" "${37}" "${38}" "${39}" "${40}" \
+      ./threader.sh "output/${1}_ZPT${min_zpt}_${max_zpt}" "$pt_range" "$@" \
          --MinTrackPT "$min_pt" --MaxTrackPT "$max_pt" \
          --MinZPT "$min_zpt" --MaxZPT "$max_zpt" &
       pids+=($!)

@@ -4,8 +4,10 @@
 #include <TCanvas.h>
 #include <TTree.h>
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <vector>
 
 using namespace std;
@@ -19,6 +21,19 @@ struct JackknifeProjectionEvent {
     vector<float> MixEta;
     vector<float> SignalPhi;
     vector<float> MixPhi;
+};
+
+struct ResultProjectionWindow {
+    int DeltaPhiXFirst = 0;
+    int DeltaPhiXLast = 0;
+    int DeltaEtaYFirst = 1;
+    int DeltaEtaYLast = 1;
+};
+
+enum class ResultGeometry {
+    Official20x20,
+    Shifted10x10,
+    Modified12x12
 };
 
 void divideByWidth(TH1D* input) {
@@ -42,12 +57,102 @@ void divideByWidth(TH1D* input) {
     }
 }
 
+
+// Check that boundary is an exact bin edge on axis (within tolerance).
+bool axisHasExactEdge(const TAxis *axis, double boundary)
+{
+    if (axis == nullptr) return false;
+    const double tolerance = std::max(1.0, std::abs(boundary)) * 1e-9;
+    for (int i = 0; i <= axis->GetNbins(); ++i) {
+        double edge = axis->GetBinLowEdge(i + 1);
+        if (std::abs(edge - boundary) < tolerance) return true;
+    }
+    return false;
+}
+
+bool validateOfficial20BinAxes(const TH2D *input)
+{
+    if (input == nullptr)
+        return false;
+    if (input->GetNbinsX() != 20 || input->GetNbinsY() != 20) {
+        std::cerr << "Error: official result path expects 20x20 histograms." << std::endl;
+        return false;
+    }
+    return true;
+}
+
+void setOfficial20BinProjectionWindow(ResultProjectionWindow &window)
+{
+    window.DeltaPhiXFirst = 0;
+    window.DeltaPhiXLast = 10;
+    window.DeltaEtaYFirst = 6;
+    window.DeltaEtaYLast = 10;
+}
+
+bool validateShifted10x10Axes(const TH2D *input)
+{
+    if (input == nullptr) {
+        std::cerr << "Error: null histogram in shifted 10x10 projection validation." << std::endl;
+        return false;
+    }
+    if (input->GetNbinsX() != 10 || input->GetNbinsY() != 10) {
+        std::cerr << "Error (10-bin shifted): expected 10x10 histogram." << std::endl;
+        return false;
+    }
+    const TAxis *xAxis = input->GetXaxis();
+    const TAxis *yAxis = input->GetYaxis();
+    bool ok = true;
+    if (!axisHasExactEdge(xAxis, 0.0)) { std::cerr << "Error (10-bin shifted): DeltaEta axis has no exact edge at 0." << std::endl; ok = false; }
+    if (!axisHasExactEdge(xAxis, 4.0)) { std::cerr << "Error (10-bin shifted): DeltaEta axis has no exact edge at 4." << std::endl; ok = false; }
+    if (!axisHasExactEdge(yAxis, 0.0)) { std::cerr << "Error (10-bin shifted): DeltaPhi axis has no exact edge at 0." << std::endl; ok = false; }
+    if (!axisHasExactEdge(yAxis, M_PI)) { std::cerr << "Error (10-bin shifted): DeltaPhi axis has no exact edge at pi." << std::endl; ok = false; }
+    return ok;
+}
+
+void setShifted10x10ProjectionWindow(ResultProjectionWindow &window)
+{
+    window.DeltaPhiXFirst = 6;
+    window.DeltaPhiXLast  = 10;
+    window.DeltaEtaYFirst = 4;
+    window.DeltaEtaYLast  = 8;
+}
+
+bool validateModified12x12Axes(const TH2D *input)
+{
+    if (input == nullptr) {
+        std::cerr << "Error: null histogram in modified 12x12 projection validation." << std::endl;
+        return false;
+    }
+    if (input->GetNbinsX() != 12 || input->GetNbinsY() != 12) {
+        std::cerr << "Error (12-bin modified): expected 12x12 histogram." << std::endl;
+        return false;
+    }
+    const TAxis *xAxis = input->GetXaxis();
+    const TAxis *yAxis = input->GetYaxis();
+    bool ok = true;
+    if (!axisHasExactEdge(xAxis, 0.0)) { std::cerr << "Error (12-bin modified): DeltaEta axis has no exact edge at 0." << std::endl; ok = false; }
+    if (!axisHasExactEdge(xAxis, 4.0)) { std::cerr << "Error (12-bin modified): DeltaEta axis has no exact edge at 4." << std::endl; ok = false; }
+    if (!axisHasExactEdge(yAxis, 0.0)) { std::cerr << "Error (12-bin modified): DeltaPhi axis has no exact edge at 0." << std::endl; ok = false; }
+    if (!axisHasExactEdge(yAxis, M_PI / 2)) { std::cerr << "Error (12-bin modified): DeltaPhi axis has no exact edge at pi/2." << std::endl; ok = false; }
+    if (!axisHasExactEdge(yAxis, M_PI)) { std::cerr << "Error (12-bin modified): DeltaPhi axis has no exact edge at pi." << std::endl; ok = false; }
+    return ok;
+}
+
+void setModified12x12ProjectionWindow(ResultProjectionWindow &window)
+{
+    window.DeltaPhiXFirst = 7;
+    window.DeltaPhiXLast  = 12;
+    window.DeltaEtaYFirst = 4;
+    window.DeltaEtaYLast  = 6;
+}
+
 int getFlatIndex(int xBin, int yBin, int nYBins)
 {
     return (xBin - 1) * nYBins + (yBin - 1);
 }
 
 void fillProjectedContributions(const vector<float> &input, int nXBins, int nYBins,
+    int deltaPhiXFirst, int deltaPhiXLast, int deltaEtaYFirst, int deltaEtaYLast,
     vector<float> &etaBins, vector<float> &phiBins)
 {
     etaBins.assign(nXBins, 0);
@@ -56,15 +161,17 @@ void fillProjectedContributions(const vector<float> &input, int nXBins, int nYBi
     for (int xBin = 1; xBin <= nXBins; ++xBin) {
         for (int yBin = 1; yBin <= nYBins; ++yBin) {
             float value = input[getFlatIndex(xBin, yBin, nYBins)];
-            if (yBin >= 6 && yBin <= 10)
+            if (yBin >= deltaEtaYFirst && yBin <= deltaEtaYLast)
                 etaBins[xBin - 1] += value;
-            if (xBin <= 10)
+            if (xBin >= deltaPhiXFirst && xBin <= deltaPhiXLast)
                 phiBins[yBin - 1] += value;
         }
     }
 }
 
-bool loadJackknifeEvents(TFile *file, TH2D *hData, vector<JackknifeProjectionEvent> &events)
+bool loadJackknifeEvents(TFile *file, int sourceXBins, int sourceYBins, int targetXBins,
+    int targetYBins, int deltaPhiXFirst, int deltaPhiXLast, int deltaEtaYFirst, int deltaEtaYLast,
+    vector<JackknifeProjectionEvent> &events)
 {
     TTree *jackknifeTree = (TTree *)file->Get("Jackknife2DData");
     if (jackknifeTree == nullptr)
@@ -80,8 +187,6 @@ bool loadJackknifeEvents(TFile *file, TH2D *hData, vector<JackknifeProjectionEve
     jackknifeTree->SetBranchAddress("SignalBins", &signalBins);
     jackknifeTree->SetBranchAddress("MixBins", &mixBins);
 
-    int nXBins = hData->GetNbinsX();
-    int nYBins = hData->GetNbinsY();
     Long64_t entryCount = jackknifeTree->GetEntries();
     events.clear();
     events.reserve(entryCount);
@@ -91,10 +196,20 @@ bool loadJackknifeEvents(TFile *file, TH2D *hData, vector<JackknifeProjectionEve
         JackknifeProjectionEvent current;
         current.SignalNZ = signalNZ;
         current.MixNZ = mixNZ;
+        if (sourceXBins != targetXBins || sourceYBins != targetYBins) {
+            std::cerr << "Error: makeProjection no longer supports variable result-stage rebinning."
+                << " Input is " << sourceXBins << "x" << sourceYBins
+                << " while projection expects " << targetXBins << "x" << targetYBins << "." << std::endl;
+            return false;
+        }
         current.SignalBins2D = *signalBins;
         current.MixBins2D = *mixBins;
-        fillProjectedContributions(current.SignalBins2D, nXBins, nYBins, current.SignalEta, current.SignalPhi);
-        fillProjectedContributions(current.MixBins2D, nXBins, nYBins, current.MixEta, current.MixPhi);
+        fillProjectedContributions(current.SignalBins2D, targetXBins, targetYBins,
+            deltaPhiXFirst, deltaPhiXLast, deltaEtaYFirst, deltaEtaYLast,
+            current.SignalEta, current.SignalPhi);
+        fillProjectedContributions(current.MixBins2D, targetXBins, targetYBins,
+            deltaPhiXFirst, deltaPhiXLast, deltaEtaYFirst, deltaEtaYLast,
+            current.MixEta, current.MixPhi);
         events.push_back(current);
     }
 
@@ -219,7 +334,8 @@ void writeJackknifeProjectionTree(const vector<JackknifeProjectionEvent> &events
     jackknifeProjection.Write();
 }
 
-void makeProjection(const char *infname="output.root", const char *outfname="result.root", const char *tag="", bool doSub=1) {
+void makeProjectionInternal(const char *infname, const char *outfname, const char *tag,
+    bool doSub, ResultGeometry geometry) {
     TFile *file = new TFile(infname, "READ");
 
     TH2D *hData = (TH2D*)file->Get("hData");
@@ -249,8 +365,35 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
         return;
     }
 
+    ResultProjectionWindow projectionWindow;
+    if (geometry == ResultGeometry::Shifted10x10) {
+        if (validateShifted10x10Axes(hData) == false) {
+            std::cerr << "Error: shifted 10x10 projection validation failed. Exiting." << std::endl;
+            return;
+        }
+        setShifted10x10ProjectionWindow(projectionWindow);
+    }
+    else if (geometry == ResultGeometry::Modified12x12) {
+        if (validateModified12x12Axes(hData) == false) {
+            std::cerr << "Error: modified 12x12 projection validation failed. Exiting." << std::endl;
+            return;
+        }
+        setModified12x12ProjectionWindow(projectionWindow);
+    }
+    else {
+        if (validateOfficial20BinAxes(hData) == false) {
+            std::cerr << "Error: official 20-bin projection validation failed. Exiting." << std::endl;
+            return;
+        }
+        setOfficial20BinProjectionWindow(projectionWindow);
+    }
+
     vector<JackknifeProjectionEvent> jackknifeEvents;
-    bool hasJackknife = loadJackknifeEvents(file, hData, jackknifeEvents);
+    bool hasJackknife = loadJackknifeEvents(file, hData->GetNbinsX(), hData->GetNbinsY(),
+        hData->GetNbinsX(), hData->GetNbinsY(),
+        projectionWindow.DeltaPhiXFirst, projectionWindow.DeltaPhiXLast,
+        projectionWindow.DeltaEtaYFirst, projectionWindow.DeltaEtaYLast,
+        jackknifeEvents);
 
     hData->SetName(Form("hData_%s",tag));
     hData->Scale(1. / hNZData->GetBinContent(1));
@@ -297,7 +440,8 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     }
 
     TCanvas *c1 = new TCanvas("c1", "Canvas for Y projection", 800, 600);
-    TH1D *hProjY = (TH1D*)hData->ProjectionY(Form("DeltaPhi_Result%s",tag),0,10);
+    TH1D *hProjY = (TH1D*)hData->ProjectionY(Form("DeltaPhi_Result%s",tag),
+        projectionWindow.DeltaPhiXFirst, projectionWindow.DeltaPhiXLast);
     TH1D *hProjYSumw2 = (TH1D*)hProjY->Clone(Form("DeltaPhi_ResultSumw2%s",tag));
     if (doSub && hasJackknife) {
         vector<double> fullSignal(hProjY->GetNbinsX(), 0);
@@ -318,7 +462,8 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hProjY->Draw();
 
     TCanvas *c2 = new TCanvas("c2", "Canvas for X projection", 800, 600);
-    TH1D *hProjX = (TH1D*)hData->ProjectionX(Form("DeltaEta_Result%s",tag),6,10);
+    TH1D *hProjX = (TH1D*)hData->ProjectionX(Form("DeltaEta_Result%s",tag),
+        projectionWindow.DeltaEtaYFirst, projectionWindow.DeltaEtaYLast);
     TH1D *hProjXSumw2 = (TH1D*)hProjX->Clone(Form("DeltaEta_ResultSumw2%s",tag));
     if (doSub && hasJackknife) {
         vector<double> fullSignal(hProjX->GetNbinsX(), 0);
@@ -360,6 +505,24 @@ void makeProjection(const char *infname="output.root", const char *outfname="res
     hTrkResidualCorrectionPtEtaPhi->Write();
     if (hasJackknife)
         writeJackknifeProjectionTree(jackknifeEvents, tag);
+}
+
+void makeProjection(const char *infname="output.root", const char *outfname="result.root",
+    const char *tag="", bool doSub=1)
+{
+    makeProjectionInternal(infname, outfname, tag, doSub, ResultGeometry::Official20x20);
+}
+
+void makeProjectionShifted10x10(const char *infname="output.root", const char *outfname="result.root",
+    const char *tag="", bool doSub=1)
+{
+    makeProjectionInternal(infname, outfname, tag, doSub, ResultGeometry::Shifted10x10);
+}
+
+void makeProjectionModified12x12(const char *infname="output.root", const char *outfname="result.root",
+    const char *tag="", bool doSub=1)
+{
+    makeProjectionInternal(infname, outfname, tag, doSub, ResultGeometry::Modified12x12);
 }
 
 int main() {

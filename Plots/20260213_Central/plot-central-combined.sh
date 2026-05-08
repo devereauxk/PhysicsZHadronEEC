@@ -20,16 +20,17 @@ PLOT_OUTPUT_BASE="${PLOT_OUTPUT_BASE:-plots/central_combined}"
 RUN_COMBINED="${RUN_COMBINED:-1}"
 RUN_SINGLE="${RUN_SINGLE:-1}"
 PLOT_INCLUDE_MC="${PLOT_INCLUDE_MC:-true}"
+USE_SYSTEMATICS="${USE_SYSTEMATICS:-true}"
 
 run_one() {
     local ZPT=$1
     local TRKPT=$2
     if [ "$RUN_COMBINED" != "0" ]; then
-        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine true --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine true --includeMC "$PLOT_INCLUDE_MC" --UseSystematics "$USE_SYSTEMATICS" --outputBase "$PLOT_OUTPUT_BASE"
     fi
     if [ "$RUN_SINGLE" != "0" ]; then
-        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine false --collisionType pPb --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
-        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine false --collisionType PbP --includeMC "$PLOT_INCLUDE_MC" --outputBase "$PLOT_OUTPUT_BASE"
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine false --collisionType pPb --includeMC "$PLOT_INCLUDE_MC" --UseSystematics "$USE_SYSTEMATICS" --outputBase "$PLOT_OUTPUT_BASE"
+        ./ExecuteCentralCombinedPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --pPbSystematicsTag "$PPB_SYSTEMATICS_TAG" --pptag "$PP_TAG" --ppSystematicsTag "$PP_SYSTEMATICS_TAG" --doCombine false --collisionType PbP --includeMC "$PLOT_INCLUDE_MC" --UseSystematics "$USE_SYSTEMATICS" --outputBase "$PLOT_OUTPUT_BASE"
     fi
 }
 

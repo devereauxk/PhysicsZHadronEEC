@@ -52,11 +52,11 @@ run_ppb_chain() {
 
     ./system-analysis.sh "${MCPREFIX}_Gen_nominal_${TAG}"         --IsPP false --IsGenZ true --IsData false --IsPPb ${ISPPB}         --Input "${MCGENINPUT}"         --MixFile "${MCGENINPUT}"         --UseEventWeight true --UseZWeight false         --UseTrackWeight true --UseResidualWeight false         --EPOSFile "${EPOSINPUT}"         "${COMMON_EXTRA_ARGS[@]}"         --Fraction 1         --yBoost 0 --nMix ${nMix}         --UseVZWeight true --VZWeightFile "${VZWEIGHT}"
 
-    ./system-analysis.sh "${DATAPREFIX}_nominal_${TAG}"         --IsPP false --IsGenZ false --IsData true --UseVZWeight true --IsPPb ${ISPPB}         --Input "${DATAINPUT}"         --MixFile "${DATAINPUT}"         --UseEventWeight true --UseZWeight false         --UseTrackWeight true --UseResidualWeight false         --yBoost 0 --nMix ${nMix}         --VZWeightFile "${VZWEIGHT}"         "${COMMON_EXTRA_ARGS[@]}"
+    ./system-analysis.sh "${DATAPREFIX}_nominal_${TAG}"         --IsPP false --IsGenZ false --IsData true --UseVZWeight true --IsPPb ${ISPPB}         --Input "${DATAINPUT}"         --MixFile "${DATAINPUT}"         --UseEventWeight true --UseZWeight false         --UseTrackWeight true --UseResidualWeight false         --yBoost 0 --nMix ${nMix}         --UseJackknife true         --VZWeightFile "${VZWEIGHT}"         "${COMMON_EXTRA_ARGS[@]}"
 
-    ./system-analysis.sh "${DATAPREFIX}_ZResidual_${TAG}"         --IsPP false --IsGenZ false --IsData true --UseVZWeight true --IsPPb ${ISPPB}         --Input "${DATAINPUT}"         --MixFile "${DATAINPUT}"         --UseEventWeight true --UseZWeight true         --UseTrackWeight true --UseResidualWeight false         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWEIGHT}"         --VZWeightFile "${VZWEIGHT}"         "${COMMON_EXTRA_ARGS[@]}"
+    ./system-analysis.sh "${DATAPREFIX}_ZResidual_${TAG}"         --IsPP false --IsGenZ false --IsData true --UseVZWeight true --IsPPb ${ISPPB}         --Input "${DATAINPUT}"         --MixFile "${DATAINPUT}"         --UseEventWeight true --UseZWeight true         --UseTrackWeight true --UseResidualWeight false         --yBoost 0 --nMix ${nMix}         --UseJackknife true         --ZWeightFile "${ZWEIGHT}"         --VZWeightFile "${VZWEIGHT}"         "${COMMON_EXTRA_ARGS[@]}"
 
-    ./system-analysis.sh "${DATAPREFIX}_trkResidual_${TAG}"         --IsPP false --IsGenZ false --IsData true --UseVZWeight true --IsPPb ${ISPPB}         --Input "${DATAINPUT}"         --MixFile "${DATAINPUT}"         --UseEventWeight true --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWEIGHT}"         --ResidualWeightFile "${RWEIGHT}"         --VZWeightFile "${VZWEIGHT}"         "${COMMON_EXTRA_ARGS[@]}"
+    ./system-analysis.sh "${DATAPREFIX}_trkResidual_${TAG}"         --IsPP false --IsGenZ false --IsData true --UseVZWeight true --IsPPb ${ISPPB}         --Input "${DATAINPUT}"         --MixFile "${DATAINPUT}"         --UseEventWeight true --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --UseJackknife true         --ZWeightFile "${ZWEIGHT}"         --ResidualWeightFile "${RWEIGHT}"         --VZWeightFile "${VZWEIGHT}"         "${COMMON_EXTRA_ARGS[@]}"
 }
 
 # Speedup path for repeated system-analysis calls:
@@ -75,7 +75,7 @@ activate_config
 
 if [ "$DOPP" == "1" ]; then
     TAG="${PP_TAG}"
-    ./system-analysis.sh "pp_trkResidual_${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         "${COMMON_EXTRA_ARGS[@]}"
+    ./system-analysis.sh "pp_trkResidual_${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --UseJackknife true         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         "${COMMON_EXTRA_ARGS[@]}"
 fi
 
 if [ "$DOPPB" == "1" ]; then
@@ -98,7 +98,7 @@ activate_config
 
 if [ "$DOPP" == "1" ]; then
     TAG="${PP_TAG}"
-    ./system-analysis.sh "pp_trkResidual_${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         "${COMMON_EXTRA_ARGS[@]}"
+    ./system-analysis.sh "pp_trkResidual_${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --UseJackknife true         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         "${COMMON_EXTRA_ARGS[@]}"
 fi
 
 if [ "$DOPPB" == "1" ]; then

@@ -85,7 +85,8 @@ TH1D *BuildFamilyHistogramSingle(const TH1D *nominal, const vector<string> &file
 
 TH1D *BuildFamilyHistogramCombined(const TH1D *nominal,
    const vector<pair<string, string>> &files, const string &observable,
-   const string &trackTag, const string &histogramName)
+   const string &trackTag, const string &histogramName, bool useShifted10x10 = false,
+   bool useModified12x12 = false)
 {
    TH1D *result = (TH1D *)nominal->Clone(histogramName.c_str());
    result->Reset("ICES");
@@ -97,10 +98,10 @@ TH1D *BuildFamilyHistogramCombined(const TH1D *nominal,
       double value = 0;
       for(const auto &filePair : files)
       {
-         TFile ppbFile(filePair.first.c_str());
-         TFile pbpFile(filePair.second.c_str());
-         TH1D *variation = BuildCombinedResultHistogram(ppbFile, pbpFile, observable,
-            trackTag, histogramName + "_Variation");
+          TFile ppbFile(filePair.first.c_str());
+          TFile pbpFile(filePair.second.c_str());
+          TH1D *variation = BuildCombinedResultHistogram(ppbFile, pbpFile, observable,
+            trackTag, histogramName + "_Variation", useShifted10x10, useModified12x12);
          if(variation == nullptr)
             continue;
 
@@ -141,10 +142,17 @@ int main(int argc, char *argv[])
    CommandLine CL(argc, argv);
 
    string nominalFileName = CL.Get("Nominal", "");
-   string nominalPPbFileName = CL.Get("NominalPPb", "");
-   string nominalPBPFileName = CL.Get("NominalPBP", "");
-   string nominalPPFileName = CL.Get("NominalPP", "");
-    string outputFileName = CL.Get("Output", "systematics.root");
+    string nominalPPbFileName = CL.Get("NominalPPb", "");
+    string nominalPBPFileName = CL.Get("NominalPBP", "");
+    string nominalPPFileName = CL.Get("NominalPP", "");
+    bool useShifted10x10 = CL.GetBool("UseShifted10x10", false);
+    bool useModified12x12 = CL.GetBool("UseModified12x12", false);
+      string outputFileName = CL.Get("Output", "systematics.root");
+    if(useShifted10x10 == true && useModified12x12 == true)
+    {
+       cerr << "UseShifted10x10 and UseModified12x12 cannot both be true" << endl;
+       return 1;
+    }
     string trackTag = CL.Get("TrackTag", "2_500");
     vector<string> includeFamilies = ParseCSV(CL.Get("IncludeFamilies",
        "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
@@ -216,7 +224,7 @@ int main(int argc, char *argv[])
       TH1D *nominal = nullptr;
       if(doCombined == true)
          nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable,
-            trackTag, "Nominal_" + observable);
+            trackTag, "Nominal_" + observable, useShifted10x10, useModified12x12);
       else
          nominal = LoadSingleResultHistogram(*nominalFile, observable, trackTag,
             "Nominal_" + observable);
@@ -248,9 +256,9 @@ int main(int argc, char *argv[])
       for(const string &family : families)
       {
          string histogramName = family + "_" + observable;
-         if(doCombined == true)
-            contributions[family] = BuildFamilyHistogramCombined(nominal,
-               familyFilePairs[family], observable, trackTag, histogramName);
+          if(doCombined == true)
+             contributions[family] = BuildFamilyHistogramCombined(nominal,
+               familyFilePairs[family], observable, trackTag, histogramName, useShifted10x10, useModified12x12);
          else
             contributions[family] = BuildFamilyHistogramSingle(nominal,
                familyFiles[family], observable, trackTag, histogramName);

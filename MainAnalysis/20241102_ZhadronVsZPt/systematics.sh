@@ -8,6 +8,8 @@ shift 3
 COMMON_EXTRA_ARGS=("$@")
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+OFFICIAL_TAG_PP="${OFFICIAL_TAG_PP}${STUDY_TAG_SUFFIX:-}"
+OFFICIAL_TAG_PPB="${OFFICIAL_TAG_PPB}${STUDY_TAG_SUFFIX:-}"
 
 nMix=10
 CONFIG_OVERRIDE=${CONFIG_FILE:-}

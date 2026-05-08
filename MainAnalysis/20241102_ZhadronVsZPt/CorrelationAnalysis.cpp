@@ -39,7 +39,98 @@ bool checkError(const Parameters& par) {
       return true;
    }
 
+   if (par.ResultDEtaBins <= 0 || par.ResultDPhiBins <= 0) {
+      std::cout << "Error! ResultDEtaBins and ResultDPhiBins must both be positive." << std::endl;
+      return true;
+   }
+
+   bool useOfficial20Bin = (par.ResultDEtaBins == 20 && par.ResultDPhiBins == 20);
+   bool useShifted10Bin = (par.ResultDEtaBins == 10 && par.ResultDPhiBins == 10);
+   bool useModified12Bin = (par.ResultDEtaBins == 12 && par.ResultDPhiBins == 12);
+   if (useOfficial20Bin == false && useShifted10Bin == false && useModified12Bin == false) {
+      std::cout << "Error! Only the maintained 20x20 official result binning, the shifted 10x10 study binning, and the maintained modified 12x12 result binning are supported." << std::endl;
+      return true;
+   }
+
    return false;    // No errors found
+}
+
+enum class ResultGeometry {
+   Official20x20,
+   Shifted10x10,
+   Modified12x12
+};
+
+ResultGeometry getResultGeometry(const Parameters &par)
+{
+   if (par.ResultDEtaBins == 10 && par.ResultDPhiBins == 10)
+      return ResultGeometry::Shifted10x10;
+   if (par.ResultDEtaBins == 12 && par.ResultDPhiBins == 12)
+      return ResultGeometry::Modified12x12;
+   return ResultGeometry::Official20x20;
+}
+
+TH2D *createOfficial20x20ResultHistogram(const string &name)
+{
+   static const double EtaEdges[21] = {
+      -4.0, -3.6, -3.2, -2.8, -2.4,
+      -2.0, -1.6, -1.2, -0.8, -0.4,
+       0.0,  0.4,  0.8,  1.2,  1.6,
+       2.0,  2.4,  2.8,  3.2,  3.6,
+       4.0
+   };
+   static const double PhiEdges[21] = {
+      -M_PI / 2, -2 * M_PI / 5, -3 * M_PI / 10, -M_PI / 5, -M_PI / 10,
+       0.0,        M_PI / 10,    M_PI / 5,       3 * M_PI / 10, 2 * M_PI / 5,
+       M_PI / 2,   3 * M_PI / 5, 7 * M_PI / 10, 4 * M_PI / 5,   9 * M_PI / 10,
+       M_PI,      11 * M_PI / 10, 6 * M_PI / 5, 13 * M_PI / 10, 7 * M_PI / 5,
+       3 * M_PI / 2
+   };
+
+   return new TH2D(name.c_str(), "", 20, EtaEdges, 20, PhiEdges);
+}
+
+TH2D *createShifted10x10ResultHistogram(const string &name)
+{
+   static const double EtaEdges[11] = {
+      -4.0, -3.2, -2.4, -1.6, -0.8,
+       0.0,  0.8,  1.6,  2.4,  3.2,
+       4.0
+   };
+   static const double PhiEdges[11] = {
+      -3 * M_PI / 5, -2 * M_PI / 5, -M_PI / 5, 0.0, M_PI / 5,
+       2 * M_PI / 5,  3 * M_PI / 5,  4 * M_PI / 5, M_PI, 6 * M_PI / 5,
+       7 * M_PI / 5
+   };
+
+    return new TH2D(name.c_str(), "", 10, EtaEdges, 10, PhiEdges);
+}
+
+TH2D *createModified12x12ResultHistogram(const string &name)
+{
+   static const double EtaEdges[13] = {
+      -4.0,        -10.0 / 3.0, -8.0 / 3.0, -2.0,
+      -4.0 / 3.0,  -2.0 / 3.0,   0.0,        2.0 / 3.0,
+       4.0 / 3.0,   2.0,         8.0 / 3.0, 10.0 / 3.0,
+       4.0
+   };
+   static const double PhiEdges[13] = {
+      -M_PI / 2, -M_PI / 3, -M_PI / 6, 0.0,
+       M_PI / 6,  M_PI / 3,  M_PI / 2, 2 * M_PI / 3,
+       5 * M_PI / 6, M_PI,   7 * M_PI / 6, 4 * M_PI / 3,
+       3 * M_PI / 2
+   };
+
+   return new TH2D(name.c_str(), "", 12, EtaEdges, 12, PhiEdges);
+}
+
+TH2D *createResultHistogram(const string &name, const Parameters &par)
+{
+   if (getResultGeometry(par) == ResultGeometry::Shifted10x10)
+      return createShifted10x10ResultHistogram(name);
+   if (getResultGeometry(par) == ResultGeometry::Modified12x12)
+      return createModified12x12ResultHistogram(name);
+   return createOfficial20x20ResultHistogram(name);
 }
 
 pair<int, int> findClosestMuonTracks(ZHadronMessenger *b, const Parameters &par)
@@ -743,8 +834,8 @@ public:
       hVZ = new TH1D(Form("hVZ%s", title.c_str()), "", 40, -20, 20);
       hZmass = new TH1D(Form("hZmass%s", title.c_str()), "", 40, 60, 120);
       
-      h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
-      hSub0 = new TH2D(Form("hSub0%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
+      h = createResultHistogram(Form("h%s", title.c_str()), par);
+      hSub0 = createResultHistogram(Form("hSub0%s", title.c_str()), par);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
       bool doJackknife = (par.useJackknife && par.isData);
       jackknifeEvents.clear();
@@ -756,7 +847,7 @@ public:
       //==================================================//
       
       par.mix = true;
-      hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
+      hMix = createResultHistogram(Form("hMix%s", title.c_str()), par);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
 
       if(par.nMix<1) return; // skip if nMix=0 (turned off)
@@ -859,6 +950,8 @@ int main(int argc, char *argv[])
    par.useVZWindow       = CL.GetBool  ("UseVZWindow", true);
    par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
    par.useJackknife    = CL.GetBool  ("UseJackknife", false);
+   par.ResultDEtaBins  = CL.GetInt   ("ResultDEtaBins", 20);
+   par.ResultDPhiBins  = CL.GetInt   ("ResultDPhiBins", 20);
    par.TrackSelectionMode = CL.Get      ("TrackSelectionMode", "Nominal");
    par.TrackTreeName   = "Tree";
    if (par.TrackSelectionMode == "Loose")   par.TrackTreeName = "TreeLoose";

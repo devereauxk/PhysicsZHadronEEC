@@ -42,6 +42,8 @@ public:
    bool useVZWindow;          // Apply the analysis |vz| < 15 requirement
    bool useFastMixing;        // Use precomputed mixing metadata to reduce candidate scanning
    bool useJackknife;        // Persist per-event contributions and replace final statistical errors with jackknife
+   int ResultDEtaBins;       // Result-stage DeltaEta bins: maintained 20x20 official, shifted 10x10, or modified 12x12
+   int ResultDPhiBins;       // Result-stage DeltaPhi bins: maintained 20x20 official, shifted 10x10, or modified 12x12
    string ZWeightFile;      // Z weight file
    bool useResidualWeight;   // Flag to see if we use residual correction
    string residualWeightFile; // Residual weight file
@@ -74,8 +76,10 @@ public:
        cout << "UseZWeight: " << (useZWeight ? "true" : "false") << endl;
         cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
         cout << "UseVZWindow: " << (useVZWindow ? "true" : "false") << endl;
-        cout << "UseFastMixing: " << (useFastMixing ? "true" : "false") << endl;
+      cout << "UseFastMixing: " << (useFastMixing ? "true" : "false") << endl;
       cout << "UseJackknife: " << (useJackknife ? "true" : "false") << endl;
+      cout << "ResultDEtaBins: " << ResultDEtaBins << endl;
+      cout << "ResultDPhiBins: " << ResultDPhiBins << endl;
       cout << "ZWeightFile: " << ZWeightFile << endl;
       cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
       cout << "TrackExtraWeight: " << TrackExtraWeight << endl;
@@ -159,7 +163,13 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
 
    TH1D* hUseJackknife = new TH1D("parUseJackknife", "parUseJackknife", 1, 0, 1);
    hUseJackknife->SetBinContent(1, par.useJackknife);
-    
+
+   TH1D* hResultDEtaBins = new TH1D("parResultDEtaBins", "parResultDEtaBins", 1, 0, 1);
+   hResultDEtaBins->SetBinContent(1, par.ResultDEtaBins);
+
+   TH1D* hResultDPhiBins = new TH1D("parResultDPhiBins", "parResultDPhiBins", 1, 0, 1);
+   hResultDPhiBins->SetBinContent(1, par.ResultDPhiBins);
+
    TH1D* hMinZY = new TH1D("parMinZY", "parMinZY", 1, 0, 1);
    hMinZY->SetBinContent(1, par.MinZY);
     
@@ -185,6 +195,8 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
    hIsPUReject->Write();
    hIsPP->Write();
    hUseJackknife->Write();
+   hResultDEtaBins->Write();
+   hResultDPhiBins->Write();
    hMinZY->Write();
    hMaxZY->Write();
 
@@ -207,6 +219,8 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
    delete hIsPUReject;
    delete hIsPP;
    delete hUseJackknife;
+   delete hResultDEtaBins;
+   delete hResultDPhiBins;
    delete hMinZY;
    delete hMaxZY;
 }

@@ -114,13 +114,15 @@ void DrawLabels(const string &collision, const string &zptRange, const string &t
 }
 
 TH1D *LoadNominalHistogram(TFile *nominalFile, TFile *nominalPPbFile, TFile *nominalPBPFile,
-   const string &observable, const string &trackRange, const string &name)
+   const string &observable, const string &trackRange, const string &name,
+   bool useShifted10x10 = false, bool useModified12x12 = false)
 {
-   if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
-      return BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, name);
-   if(nominalFile != nullptr)
-      return LoadSingleResultHistogram(*nominalFile, observable, trackRange, name);
-   return nullptr;
+    if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
+      return BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, name,
+         useShifted10x10, useModified12x12);
+    if(nominalFile != nullptr)
+       return LoadSingleResultHistogram(*nominalFile, observable, trackRange, name);
+    return nullptr;
 }
 
 TH1D *BuildRelativeHistogram(const TH1D *histogram, const TH1D *nominal, const string &name)
@@ -327,10 +329,17 @@ int main(int argc, char *argv[])
     string nominalPPbFileName = CL.Get("NominalPPb", "");
     string nominalPBPFileName = CL.Get("NominalPBP", "");
    string outputBase = CL.Get("OutputBase", "plots/systematics");
-   string collision = CL.Get("Collision", "pPb");
-   string zptRange = CL.Get("ZPTRange", "40_350");
-   string trackRange = CL.Get("TrackPTRange", "2_500");
-    vector<string> families = ParseCSV(CL.Get("Families", "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
+    string collision = CL.Get("Collision", "pPb");
+    string zptRange = CL.Get("ZPTRange", "40_350");
+    string trackRange = CL.Get("TrackPTRange", "2_500");
+    bool useShifted10x10 = CL.GetBool("UseShifted10x10", false);
+    bool useModified12x12 = CL.GetBool("UseModified12x12", false);
+    if(useShifted10x10 == true && useModified12x12 == true)
+    {
+       cerr << "UseShifted10x10 and UseModified12x12 cannot both be true" << endl;
+       return 1;
+    }
+     vector<string> families = ParseCSV(CL.Get("Families", "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
      vector<string> differenceFamilies = NormalizeDifferenceFamilies(ParseCSV(CL.Get("DifferenceFamilies", "TrackSelection,TrackCorrection,MuonRejection,PU,ScaleFactor,EnergyExtrapolation")));
 
    TFile systematicsFile(inputFileName.c_str());
@@ -338,10 +347,10 @@ int main(int argc, char *argv[])
    TFile *nominalPPbFile = (nominalPPbFileName != "") ? TFile::Open(nominalPPbFileName.c_str()) : nullptr;
    TFile *nominalPBPFile = (nominalPBPFileName != "") ? TFile::Open(nominalPBPFileName.c_str()) : nullptr;
 
-   TH1D *nominalDeltaPhi = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
-      "DeltaPhi", trackRange, "NominalDeltaPhi");
-   TH1D *nominalDeltaEta = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
-      "DeltaEta", trackRange, "NominalDeltaEta");
+     TH1D *nominalDeltaPhi = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
+       "DeltaPhi", trackRange, "NominalDeltaPhi", useShifted10x10, useModified12x12);
+     TH1D *nominalDeltaEta = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
+       "DeltaEta", trackRange, "NominalDeltaEta", useShifted10x10, useModified12x12);
     if(nominalDeltaPhi != nullptr)
     {
        DrawUncertaintyOverlay(systematicsFile, nominalDeltaPhi, "DeltaPhi", families, collision, zptRange, trackRange, outputBase + "-DeltaPhi-absolute.pdf", false);

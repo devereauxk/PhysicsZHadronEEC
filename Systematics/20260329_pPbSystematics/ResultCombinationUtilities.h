@@ -68,7 +68,58 @@ inline TH1D *LoadSingleResultHistogram(TFile &file, const std::string &observabl
    return histogram;
 }
 
-inline TH1D *ProjectResultObservable(TH2D *histogram, const std::string &observable,
+inline bool AxisHasExactEdge(const TAxis *axis, double boundary)
+{
+   if(axis == nullptr)
+      return false;
+
+   double tolerance = std::max(1.0, std::abs(boundary)) * 1e-9;
+   for(int i = 0; i <= axis->GetNbins(); i++)
+   {
+      double edge = axis->GetBinLowEdge(i + 1);
+      if(std::abs(edge - boundary) < tolerance)
+         return true;
+   }
+   return false;
+}
+
+inline bool ValidateShifted10x10Histogram(TH2D *histogram)
+{
+   if(histogram == nullptr)
+      return false;
+   if(histogram->GetNbinsX() != 10 || histogram->GetNbinsY() != 10)
+      return false;
+   if(AxisHasExactEdge(histogram->GetXaxis(), 0.0) == false)
+      return false;
+   if(AxisHasExactEdge(histogram->GetXaxis(), 4.0) == false)
+      return false;
+   if(AxisHasExactEdge(histogram->GetYaxis(), 0.0) == false)
+      return false;
+   if(AxisHasExactEdge(histogram->GetYaxis(), M_PI) == false)
+      return false;
+   return true;
+}
+
+inline bool ValidateModified12x12Histogram(TH2D *histogram)
+{
+   if(histogram == nullptr)
+      return false;
+   if(histogram->GetNbinsX() != 12 || histogram->GetNbinsY() != 12)
+      return false;
+   if(AxisHasExactEdge(histogram->GetXaxis(), 0.0) == false)
+      return false;
+   if(AxisHasExactEdge(histogram->GetXaxis(), 4.0) == false)
+      return false;
+   if(AxisHasExactEdge(histogram->GetYaxis(), 0.0) == false)
+      return false;
+   if(AxisHasExactEdge(histogram->GetYaxis(), M_PI / 2) == false)
+      return false;
+   if(AxisHasExactEdge(histogram->GetYaxis(), M_PI) == false)
+      return false;
+   return true;
+}
+
+inline TH1D *ProjectOfficial20x20ResultObservable(TH2D *histogram, const std::string &observable,
    const std::string &name)
 {
    if(histogram == nullptr)
@@ -86,8 +137,49 @@ inline TH1D *ProjectResultObservable(TH2D *histogram, const std::string &observa
    return result;
 }
 
+inline TH1D *ProjectShifted10x10ResultObservable(TH2D *histogram, const std::string &observable,
+   const std::string &name)
+{
+   if(histogram == nullptr)
+      return nullptr;
+   if(ValidateShifted10x10Histogram(histogram) == false)
+      return nullptr;
+
+   TH1D *result = nullptr;
+   if(observable == "DeltaPhi")
+      result = (TH1D *)histogram->ProjectionY(name.c_str(), 6, 10);
+   else
+      result = (TH1D *)histogram->ProjectionX(name.c_str(), 4, 8);
+
+   result->SetDirectory(nullptr);
+   NormalizeByBinWidth(result);
+   result->Scale(0.5);
+   return result;
+}
+
+inline TH1D *ProjectModified12x12ResultObservable(TH2D *histogram, const std::string &observable,
+   const std::string &name)
+{
+   if(histogram == nullptr)
+      return nullptr;
+   if(ValidateModified12x12Histogram(histogram) == false)
+      return nullptr;
+
+   TH1D *result = nullptr;
+   if(observable == "DeltaPhi")
+      result = (TH1D *)histogram->ProjectionY(name.c_str(), 7, 12);
+   else
+      result = (TH1D *)histogram->ProjectionX(name.c_str(), 4, 6);
+
+   result->SetDirectory(nullptr);
+   NormalizeByBinWidth(result);
+   result->Scale(0.5);
+   return result;
+}
+
 inline TH1D *BuildCombinedResultHistogram(TFile &pPbFile, TFile &pbpFile,
-   const std::string &observable, const std::string &trackRange, const std::string &name)
+   const std::string &observable, const std::string &trackRange, const std::string &name,
+   bool useShifted10x10 = false, bool useModified12x12 = false)
 {
    TH2D *signalPPb = LoadCloned2D(pPbFile, "hData_" + trackRange, name + "_SignalPPb");
    TH2D *signalPbp = LoadCloned2D(pbpFile, "hData_" + trackRange, name + "_SignalPbp");
@@ -129,7 +221,13 @@ inline TH1D *BuildCombinedResultHistogram(TFile &pPbFile, TFile &pbpFile,
       backgroundPPb->Scale(1.0 / totalBackgroundNZ);
 
    signalPPb->Add(backgroundPPb, -1);
-   TH1D *result = ProjectResultObservable(signalPPb, observable, name);
+   TH1D *result = nullptr;
+   if(useModified12x12 == true)
+      result = ProjectModified12x12ResultObservable(signalPPb, observable, name);
+   else if(useShifted10x10 == true)
+      result = ProjectShifted10x10ResultObservable(signalPPb, observable, name);
+   else
+      result = ProjectOfficial20x20ResultObservable(signalPPb, observable, name);
 
    delete signalPPb;
    delete signalPbp;
