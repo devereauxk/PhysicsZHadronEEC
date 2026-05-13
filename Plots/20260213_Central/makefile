@@ -1,4 +1,4 @@
-default: clean ExecuteCentralPlot ExecuteCentralSBPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot ExecuteEnergyExtrapolationPlot ExecutePPPlot ExecutePUPlot ExecuteVZPlot ExecuteCentralOverlayPPbPbPPlot ExecutePaperPlot
+default: clean ExecuteCentralPlot ExecuteCentralSBPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot ExecuteEnergyExtrapolationPlot ExecutePPPlot ExecutePUPlot ExecuteVZPlot ExecuteCentralOverlayPPbPbPPlot ExecutePaperPlot ExecutePPEEPlot
 
 ExecuteCentralPlot: plot_central.cpp
 	g++ plot_central.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
@@ -73,3 +73,9 @@ clean:
 	rm -f ExecutePUPlot
 	rm -f ExecuteVZPlot
 	rm -f ExecutePaperPlot
+	rm -f ExecutePPEEPlot
+
+ExecutePPEEPlot: plot_pp_ee.cpp
+	g++ plot_pp_ee.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecutePPEEPlot `root-config --cflags --glibs` \
+		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o

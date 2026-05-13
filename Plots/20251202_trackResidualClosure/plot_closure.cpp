@@ -3,6 +3,7 @@
 #include <TH2D.h>
 #include <TH3D.h>
 #include <TF1.h>
+#include <TStyle.h>
 #include <iostream>
 using namespace std;
 
@@ -70,6 +71,8 @@ int main(int argc, char *argv[]) {
     vector<TH1*> hTrkPt;
     vector<TH1*> hTrkEta;
     vector<TH1*> hTrkPhi;
+    vector<TH2D*> hTrkEtaPhiRaw;
+    vector<TH2D*> hTrkEtaPhi;
     vector<TH1*> hDeltaEta_all;
     vector<TH1*> hDeltaPhi_all;
     vector<TH1*> hDeltaEta_mix;
@@ -111,6 +114,9 @@ int main(int argc, char *argv[]) {
         TH1D* this_hTrkPt = this_hTrkPtEtaPhi->ProjectionX(Form("trkPt_%d", i));
         TH1D* this_hTrkEta = this_hTrkPtEtaPhi->ProjectionY(Form("trkEta_%d", i));
         TH1D* this_hTrkPhi = this_hTrkPtEtaPhi->ProjectionZ(Form("trkPhi_%d", i));
+        TH2D* this_hTrkEtaPhi = (TH2D *)this_hTrkPtEtaPhi->Project3D("zy");
+        this_hTrkEtaPhi->SetName(Form("trkEtaPhi_%d", i));
+        TH2D* this_hTrkEtaPhiRaw = (TH2D *)this_hTrkEtaPhi->Clone(Form("trkEtaPhiRaw_%d", i));
 
         if(UseWorkflowInputs == true)
         {
@@ -120,6 +126,7 @@ int main(int argc, char *argv[]) {
                 this_hTrkPt->Scale(1.0 / NZ);
                 this_hTrkEta->Scale(1.0 / NZ);
                 this_hTrkPhi->Scale(1.0 / NZ);
+                this_hTrkEtaPhi->Scale(1.0 / NZ);
             }
         }
 
@@ -130,6 +137,8 @@ int main(int argc, char *argv[]) {
         hTrkPt.push_back(this_hTrkPt);
         hTrkEta.push_back(this_hTrkEta);
         hTrkPhi.push_back(this_hTrkPhi);
+        hTrkEtaPhiRaw.push_back(this_hTrkEtaPhiRaw);
+        hTrkEtaPhi.push_back(this_hTrkEtaPhi);
 
         i++;
     }
@@ -210,6 +219,67 @@ int main(int argc, char *argv[]) {
 
     cTrk3->Update();
     cTrk3->SaveAs(Form("%s-phi.pdf", output.c_str()));
+
+    if(hTrkEtaPhi.size() >= 3)
+    {
+        gStyle->SetPalette(kBird);
+        TH2D *hTrkEtaPhiRatio = (TH2D *)hTrkEtaPhi[2]->Clone("hTrkEtaPhiRatio");
+        hTrkEtaPhiRatio->SetTitle(";#eta_{ch};#phi_{ch};MC RECO corrected / GEN");
+        hTrkEtaPhiRatio->Divide(hTrkEtaPhi[0]);
+        hTrkEtaPhiRatio->SetMinimum(0.8);
+        hTrkEtaPhiRatio->SetMaximum(1.2);
+        hTrkEtaPhiRatio->SetContour(100);
+
+        gStyle->SetOptStat(0);
+
+        TCanvas *cTrkEtaPhi = new TCanvas("cTrkEtaPhi", "cTrkEtaPhi", 700, 600);
+        cTrkEtaPhi->SetRightMargin(0.18);
+        cTrkEtaPhi->SetLeftMargin(0.12);
+        cTrkEtaPhi->SetBottomMargin(0.12);
+
+        hTrkEtaPhiRatio->Draw("COLZ");
+        AddCMSHeader((TPad *)cTrkEtaPhi, "Internal", false);
+        AddUPCHeader((TPad *)cTrkEtaPhi, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
+
+        cTrkEtaPhi->Update();
+        cTrkEtaPhi->SaveAs(Form("%s-eta-phi-ratio.pdf", output.c_str()));
+    }
+
+    if(hTrkEtaPhiRaw.size() >= 3)
+    {
+        gStyle->SetPalette(kBird);
+        const double sharedMaximum = max(hTrkEtaPhiRaw[0]->GetMaximum(), hTrkEtaPhiRaw[2]->GetMaximum());
+        const double zMax = (sharedMaximum > 0) ? sharedMaximum : 1;
+
+        auto drawHeatmap = [&](TH2D *histogram, const string &title, const string &suffix)
+        {
+            histogram->SetTitle(Form(";#eta_{ch};#phi_{ch};%s", title.c_str()));
+            histogram->SetMinimum(0);
+            histogram->SetMaximum(zMax);
+            histogram->SetContour(100);
+
+            gStyle->SetOptStat(0);
+
+            TCanvas *canvas = new TCanvas(Form("cTrkEtaPhi_%s", suffix.c_str()),
+                Form("cTrkEtaPhi_%s", suffix.c_str()), 700, 600);
+            canvas->SetRightMargin(0.18);
+            canvas->SetLeftMargin(0.12);
+            canvas->SetBottomMargin(0.12);
+
+            histogram->Draw("COLZ");
+            AddCMSHeader((TPad *)canvas, "Internal", false);
+            AddUPCHeader((TPad *)canvas, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
+
+            canvas->Update();
+            canvas->SaveAs(Form("%s-%s.pdf", output.c_str(), suffix.c_str()));
+        };
+
+        TH2D *hTrkEtaPhiGen = (TH2D *)hTrkEtaPhiRaw[0]->Clone("hTrkEtaPhiGen");
+        TH2D *hTrkEtaPhiCorrected = (TH2D *)hTrkEtaPhiRaw[2]->Clone("hTrkEtaPhiCorrected");
+
+        drawHeatmap(hTrkEtaPhiGen, "MC GEN weighted counts", "eta-phi-gen");
+        drawHeatmap(hTrkEtaPhiCorrected, "MC RECO corrected weighted counts", "eta-phi-corrected");
+    }
 
     return 0;
 

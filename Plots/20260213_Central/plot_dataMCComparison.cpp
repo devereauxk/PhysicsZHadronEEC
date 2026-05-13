@@ -3,6 +3,7 @@
 #include <TH2D.h>
 #include <TH3D.h>
 #include <TF1.h>
+#include <TSystem.h>
 #include <iostream>
 using namespace std;
 
@@ -23,34 +24,57 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
+    string inputRootDir = CL.Get("inputRootDir", "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
+    string outputDir = CL.Get("outputDir", "plots/dataMCComparison");
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
-    string mctag = (collisionType == "pp") ? "pythia" : collisionType;
-
-    // files to load
-    vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sNoEPOSMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pythia%sEPOSMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s-nosub.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_trkResidual_%s_ZPT%s-nosub.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
-    };
-    vector<string> labels = {
-        "Powheg+EPOS GEN",
-        "Powheg GEN (x2)",
-        "Powheg+EPOS RECO",
-        "  + corrections",
-        "Pythia+EPOS GEN",
-        "DATA",
-        "  + corrections"
-    };
+    vector<string> input_ZPT_files;
+    vector<string> labels;
+    if(collisionType == "pp")
+    {
+        input_ZPT_files = {
+            Form("%s/pythiaMC_Gen_nominal_%s_ZPT%s-nosub.root", inputRootDir.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/pythiaMC_nominal_%s_ZPT%s-nosub.root", inputRootDir.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/pythiaMC_trkResidual_%s_ZPT%s-nosub.root", inputRootDir.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/pp_nominal_%s_ZPT%s-nosub.root", inputRootDir.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/pp_EEtrkResidual_%s_ZPT%s-nosub.root", inputRootDir.c_str(), tag.c_str(), zPtRange.c_str())
+        };
+        labels = {
+            "Pythia+Madgraph GEN",
+            "Pythia+Madgraph RECO",
+            "  + corrections",
+            "DATA",
+            "  + corrections"
+        };
+    }
+    else
+    {
+        string mctag = collisionType;
+        input_ZPT_files = {
+            Form("%s/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", inputRootDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%sNoEPOSMC_Gen_nominal_%s_ZPT%s-nosub.root", inputRootDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%sMC_nominal_%s_ZPT%s-nosub.root", inputRootDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%sMC_trkResidual_%s_ZPT%s-nosub.root", inputRootDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/pythia%sEPOSMC_Gen_nominal_%s_ZPT%s-nosub.root", inputRootDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%s_nominal_%s_ZPT%s-nosub.root", inputRootDir.c_str(), collisionType.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%s_trkResidual_%s_ZPT%s-nosub.root", inputRootDir.c_str(), collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        };
+        labels = {
+            "Powheg+EPOS GEN",
+            "Powheg GEN (x2)",
+            "Powheg+EPOS RECO",
+            "  + corrections",
+            "Pythia+EPOS GEN",
+            "DATA",
+            "  + corrections"
+        };
+    }
     
-    string output =  Form("plots/dataMCComparison/%s_%s_ZPT%s", collisionType.c_str(), tag.c_str(), zPtRange.c_str());
+    gSystem->mkdir(outputDir.c_str(), true);
+    string output =  Form("%s/%s_%s_ZPT%s", outputDir.c_str(), collisionType.c_str(), tag.c_str(), zPtRange.c_str());
 
     vector<TH1*> hZMass;
     vector<TH1*> hZPt;
@@ -98,7 +122,7 @@ int main(int argc, char *argv[]) {
         TH1D* this_hTrkEta = this_hTrkPtEtaPhi->ProjectionY(Form("trkEta_%d", i));
         TH1D* this_hTrkPhi = this_hTrkPtEtaPhi->ProjectionZ(Form("trkPhi_%d", i));
 
-        if (i==1) this_hTrkEta->Scale(2);
+        if (collisionType != "pp" && i==1) this_hTrkEta->Scale(2);
 
         divideByWidth(this_hTrkPt);
         divideByWidth(this_hTrkEta);
@@ -110,10 +134,24 @@ int main(int argc, char *argv[]) {
         i++;
     }
 
-    vector<int> markerColors = {cmsBlue, kMagenta, cmsRed, kSpring-6, cmsTealL1, kOrange+7, kSpring+7, cmsGray};
-    vector<int> markerStyles = {mSquareFill, mDiamondFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = markerColors;
-    vector<int> lineStyles = {0, 0, 2, 0, 1, 2, 0};
+    vector<int> markerColors;
+    vector<int> markerStyles;
+    vector<int> lineColors;
+    vector<int> lineStyles;
+    if(collisionType == "pp")
+    {
+        markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7};
+        markerStyles = {mSquareFill, mDiamondFill, mCircleFill, mCircleFill, mCircleFill};
+        lineColors = markerColors;
+        lineStyles = {0, 0, 2, 2, 0};
+    }
+    else
+    {
+        markerColors = {cmsBlue, kMagenta, cmsRed, kSpring-6, cmsTealL1, kOrange+7, kSpring+7, cmsGray};
+        markerStyles = {mSquareFill, mDiamondFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
+        lineColors = markerColors;
+        lineStyles = {0, 0, 2, 0, 1, 2, 0};
+    }
 
 
     // ===========================================
@@ -194,7 +232,7 @@ int main(int argc, char *argv[]) {
         lineColors, lineStyles, 
         markerColors, markerStyles,
         "y_{ch}", -4, 4,
-        "(1/N_{Z}) dN_{ch}/d y_{ch}", 10, 25,
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", (collisionType == "pp") ? 3 : 10, (collisionType == "pp") ? 7 : 25,
         "Ratio to GEN", 0.5, 1.5,
         0,
         false, false, false
