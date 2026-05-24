@@ -309,7 +309,7 @@ int getZpTBin(float zPt) {
    return 3;
 }
 
-float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector *corrector) {
+float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector2D *corrector) {
    float mult = 0;
    pair<int, int> closestMuonTracks = findClosestMuonTracks(b, par);
    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
@@ -438,17 +438,26 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
    }
 
-   // open track residual correctors if needed
-   TrackResidualCorrector *corrector;
-   TrackResidualCorrector *corrector_0_10;
-   TrackResidualCorrector *corrector_10_20;
-   TrackResidualCorrector *corrector_20_40;
-   TrackResidualCorrector *corrector_40_500;
+   // open track residual correctors if needed (2D eta-phi version)
+   TrackResidualCorrector2D *corrector;
+   TrackResidualCorrector2D *corrector_0_10;
+   TrackResidualCorrector2D *corrector_10_20;
+   TrackResidualCorrector2D *corrector_20_40;
+   TrackResidualCorrector2D *corrector_40_500;
    if (par.useResidualWeight && par.residualWeightFile != "") {
-      corrector_0_10   = new TrackResidualCorrector(Form("%s0-10.root",   par.residualWeightFile.c_str()));              
-      corrector_10_20  = new TrackResidualCorrector(Form("%s10-20.root",  par.residualWeightFile.c_str()));
-      corrector_20_40  = new TrackResidualCorrector(Form("%s20-40.root",  par.residualWeightFile.c_str()));
-      corrector_40_500 = new TrackResidualCorrector(Form("%s40-500.root", par.residualWeightFile.c_str()));              
+      string rf = par.residualWeightFile;
+      bool singleFile = (rf.size() >= 5 && rf.substr(rf.size()-5) == ".root");
+      if (singleFile) {
+         corrector_0_10   = new TrackResidualCorrector2D(rf);
+         corrector_10_20  = new TrackResidualCorrector2D(rf);
+         corrector_20_40  = new TrackResidualCorrector2D(rf);
+         corrector_40_500 = new TrackResidualCorrector2D(rf);
+      } else {
+         corrector_0_10   = new TrackResidualCorrector2D(Form("%s0-10.root",   rf.c_str()));
+         corrector_10_20  = new TrackResidualCorrector2D(Form("%s10-20.root",  rf.c_str()));
+         corrector_20_40  = new TrackResidualCorrector2D(Form("%s20-40.root",  rf.c_str()));
+         corrector_40_500 = new TrackResidualCorrector2D(Form("%s40-500.root", rf.c_str()));
+      }
    }
 
    // Optional fast-mixing metadata cache:
@@ -981,7 +990,6 @@ int main(int argc, char *argv[])
    par.useVZWindow       = CL.GetBool  ("UseVZWindow", true);
    par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
    par.useJackknife    = CL.GetBool  ("UseJackknife", false);
-   par.usePionTrackY   = CL.GetBool  ("UsePionTrackY", false);
    par.ResultDEtaBins  = CL.GetInt   ("ResultDEtaBins", 20);
    par.ResultDPhiBins  = CL.GetInt   ("ResultDPhiBins", 20);
    par.TrackSelectionMode = CL.Get      ("TrackSelectionMode", "Nominal");
@@ -999,6 +1007,7 @@ int main(int argc, char *argv[])
    par.includeHole   = CL.GetBool  ("includeHole",true);     // Include hole particle or not
    par.isPPb         = CL.GetBool  ("IsPPb", false);         // Flag to indicate if p is going in the positive eta direction.
    par.yBoost       = CL.GetDouble("yBoost", 0);         // Rapidity boost for pPb analysis
+   par.usePionTrackY   = CL.GetBool  ("UsePionTrackY", false);
    par.mix = 0;
    par.isPP = IsPP;
    par.isData = IsData;

@@ -2,6 +2,7 @@
 
 #include "TFile.h"
 #include "TH1D.h"
+#include "TH2D.h"
 #include "TF2.h"
 
 class TrackResidualCorrector
@@ -115,6 +116,67 @@ private:
    TrackResidualCorrector *TRC2;
    TrackResidualCorrector *TRC3;
    TrackResidualCorrector *TRC4;
+};
+
+class TrackResidualCorrector2D
+{
+public:
+   TrackResidualCorrector2D(std::string filename = "")
+   {
+      if(filename == "")
+      {
+         hPtCorrTotal = nullptr;
+         hEtaPhiCorrTotal = nullptr;
+         f = nullptr;
+         return;
+      }
+      f = new TFile(filename.c_str());
+      hPtCorrTotal  = (TH1D *)f->Get("hPtCorrTotal");
+      hEtaPhiCorrTotal = (TH2D *)f->Get("hEtaPhiCorrTotal");
+   }
+
+   ~TrackResidualCorrector2D()
+   {
+      if(f != nullptr)
+      {
+         f->Close();
+         delete f;
+      }
+   }
+
+   double GetCorrectionFactor(double pt, double eta, double phi)
+   {
+      if(hPtCorrTotal == nullptr || hEtaPhiCorrTotal == nullptr)
+         return 1;
+
+      if(phi < 0)
+         phi += 2 * M_PI;
+
+      double PTMax = hPtCorrTotal->GetXaxis()->GetBinUpEdge(hPtCorrTotal->GetNbinsX());
+
+      int bin_pt = hPtCorrTotal->GetXaxis()->FindBin(pt);
+      if(pt >= PTMax)
+         bin_pt = hPtCorrTotal->GetNbinsX();
+
+      int bin_eta = hEtaPhiCorrTotal->GetXaxis()->FindBin(eta);
+      int bin_phi = hEtaPhiCorrTotal->GetYaxis()->FindBin(phi);
+
+      double corr = hPtCorrTotal->GetBinContent(bin_pt) *
+         hEtaPhiCorrTotal->GetBinContent(bin_eta, bin_phi);
+
+      if(isnan(corr))
+      {
+         std::cerr << "Error!  nan efficiency! pt=" << bin_pt << " etaphi=(" << bin_eta << "," << bin_phi << ")" << std::endl;
+         corr = 1;
+      }
+
+      return corr;
+   }
+
+private:
+   TFile* f;
+   TH1D *hPtCorrTotal;
+   TH2D *hEtaPhiCorrTotal;
 };
 
 class VZCorrector

@@ -31,6 +31,43 @@ apply this contract strictly.
   produced, validation checks, failures/retries, and final status.
 - **Handoff**: Reviewer defines scope, acceptance criteria, ordering, and stop
   conditions. Analyzer executes and reports. Reviewer validates and reports back to user.
+- **Writer**: edits Overleaf note text only; does not write or run code. Constrained
+  to the specific section(s) dispatched to it — must not edit, check typos, or
+  reformat other sections. Follows the style contract below.
+
+### Writer style contract (Overleaf `~/OverleafZHadronInPPb/`)
+
+- **No implementation references**: never mention ROOT files, code variables, script
+  names, file paths, tag strings, skim versions, or workflow details. Write at the
+  physics level only.
+- **Voice and tense**: present tense for descriptions of method ("We correct…",
+  "The correction is applied…"); past tense for completed measurements ("The data
+  were collected…"). First-person plural "we" throughout.
+- **Collision system names**: `pp`, `pPb`, `Pbp` in running text (never `PbP` in
+  prose; `PbP` appears only in file-name references). `$\rootsNN = 8.16$~\TeV`.
+- **Kinematic ranges**: inline math with custom macros:
+  `$0 < \ptz < 500$\GeV`, `$0.5 < \ptt < 15$\GeV`,
+  `$0 < \ptz < 30$\GeV` / `$30 < \ptz < 500$\GeV`.
+  Use `\GeV` (no `/c`), except `\GeVc` for momentum quantities when the note
+  already does so (check surrounding context).
+- **Custom macros** (defined in `custom-definitions.tex`):
+  `\ptz`, `\ptt`, `\dphitz`, `\dytz`, `\detatz`, `\etat`, `\phit`, `\phiz`, `\yz`,
+  `\zBoson`, `\zBosons`, `\PYTHIAEIGHT`, `\MGMCatNLO`, `\HYDJET`, `\rootsNN`, `\pp`.
+- **Cross-references**: `Section~\ref{sec:...}` or `Sec.~\ref{sec:...}`;
+  `Fig.~\ref{fig:...}`; `Table~\ref{table:...}`; `Eq.~\ref{eq:...}`.
+  Non-breaking `~` before `\ref`.
+- **Figure captions**: state what is plotted, name the collision system(s), specify
+  the kinematic selection, and identify each panel/row/column. No trailing periods.
+- **Common phrases**: "closure is seen", "sub-percent level agreement",
+  "We apply kinematic selection of…", "The lower panels show…",
+  "Variations are shown with an inclusive kinematic selection…".
+- **Correction descriptions**: describe the physics idea and the iterative procedure
+  in general terms (e.g. "iterative bin-by-bin reweighting"), never refer to ROOT
+  macro names, histogram keys, or iteration-count implementation details unless
+  they are physics-relevant (e.g. "three iterations is sufficient").
+- **Author-note macro**: `\kd{...}` for Kyle's inline comments/TODOs.
+- **Appendix labels**: `\label{subsec:appendix_...}` for appendix subsections.
+- **No** footnotes, no acknowledgments section editing, no bibliography editing.
 
 ## Build, test, and lint
 
@@ -123,8 +160,8 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   `PbPData_Reco.root` / `PbPMC_{Reco,Gen}.root`; EPOS helpers remain on the merged
   EPOS paths.
 - **Official tag convention**: `OFFICIAL_TAG_PP` / `OFFICIAL_TAG_PPB` exported from
-  the dictionary. Current V0.3 campaign uses `EEV5_ZV9_trkV27_nmix10` (pp) and
-  `ZV9_trkV27_nmix10` (pPb/PbP). Never invent ad hoc descriptive suffixes
+  the dictionary. Current V0.3 campaign uses `EEV5_ZV9_trkV28_nmix10` (pp) and
+  `ZV9_trkV28_nmix10` (pPb/PbP). Never invent ad hoc descriptive suffixes
   (`newVZFix`, `skimVZOff`, etc.); if physics changes, increment `ZV*` / `trkV*`.
 
 ### Private MC (pp Pythia+MadGraph)
@@ -214,6 +251,34 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   main-analysis `rejectMuonMatchedTrack(...)` semantics — explicit `TrackMuDR` first,
   then `TrackMuClosest`, then boolean `IsMuTagged`. `TrackMuDR`/`TrackMuClosest`
   apply to MC RECO and MC GEN.
+
+### 2D residual correction (20260518_ResidualCorrection2D)
+- **Overview**: replaces the triple-1D (`pT × η × φ`) track residual correction with a
+  `pT × (η,φ)` correction — one 1D ratio for `pT` and one simultaneous 2D ratio for
+  `(η, φ)`, preserving angular correlations. Three iterations, same as 1D. Promoted at
+  `trkV28`; the 1D workflow at `20251211_ResidualCorrection` is kept as a fallback.
+- **Header**: `CommonCode/include/TrackResidualCorrector.h` exports both
+  `TrackResidualCorrector` (1D, still used by `EnergyCorrector`/`Zcorrector`) and
+  `TrackResidualCorrector2D` (reads `hPtCorrTotal` TH1D + `hEtaPhiCorrTotal` TH2D,
+  returns product correction). Main-analysis `CorrelationAnalysis.cpp` dispatches to
+  `TrackResidualCorrector2D` when the weight file contains `hEtaPhiCorrTotal`.
+- **Correction ROOT layout**: each file contains `hPtCorrTotal` (TH1D, 30 bins
+  0.5–15 GeV) and `hEtaPhiCorrTotal` (TH2D, 48 η × 48 φ bins). Iteration-level
+  histograms `hPtCorr_iter{0,1,2}` and `hEtaPhiCorr_iter{0,1,2}` are also stored for
+  diagnostic plots.
+- **Workflow**: `MainAnalysis/20260518_ResidualCorrection2D/workflow_2D/` mirrors the
+  1D workflow structure. Runners: `run-pp.sh`, `run-pPb.sh`, `run-pp-systematics.sh`,
+  `run-pPb-systematics.sh`, `run-pp-pu.sh`, `run-pPb-pu.sh`. Iteration scripts:
+  `correction_2D.C` (per-iteration 2D correction), `merge_corrections_2D.C`
+  (element-wise product across iterations). Closure inputs stored in
+  `output/closure_inputs/`.
+- **Closure plots**: `Plots/20251202_trackResidualClosure/` generates 1D
+  `pt`/`eta`/`phi` closure PDFs plus 2D `eta-phi-{corrected,gen,ratio}` heat maps from
+  `workflow_2D/output/closure_inputs/`. The 3×2 correction convergence plots
+  (`corrections_2D_*.pdf`) are produced by `workflow_2D/plot_corrections_2D.sh`.
+- **Official weight paths**: 84 files at
+  `workflow_2D/output/20260519_ZV9_trkV28_TrackResidualCorrection_*` keyed in
+  `OfficialWeightDictionary.sh` as `OFFICIAL_R_WEIGHT_FILE_{PP,PPB,PBP}[_variant]`.
 
 ### TnP weights
 - **20250929 skimmer TnP**: pp / PA MC keep `MZHadron.ZWeight = 1` and `ExtraZWeight = 1`.
@@ -319,8 +384,8 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   semi-official study (tags `*_bin10x10shifted_20260506`) — keep its runners and
   exploratory presentation but prefer the newer `12 × 12` set for note Results. The
   maintained `12 × 12` surface uses tags
-  `EEV5_ZV9_trkV27_nmix10_bin12x12_20260507` (pp) and
-  `ZV9_trkV27_nmix10_bin12x12_20260507` (pPb/PbP). Refresh the inclusive
+  `EEV5_ZV9_trkV28_nmix10_bin12x12_20260507` (pp) and
+  `ZV9_trkV28_nmix10_bin12x12_20260507` (pPb/PbP). Refresh the inclusive
   `ZPT0_500`/`trkPT0.5_15` plus six scan bins through
   `MainAnalysis/20241102_ZhadronVsZPt/{result-study-bin12x12-20260507.sh,
   systematics-bin12x12-20260507.sh}`,
@@ -479,16 +544,21 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   plots in `Plots/20260115_ZResidualClosure/`.
 - `Plots/20260115_ZResidualClosure/`: Z-correction closure outputs (e.g.
   `ZPT0_500_Zclosure-closure-*.pdf` under `plots/{pp,pPb,PbP}`).
-- `MainAnalysis/20251211_ResidualCorrection/workflow/plots/`: track residual
-  correction-iteration outputs; latest uses `TrackResidualCorrection_V24_ZWeight_V6`.
+- `MainAnalysis/20251211_ResidualCorrection/workflow/plots/`: 1D track residual
+  correction-iteration outputs (fallback); superseded by 2D for `trkV28`.
+- `MainAnalysis/20260518_ResidualCorrection2D/workflow_2D/`: 2D track residual
+  correction derivation. Official `trkV28` weight files in `output/`, correction
+  convergence PDFs (`corrections_2D_*.pdf`) and 1D closure PDFs in `plots/`, closure
+  inputs in `output/closure_inputs/`.
 - `Plots/20251202_trackResidualClosure/plots/`: track-level no-subtraction closure
-  outputs (`*-nosub-closure-*`), including `trkV24` updated pPb/PbP figures.
+  outputs (`*-nosub-closure-*`) including `trkV28` 2D eta-phi heat maps
+  (`*-nosub-closure-eta-phi-{corrected,gen,ratio}.pdf`).
 - `Plots/20260120_CentralClosure/plots/`: background-subtracted and pre-subtraction
   closure outputs (`*-closure-Delta{Eta,Phi}-{all,bkg,result}.pdf`), including
-  `trkV24` updated pPb/PbP figures. For current-tag pp closure refreshes, the
-  maintained path is to run `ExecuteClosureTest` directly for `collisionType=pp` over
-  `ZPT={0_10,10_20,20_40,40_500}`, `trkPtRange=0.5_500`, `tag=$OFFICIAL_TAG_PP`;
-  `plot-central.sh` does not by itself refresh the pp closure panels.
+  `trkV28` updated figures. For current-tag closure refreshes, run
+  `ExecuteClosureTest` directly for each `collisionType` over
+  `ZPT={0_10,10_20,20_40,40_500}`, `trkPtRange=0.5_15`, `tag=$OFFICIAL_TAG_PP` (or
+  `$OFFICIAL_TAG_PPB`); `plot-central.sh` runs all three systems.
 - `SampleGeneration/20250929_ReducedTreePA/`: PA reduced-tree skimming that produced
   the V0.2 skim inputs. `ReduceForest.cpp` converts forest ROOT inputs into skim
   trees; `make Prepare` creates `Samples/{PAMC,APMC,PAData}` symlinks. Forest-side

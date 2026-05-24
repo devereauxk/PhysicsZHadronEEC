@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
     if(UseWorkflowInputs == true)
     {
         string zPtRangeDash = ReplaceAll(zPtRange, "_", "-");
-        string base = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20251211_ResidualCorrection/workflow/output/closure_inputs";
+        string base = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260518_ResidualCorrection2D/workflow_2D/output/closure_inputs";
         inputNosubFiles = {
             Form("%s/%s_%s_zPt%s_gen.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
             Form("%s/%s_%s_zPt%s_reco.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
@@ -98,8 +98,8 @@ int main(int argc, char *argv[]) {
         TH1D* hNZ = nullptr;
         if(UseWorkflowInputs == true)
         {
-            this_hTrkPtEtaPhi = (TH3D*)fin->Get("h3D");
-            hNZ = (TH1D*)fin->Get("hNZ");
+            this_hTrkPtEtaPhi = (TH3D*)fin->Get("hTrkPtEtaPhiData");
+            hNZ = (TH1D*)fin->Get("hNZData");
         }
         else
         {

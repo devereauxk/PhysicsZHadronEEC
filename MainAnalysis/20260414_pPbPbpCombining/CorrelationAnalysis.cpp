@@ -307,13 +307,13 @@ int main(int argc, char *argv[])
    if (par.ZCorrectionFile != "")
       ZCorrectionCorrector = make_unique<ZYDirectCorrector>(par.ZCorrectionFile);
 
-   TrackResidualCorrector *corrector_0_10 = nullptr, *corrector_10_20 = nullptr,
-                          *corrector_20_40 = nullptr, *corrector_40_500 = nullptr;
+   TrackResidualCorrector2D *corrector_0_10 = nullptr, *corrector_10_20 = nullptr,
+                            *corrector_20_40 = nullptr, *corrector_40_500 = nullptr;
    if (par.useResidualWeight && par.residualWeightFile != "") {
-      corrector_0_10   = new TrackResidualCorrector(Form("%s0-10.root",   par.residualWeightFile.c_str()));
-      corrector_10_20  = new TrackResidualCorrector(Form("%s10-20.root",  par.residualWeightFile.c_str()));
-      corrector_20_40  = new TrackResidualCorrector(Form("%s20-40.root",  par.residualWeightFile.c_str()));
-      corrector_40_500 = new TrackResidualCorrector(Form("%s40-500.root", par.residualWeightFile.c_str()));
+      corrector_0_10   = new TrackResidualCorrector2D(Form("%s0-10.root",   par.residualWeightFile.c_str()));
+      corrector_10_20  = new TrackResidualCorrector2D(Form("%s10-20.root",  par.residualWeightFile.c_str()));
+      corrector_20_40  = new TrackResidualCorrector2D(Form("%s20-40.root",  par.residualWeightFile.c_str()));
+      corrector_40_500 = new TrackResidualCorrector2D(Form("%s40-500.root", par.residualWeightFile.c_str()));
    }
 
    unsigned long nEntry = M->GetEntries() * par.scaleFactor;
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
       hZ3D->Fill(zPt, zY_CM, zPhi, eventWeight);
 
       // Select track residual corrector by Z pT bin
-      TrackResidualCorrector *corrector = nullptr;
+      TrackResidualCorrector2D *corrector = nullptr;
       if (par.useResidualWeight && par.residualWeightFile != "") {
          if (zPt < 10) corrector = corrector_0_10;
          else if (zPt < 20) corrector = corrector_10_20;
