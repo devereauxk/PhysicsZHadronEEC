@@ -20,6 +20,7 @@ using namespace std;
 #include "TPad.h"
 #include "TROOT.h"
 #include "TStyle.h"
+#include "TTree.h"
 
 #include "CommandLine.h"
 #include "KylesPlotting.h"
@@ -68,6 +69,90 @@ TH1D *BuildSingleBkgHistogram(TFile &file,
    return result;
 }
 
+struct JackknifeProjectionContribution {
+   double SignalNZ = 0;
+   double MixNZ = 0;
+   vector<float> SignalEta;
+   vector<float> MixEta;
+   vector<float> SignalPhi;
+   vector<float> MixPhi;
+};
+
+void AppendJackknifeProjectionContributions(TFile *file, const string &treeName,
+   vector<JackknifeProjectionContribution> &events)
+{
+   if (file == nullptr) return;
+   TTree *tree = (TTree *)file->Get(treeName.c_str());
+   if (tree == nullptr) return;
+
+   double signalNZ = 0, mixNZ = 0;
+   vector<float> *signalEta = nullptr, *mixEta = nullptr;
+   vector<float> *signalPhi = nullptr, *mixPhi = nullptr;
+   tree->SetBranchAddress("SignalNZ", &signalNZ);
+   tree->SetBranchAddress("MixNZ", &mixNZ);
+   tree->SetBranchAddress("SignalEta", &signalEta);
+   tree->SetBranchAddress("MixEta", &mixEta);
+   tree->SetBranchAddress("SignalPhi", &signalPhi);
+   tree->SetBranchAddress("MixPhi", &mixPhi);
+
+   for (Long64_t entry = 0; entry < tree->GetEntries(); ++entry) {
+      tree->GetEntry(entry);
+      JackknifeProjectionContribution c;
+      c.SignalNZ = signalNZ; c.MixNZ = mixNZ;
+      c.SignalEta = *signalEta; c.MixEta = *mixEta;
+      c.SignalPhi = *signalPhi; c.MixPhi = *mixPhi;
+      events.push_back(c);
+   }
+}
+
+vector<double> ComputeProjectedJackknifeSigma(const vector<JackknifeProjectionContribution> &events,
+   const TH1D *fullHistogram, bool useEta)
+{
+   int nBins = fullHistogram->GetNbinsX();
+   vector<double> sigma(nBins, 0);
+   if (events.size() < 2) return sigma;
+
+   double totalSignalNZ = 0, totalMixNZ = 0;
+   vector<double> fullSignal(nBins, 0), fullMix(nBins, 0);
+   for (const auto &e : events) {
+      totalSignalNZ += e.SignalNZ;
+      totalMixNZ += e.MixNZ;
+      for (int i = 0; i < nBins; ++i) {
+         fullSignal[i] += (useEta ? e.SignalEta[i] : e.SignalPhi[i]);
+         fullMix[i] += (useEta ? e.MixEta[i] : e.MixPhi[i]);
+      }
+   }
+
+   int validEvents = 0;
+   for (const auto &e : events) {
+      if (totalSignalNZ - e.SignalNZ <= 0 || totalMixNZ - e.MixNZ <= 0) continue;
+      validEvents++;
+   }
+   if (validEvents < 2) return sigma;
+
+   for (int i = 1; i <= nBins; ++i) {
+      double fullValue = fullSignal[i-1] / totalSignalNZ - fullMix[i-1] / totalMixNZ;
+      double varianceSum = 0;
+      for (const auto &e : events) {
+         if (totalSignalNZ - e.SignalNZ <= 0 || totalMixNZ - e.MixNZ <= 0) continue;
+         double sigWO = (fullSignal[i-1] - (useEta ? e.SignalEta[i-1] : e.SignalPhi[i-1])) / (totalSignalNZ - e.SignalNZ);
+         double mixWO = (fullMix[i-1] - (useEta ? e.MixEta[i-1] : e.MixPhi[i-1])) / (totalMixNZ - e.MixNZ);
+         double delta = (sigWO - mixWO) - fullValue;
+         varianceSum += delta * delta;
+      }
+      sigma[i-1] = sqrt((validEvents - 1.0) / validEvents * varianceSum);
+   }
+   return sigma;
+}
+
+void ApplyCombinedJackknifeErrors(TH1D *h, const vector<JackknifeProjectionContribution> &events, bool useEta)
+{
+   if (events.size() < 2 || h == nullptr) return;
+   vector<double> sigma = ComputeProjectedJackknifeSigma(events, h, useEta);
+   for (int i = 1; i <= h->GetNbinsX(); ++i)
+      h->SetBinError(i, sigma[i-1] / h->GetBinWidth(i) * 0.5);
+}
+
 int main(int argc, char *argv[])
 {
    CommandLine CL(argc, argv);
@@ -93,6 +178,7 @@ int main(int argc, char *argv[])
    // Precompute file paths for each nmix value.
    struct NmixFiles {
       string ppResult, ppNosub;
+      string pPbResult, pbpResult;
       string pPbNosub, pbpNosub;
       string pPbGenNosub, pbpGenNosub;
    };
@@ -106,6 +192,8 @@ int main(int argc, char *argv[])
 
       files[i].ppResult     = dir + "/pp_trkResidual_"          + ppTag  + "_ZPT" + zptRange + "-result.root";
       files[i].ppNosub      = dir + "/pp_trkResidual_"          + ppTag  + "_ZPT" + zptRange + "-nosub.root";
+      files[i].pPbResult    = dir + "/pPb_trkResidual_"         + ppbTag + "_ZPT" + zptRange + "-result.root";
+      files[i].pbpResult    = dir + "/PbP_trkResidual_"         + ppbTag + "_ZPT" + zptRange + "-result.root";
       files[i].pPbNosub     = dir + "/pPb_trkResidual_"         + ppbTag + "_ZPT" + zptRange + "-nosub.root";
       files[i].pbpNosub     = dir + "/PbP_trkResidual_"         + ppbTag + "_ZPT" + zptRange + "-nosub.root";
       files[i].pPbGenNosub  = dir + "/pPbMC_Gen_nominal_"       + ppbTag + "_ZPT" + zptRange + "-nosub.root";
@@ -159,6 +247,18 @@ int main(int argc, char *argv[])
                      h = BuildCombinedResultHistogram(*fPPb, *fPbp, observable, trackRange, suffix);
                      fPPb->Close(); delete fPPb;
                      fPbp->Close(); delete fPbp;
+                     if (h != nullptr) {
+                        vector<JackknifeProjectionContribution> jkEvents;
+                        TFile *fPPbR = TFile::Open(F.pPbResult.c_str());
+                        TFile *fPbpR = TFile::Open(F.pbpResult.c_str());
+                        if (fPPbR && !fPPbR->IsZombie())
+                           AppendJackknifeProjectionContributions(fPPbR, Form("JackknifeProjection%s", trackRange.c_str()), jkEvents);
+                        if (fPbpR && !fPbpR->IsZombie())
+                           AppendJackknifeProjectionContributions(fPbpR, Form("JackknifeProjection%s", trackRange.c_str()), jkEvents);
+                        ApplyCombinedJackknifeErrors(h, jkEvents, observable == "DeltaEta");
+                        if (fPPbR) { fPPbR->Close(); delete fPPbR; }
+                        if (fPbpR) { fPbpR->Close(); delete fPbpR; }
+                     }
                   } else { // EPOSgen
                      TFile *fPPb = TFile::Open(F.pPbGenNosub.c_str());
                      TFile *fPbp = TFile::Open(F.pbpGenNosub.c_str());

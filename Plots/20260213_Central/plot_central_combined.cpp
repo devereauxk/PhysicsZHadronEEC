@@ -539,13 +539,14 @@ int main(int argc, char *argv[]) {
         deltaEtaProjectionLabel = "0 < #Delta#varphi_{ch,Z} < #pi";
 
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
-    TPad* pResult1 = (TPad*) PlotCMSDiffResult(
+    TPad* pResult1 = (TPad*) PlotCMSDiffResultRegion(
         hDeltaEta_combined, topSystematicsEta, differenceSystematicsEta, "", labels,
-        lineColors, lineStyles, 
+        lineColors, lineStyles,
         markerColors, markerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
         differenceLabel.c_str(), -1, -1,
+        0, 4,
         0,
         false, false, true,
         0.2
@@ -567,13 +568,14 @@ int main(int argc, char *argv[]) {
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
     TCanvas* cResult2 = new TCanvas("cResult2", "cResult2", 600, 600);
-    TPad* pResult2 = (TPad*) PlotCMSDiffResult(
+    TPad* pResult2 = (TPad*) PlotCMSDiffResultRegion(
         hDeltaPhi_combined, topSystematicsPhi, differenceSystematicsPhi, "", labels,
-        lineColors, lineStyles, 
+        lineColors, lineStyles,
         markerColors, markerStyles,
         "#Delta#varphi_{ch,Z}", useShifted10x10 ? -3 * M_PI / 5 : -1.5707, useShifted10x10 ? 7 * M_PI / 5 : 4.7123,
         "d#LT#DeltaN_{ch}#GT/d#Delta#varphi_{ch,Z}", -1, -1,
         differenceLabel.c_str(), -1, -1,
+        0, M_PI,
         0,
         false, false, true,
         0.2

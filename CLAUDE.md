@@ -518,6 +518,35 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   `output/<sys>_run<N>/` and `plots/extremal_runs/`; presentation
   `presentations/pPbPbp_extremal_runs_presentation.pdf`.
 
+## Jewel MC samples (`SampleGeneration/20260521_Jewel`)
+
+- **Generator**: `~/Jewel/jewel-2.4.0/jewel-2.4.0-vac` (vacuum, pp) and `jewel-2.4.0-2D` (medium, pPb).
+  Requires `export LD_LIBRARY_PATH=/home/kdeverea/Jewel/lhapdf/lib` and
+  `export LHAPATH=/cvmfs/sft.cern.ch/lcg/external/lhapdfsets/current`.
+- **Process**: `PROCESS PPZJ` with `PTMIN 15`, `PTMAX 1200`, `SQRTS {5020,8160}`, `NPROTON 1`,
+  `WEXPO 4.5`, `HADRO T`, `MASS 1.`, `KEEPRECOILS T`, `WRITESCATCEN T`, `WRITEDUMMIES T`.
+- **Canonical skims** (do not delete without user confirmation):
+  - `output/jewel_pp_8160.root` — 1.89M events, pp 8.16 TeV vacuum (pre-existing)
+  - `output/jewel_pp_5020.root` — 1.42M events, pp 5.02 TeV vacuum (NEVENT 1500000)
+  - `output/jewel_pPb_8160.root` — 1.03M events, pPb 8.16 TeV 2D medium (100 Ncoll bins × 15K events)
+- **HepMC format**: Jewel writes flat HepMC2 E/P-line format. `ConvertHepMC.cpp` uses a direct text
+  parser (no HepMC3 library). pPb bins are merged with `cat` before conversion since the converter
+  reads a single file.
+- **Fortran path limit**: `MEDIUMPARAMS` path must be ≤ ~73 chars. Medium files for pPb are written to
+  `~/Jewel/jewel-2.4.0/params/pPb/` (not the repo path). `setup-pPb.sh` handles this automatically.
+- **2D hydro profiles**: 100 Ncoll bins in `~/Jewel/hydro/pPb/sample/` (68 visible + 32 hidden
+  `.`-prefix dirs). `setup-pPb.sh` uses `shopt -s dotglob` to include all.
+- **Analysis flags**: `--IsPP {true,false} --IsGenZ true --IsData false --IsJewel true
+  --UseEventWeight true --UseZWeight false --UseTrackWeight true --UseResidualWeight false
+  --yBoost 0 --nMix 10`. Run from `MainAnalysis/20241102_ZhadronVsZPt/` with `SKIP_CLEAN=1 NTHREAD=25`.
+- **Cross-section weighting**: PPZJ events carry per-event cross-section weights. Weighted N_Z
+  denominators (~1e-3) differ by dataset — per-Z distributions differ by dataset for this reason
+  alone (not physics). Normalization offsets between pp and pPb are expected.
+- **Analysis entrypoints**: `jewel-pp-energy.sh` (pp 8.16 + 5.02 comparison),
+  `jewel-pPb.sh` (pPb 8.16). Output plots in `Plots/20260212_pPbJewel/plots/{pp_energy,pPb}/`.
+- **Plot scripts**: `plot-jewel-pp-diagnostics.sh`, `plot-jewel-pp-energy.sh`,
+  `plot-jewel-pPb-diagnostics.sh`, `plot-jewel-pPb.sh` — all in `Plots/20260212_pPbJewel/`.
+
 ## Production workflow style (official outputs)
 
 - Favor modifying existing scripts or adding new dedicated scripts in-repo. Drive

@@ -28,6 +28,12 @@ int main(int argc, char *argv[])
    string input5020 = CL.Get("Input5020");
    string trkPtRange = CL.Get("TrackPTRange", "0.5_15");
    string outputBase = CL.Get("OutputBase", "plots/pp_energy/jewel_pp_diag");
+   string label8160 = CL.Get("Label8160", "JEWEL_pp_8.16_TeV");
+   string label5020 = CL.Get("Label5020", "JEWEL_pp_5.02_TeV");
+   string ratioLabel = CL.Get("RatioLabel", "5.02_/_8.16");
+   for(char &c : label8160) if(c == '_') c = ' ';
+   for(char &c : label5020) if(c == '_') c = ' ';
+   for(char &c : ratioLabel) if(c == '_') c = ' ';
 
    TFile *f8160 = TFile::Open(input8160.c_str());
    TFile *f5020 = TFile::Open(input5020.c_str());
@@ -69,12 +75,12 @@ int main(int argc, char *argv[])
       TCanvas canvas(("c_" + obs.name).c_str(), "", 600, 600);
       TPad *pad = (TPad *)plotCMSRatio(
          histograms, ("ZDiag_" + obs.name).c_str(),
-         {"JEWEL pp 8.16 TeV", "JEWEL pp 5.02 TeV"},
+         {label8160.c_str(), label5020.c_str()},
          {cmsBlue, cmsRed}, {0, 0},
          {cmsBlue, cmsRed}, {20, 21},
          obs.label.c_str(), obs.lo, obs.hi,
          ("(1/N_{Z}) dN/d" + obs.label).c_str(), -1, -1,
-         "5.02 / 8.16", 0.5, 1.5,
+         ratioLabel.c_str(), 0.5, 1.5,
          0,
          (obs.name == "ZPt"), false, false
       );
@@ -99,12 +105,12 @@ int main(int argc, char *argv[])
       TCanvas c("cTrkPt", "", 600, 600);
       TPad *pad = (TPad *)plotCMSRatio(
          {(TH1 *)hTrkPt_8160, (TH1 *)hTrkPt_5020}, "TrkPt",
-         {"JEWEL pp 8.16 TeV", "JEWEL pp 5.02 TeV"},
+         {label8160.c_str(), label5020.c_str()},
          {cmsBlue, cmsRed}, {0, 0},
          {cmsBlue, cmsRed}, {20, 21},
          "p_{T}^{ch} (GeV)", 0.5, 15,
          "(1/N_{Z}) dN/dp_{T}^{ch}", -1, -1,
-         "5.02 / 8.16", 0.5, 1.5,
+         ratioLabel.c_str(), 0.5, 1.5,
          0,
          true, false, false
       );
@@ -122,12 +128,12 @@ int main(int argc, char *argv[])
       TCanvas cEta("cTrkEta", "", 600, 600);
       TPad *padEta = (TPad *)plotCMSRatio(
          {(TH1 *)hTrkEta_8160, (TH1 *)hTrkEta_5020}, "TrkEta",
-         {"JEWEL pp 8.16 TeV", "JEWEL pp 5.02 TeV"},
+         {label8160.c_str(), label5020.c_str()},
          {cmsBlue, cmsRed}, {0, 0},
          {cmsBlue, cmsRed}, {20, 21},
          "#eta^{ch}", -2.4, 2.4,
          "(1/N_{Z}) dN/d#eta^{ch}", -1, -1,
-         "5.02 / 8.16", 0.5, 1.5,
+         ratioLabel.c_str(), 0.5, 1.5,
          0,
          false, false, false
       );
