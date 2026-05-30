@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
+    string tagDeltaVZ = CL.Get("tagDeltaVZ", "");
     string mctag = (collisionType == "pp" ? "pythia" : collisionType);
 
     // files to load
@@ -51,6 +52,12 @@ int main(int argc, char *argv[]) {
         "  & Z correction",
         "  & Z + track correction"
     };
+    if (!tagDeltaVZ.empty()) {
+        input_ZPT_files.push_back(
+            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s",
+                 mctag.c_str(), tagDeltaVZ.c_str(), zPtRange.c_str()));
+        labels.push_back("  & |#DeltaVZ| < 0.5 cm");
+    }
     string output = Form("plots/%s/%s_ZPT%s_trkPT%s_%s-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     vector<TH1*> hDeltaEta_all;
@@ -143,10 +150,10 @@ int main(int argc, char *argv[]) {
     }
 
 
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, cmsYellow, cmsGray};
-    vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {0, 2, 1, 0, 1};
+    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kViolet+1, cmsYellow, cmsGray};
+    vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
+    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kViolet+1, cmsTealL1, cmsRed, cmsRed};
+    vector<int> lineStyles = {0, 2, 1, 0, 1, 1};
 
     // make canvas
     TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);

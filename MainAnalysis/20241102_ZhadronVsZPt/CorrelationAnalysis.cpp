@@ -8,6 +8,7 @@
 #include <TNtuple.h>
 #include <TFile.h>
 
+#include <climits>
 #include <iostream>
 #include <utility>
 
@@ -210,7 +211,8 @@ bool trackSelectionNoPt(ZHadronMessenger *b, const Parameters &par, int j,
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if (par.isPUReject && par.isData && b->NVertex != 1) return 0;
-   if (par.useVZWindow && fabs(b->VZ) >= 15) return 0;
+   if (par.useVZWindow && fabs(b->VZ) >= par.VZWindowSize) return 0;
+   if (b->Run < par.MinRun || b->Run >= par.MaxRun) return 0;
 
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size()) == 0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) < 60) return 0;
@@ -434,17 +436,20 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    // keep event-matching logic the same but avoid repeated eventSelection scans in the inner loop.
    vector<char> mixEventPass;
    vector<char> mixEventZPtBin;
+   vector<float> mixEventVZ;
    bool useFastMixingCache = (par.mix && par.useFastMixing && !par.useEPOSFile);
    if (useFastMixingCache) {
       unsigned long nMixEntry = MMix->GetEntries();
       mixEventPass.assign(nMixEntry, 0);
       mixEventZPtBin.assign(nMixEntry, -1);
+      mixEventVZ.assign(nMixEntry, 0);
       for (unsigned long m = 0; m < nMixEntry; m++) {
          MMix->GetEntry(m);
          if (!eventSelection(MMix, par)) continue;
          float mixZPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
          mixEventPass[m] = 1;
          mixEventZPtBin[m] = getZpTBin(mixZPt);
+         mixEventVZ[m] = MMix->VZ;
       }
    }
 
@@ -568,6 +573,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                 if (useFastMixingCache) {
                    if (mixEventPass[mix_i] == 0) continue;
                    if (mixEventZPtBin[mix_i] != zPtBin) continue;
+                   if (par.MaxMixDeltaVZ > 0 && fabs(mixEventVZ[mix_i] - MZSignal->VZ) > par.MaxMixDeltaVZ) continue;
                    if (i != mix_i) foundMix = true;
                    continue;
                }
@@ -584,8 +590,11 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                if (!eventSelection(MMix, par)) continue;
 
                // only mix with Z events of similar Z pT
-               float mix_zPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]); 
+               float mix_zPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
                if (!isSameZpTBin(zPt, mix_zPt)) continue;
+
+               // require similar vertex position
+               if (par.MaxMixDeltaVZ > 0 && fabs(MMix->VZ - MZSignal->VZ) > par.MaxMixDeltaVZ) continue;
 
                if (i != mix_i) foundMix = true;
             }
@@ -644,8 +653,9 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                                        : DeltaPhi((*MZSignal->trackPhi)[j], zPhi);
             float trackDphi2 = par.mix ? DeltaPhi(zPhi, (*MMix->trackPhi)[j])
                                        : DeltaPhi(zPhi, (*MZSignal->trackPhi)[j]);
-            float trackDeta  = par.mix ? fabs((*MMix->trackEta)[j] - zY)
-                                       : fabs((*MZSignal->trackEta)[j] - zY);
+            float trackDeta  = par.mix ? (par.fillSigned ? (*MMix->trackEta)[j] - zY : fabs((*MMix->trackEta)[j] - zY))
+                                       : (par.fillSigned ? (*MZSignal->trackEta)[j] - zY : fabs((*MZSignal->trackEta)[j] - zY));
+            if (par.fillSigned && par.flipDeltaEta) trackDeta = -trackDeta;
 
             float trackPhi  = par.mix ? (*MMix->trackPhi)[j] : (*MZSignal->trackPhi)[j];
             float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
@@ -702,16 +712,24 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             //==================================================//
             // fill central values
             //==================================================//
-            h->Fill(trackDeta, trackDphi, weight);
-            h->Fill(-trackDeta, trackDphi, weight);
-            h->Fill(trackDeta, trackDphi2, weight);
-            h->Fill(-trackDeta, trackDphi2, weight);
-
-            if (jackknifeEvent != nullptr) {
-               if (par.mix)
-                  accumulateReflectedEventContribution(h, jackknifeEvent->MixBins, trackDeta, trackDphi, trackDphi2, weight);
-               else
-                  accumulateReflectedEventContribution(h, jackknifeEvent->SignalBins, trackDeta, trackDphi, trackDphi2, weight);
+            if (par.fillSigned) {
+               // signed DeltaEta and DeltaPhi: 1 fill per track (no folding on either axis)
+               h->Fill(trackDeta, trackDphi, weight);
+               if (jackknifeEvent != nullptr) {
+                  auto &bins = par.mix ? jackknifeEvent->MixBins : jackknifeEvent->SignalBins;
+                  accumulateEventContribution(h, bins, trackDeta, trackDphi, weight);
+               }
+            } else {
+               h->Fill( trackDeta, trackDphi,  weight);
+               h->Fill(-trackDeta, trackDphi,  weight);
+               h->Fill( trackDeta, trackDphi2, weight);
+               h->Fill(-trackDeta, trackDphi2, weight);
+               if (jackknifeEvent != nullptr) {
+                  if (par.mix)
+                     accumulateReflectedEventContribution(h, jackknifeEvent->MixBins, trackDeta, trackDphi, trackDphi2, weight);
+                  else
+                     accumulateReflectedEventContribution(h, jackknifeEvent->SignalBins, trackDeta, trackDphi, trackDphi2, weight);
+               }
             }
 
           
@@ -958,6 +976,7 @@ int main(int argc, char *argv[])
    par.useVZWeight       = CL.GetBool  ("UseVZWeight", false);
    par.useVZWindow       = CL.GetBool  ("UseVZWindow", true);
    par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
+   par.MaxMixDeltaVZ   = CL.GetDouble("MaxMixDeltaVZ", 0);
    par.useJackknife    = CL.GetBool  ("UseJackknife", false);
    par.ResultDEtaBins  = CL.GetInt   ("ResultDEtaBins", 20);
    par.ResultDPhiBins  = CL.GetInt   ("ResultDPhiBins", 20);
@@ -975,7 +994,12 @@ int main(int argc, char *argv[])
    par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);      // Do Muon systematics, -1 means no extraweight.
    par.includeHole   = CL.GetBool  ("includeHole",true);     // Include hole particle or not
    par.isPPb         = CL.GetBool  ("IsPPb", false);         // Flag to indicate if p is going in the positive eta direction.
-   par.yBoost       = CL.GetDouble("yBoost", 0);         // Rapidity boost for pPb analysis
+   par.yBoost        = CL.GetDouble("yBoost", 0);         // Rapidity boost for pPb analysis
+   par.MinRun        = CL.GetInt   ("MinRun", 0);           // Minimum run number (inclusive)
+   par.MaxRun        = CL.GetInt   ("MaxRun", INT_MAX);     // Maximum run number (exclusive)
+   par.VZWindowSize  = CL.GetDouble("VZWindowSize", 15.0);  // |vz| window half-width in cm
+   par.fillSigned    = CL.GetBool  ("FillSigned", false);   // Fill signed DeltaEta instead of folded |DeltaEta|
+   par.flipDeltaEta  = CL.GetBool  ("FlipDeltaEta", false); // Negate trackDeta before filling (only active with FillSigned)
    par.mix = 0;
    par.isPP = IsPP;
    par.isData = IsData;

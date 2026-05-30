@@ -6,11 +6,11 @@ THISDIR=$(cd "$(dirname "$0")" && pwd)
 PRESENTATION_DIR="$THISDIR/presentations"
 mkdir -p "$PRESENTATION_DIR"
 
-PP_TAG="${PP_TAG_OVERRIDE:-EEV5_ZV9_trkV27_nmix10_bin12x12_20260507}"
-PPB_TAG="${PPB_TAG_OVERRIDE:-ZV9_trkV27_nmix10_bin12x12_20260507}"
-PLOT_BASE="${PLOT_OUTPUT_BASE:-../plots/central_combined_bin12x12_20260507}"
-TEX_FILE="$PRESENTATION_DIR/central_combined_bin12x12_20260507.tex"
-PDF_FILE="$PRESENTATION_DIR/central_combined_bin12x12_20260507.pdf"
+PP_TAG="${PP_TAG_OVERRIDE:-EEV5_ZV9_trkV28_nmix10_bin12x12}"
+PPB_TAG="${PPB_TAG_OVERRIDE:-ZV9_trkV28_nmix10_bin12x12}"
+PLOT_BASE="${PLOT_OUTPUT_BASE:-../plots/central_combined_bin12x12}"
+TEX_FILE="$PRESENTATION_DIR/central_combined_bin12x12.tex"
+PDF_FILE="$PRESENTATION_DIR/central_combined_bin12x12.pdf"
 
 cat > "$TEX_FILE" <<'TEXEOF'
 \documentclass[aspectratio=169]{beamer}

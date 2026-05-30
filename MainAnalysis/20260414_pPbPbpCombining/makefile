@@ -1,4 +1,4 @@
-default: ExecuteCorrelationAnalysis ExecutePlotComparison ExecutePlotZcorrComparison ExecutePlotZptcutComparison ExecutePlotZcorrClosure ExecuteRunAverageDEta ExecutePlotExtremalRuns
+default: ExecuteCorrelationAnalysis ExecutePlotComparison ExecutePlotZcorrComparison ExecutePlotZptcutComparison ExecutePlotZcorrClosure ExecuteRunAverageDEta ExecutePlotExtremalRuns ExecutePlot12x12PPbPbP
 
 ExecuteCorrelationAnalysis: CorrelationAnalysis.cpp
 	g++ CorrelationAnalysis.cpp -O3 -I. -I$(ProjectBase)/CommonCode/include -I./include \
@@ -29,3 +29,7 @@ ExecuteRunAverageDEta: tabulate_run_average_deta.cpp
 ExecutePlotExtremalRuns: plot_extremal_runs.cpp
 	g++ plot_extremal_runs.cpp -O3 -I. -I$(ProjectBase)/CommonCode/include -I./include \
 		-o ExecutePlotExtremalRuns `root-config --cflags --glibs`
+
+ExecutePlot12x12PPbPbP: plot_12x12_ppbpbp.cpp
+	g++ plot_12x12_ppbpbp.cpp -O3 -I. -I$(ProjectBase)/CommonCode/include -I./include \
+		-o ExecutePlot12x12PPbPbP `root-config --cflags --glibs`

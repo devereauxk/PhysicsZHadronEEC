@@ -48,9 +48,20 @@ int main(int argc, char *argv[]) {
     };
     string output = Form("plots/central_overlay_PPbPbP/%s_ZPT%s_trkPT%s", tag.c_str(), zPtRange.c_str(), trkPtRange.c_str());
 
-    // plotted histograms
+    // full per-file style tables (indexed by original file order)
+    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsYellow, cmsGray};
+    vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
+    vector<int> lineColors   = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
+    vector<int> lineStyles   = {0, 2, 0, 2};
+
+    // plotted histograms — used* vectors stay in sync with the histogram vectors
     vector<TH1*> hDeltaEta_combined;
     vector<TH1*> hDeltaPhi_combined;
+    vector<string> usedLabels;
+    vector<int> usedMarkerColors;
+    vector<int> usedMarkerStyles;
+    vector<int> usedLineColors;
+    vector<int> usedLineStyles;
 
 
     // ============================
@@ -62,16 +73,25 @@ int main(int argc, char *argv[]) {
     for (const auto& input_ZPT : input_ZPT_files) {
 
         TFile* fin = TFile::Open(Form("%s-result.root", input_ZPT.c_str()), "READ");
-        
+
         if (!fin || fin->IsZombie()) {
             std::cerr << "Error: Unable to open file " << input_ZPT << std::endl;
+            i++;
             continue;
         }
 
         // read results
         TH1D* this_hDeltaEta = (TH1D*)fin->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
-        this_hDeltaEta->SetName(Form("DeltaEta_%d", i));
         TH1D* this_hDeltaPhi = (TH1D*)fin->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
+
+        if (!this_hDeltaEta || !this_hDeltaPhi) {
+            std::cerr << "Warning: histogram DeltaEta/Phi_Result" << trkPtRange
+                      << " not found in " << input_ZPT << ", skipping" << std::endl;
+            i++;
+            continue;
+        }
+
+        this_hDeltaEta->SetName(Form("DeltaEta_%d", i));
         this_hDeltaPhi->SetName(Form("DeltaPhi_%d", i));
 
         this_hDeltaEta->Scale(1./2);
@@ -79,15 +99,14 @@ int main(int argc, char *argv[]) {
 
         hDeltaEta_combined.push_back(this_hDeltaEta);
         hDeltaPhi_combined.push_back(this_hDeltaPhi);
+        if (i < (int)labels.size())      usedLabels.push_back(labels[i]);
+        if (i < (int)markerColors.size()) usedMarkerColors.push_back(markerColors[i]);
+        if (i < (int)markerStyles.size()) usedMarkerStyles.push_back(markerStyles[i]);
+        if (i < (int)lineColors.size())   usedLineColors.push_back(lineColors[i]);
+        if (i < (int)lineStyles.size())   usedLineStyles.push_back(lineStyles[i]);
 
         i++;
     }
-
-
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsYellow, cmsGray};
-    vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kMagenta-3, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {0, 2, 0, 2};
 
     float diffMin = (trkPtRange == "4_500") ? -0.1 : -0.35;
     float diffMax = (trkPtRange == "4_500") ? 0.1 : 0.35;
@@ -97,9 +116,9 @@ int main(int argc, char *argv[]) {
     // ===========================================
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
     TPad* pResult1 = (TPad*) plotCMSDiff(
-        hDeltaEta_combined, "", labels,
-        lineColors, lineStyles, 
-        markerColors, markerStyles,
+        hDeltaEta_combined, "", usedLabels,
+        usedLineColors, usedLineStyles,
+        usedMarkerColors, usedMarkerStyles,
         "#Delta y_{ch,Z}", -4, 4,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
         "Difference wrt PPb DATA", diffMin, diffMax,
@@ -119,9 +138,9 @@ int main(int argc, char *argv[]) {
 
     TCanvas* cResult2 = new TCanvas("cResult2", "cResult2", 600, 600);
     TPad* pResult2 = (TPad*) plotCMSDiff(
-        hDeltaPhi_combined, "", labels,
-        lineColors, lineStyles, 
-        markerColors, markerStyles,
+        hDeltaPhi_combined, "", usedLabels,
+        usedLineColors, usedLineStyles,
+        usedMarkerColors, usedMarkerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
         "Difference wrt PPb DATA", diffMin, diffMax,

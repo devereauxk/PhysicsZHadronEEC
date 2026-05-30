@@ -1,4 +1,4 @@
-default: ExecuteJewel ExecuteJewelPPEnergy ExecuteJewelPPDiagnostics ExecuteJewelPPb
+default: ExecuteJewel ExecuteJewelPPEnergy ExecuteJewelPPDiagnostics ExecuteJewelPPb ExecuteJewelPPbSlicedComparison ExecuteJewelPPSkims
 
 ExecuteJewel: plot_jewel.cpp
 	g++ plot_jewel.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
@@ -18,5 +18,13 @@ ExecuteJewelPPb: plot_jewel_pPb.cpp
 	g++ plot_jewel_pPb.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
 		-o ExecuteJewelPPb `root-config --cflags --glibs`
 
+ExecuteJewelPPbSlicedComparison: plot_jewel_pPb_sliced_comparison.cpp
+	g++ plot_jewel_pPb_sliced_comparison.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecuteJewelPPbSlicedComparison `root-config --cflags --glibs`
+
+ExecuteJewelPPSkims: plot_jewel_pp_skims.cpp
+	g++ plot_jewel_pp_skims.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecuteJewelPPSkims `root-config --cflags --glibs`
+
 clean:
-	rm -f ExecuteJewel ExecuteJewelPPEnergy ExecuteJewelPPDiagnostics ExecuteJewelPPb
+	rm -f ExecuteJewel ExecuteJewelPPEnergy ExecuteJewelPPDiagnostics ExecuteJewelPPb ExecuteJewelPPbSlicedComparison ExecuteJewelPPSkims

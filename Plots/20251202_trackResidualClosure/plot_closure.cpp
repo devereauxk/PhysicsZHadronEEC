@@ -73,6 +73,10 @@ int main(int argc, char *argv[]) {
     vector<TH1*> hTrkPhi;
     vector<TH2D*> hTrkEtaPhiRaw;
     vector<TH2D*> hTrkEtaPhi;
+    vector<TH2D*> hTrkPtEtaRaw;
+    vector<TH2D*> hTrkPtEta;
+    vector<TH2D*> hTrkPtPhiRaw;
+    vector<TH2D*> hTrkPtPhi;
     vector<TH1*> hDeltaEta_all;
     vector<TH1*> hDeltaPhi_all;
     vector<TH1*> hDeltaEta_mix;
@@ -118,6 +122,16 @@ int main(int argc, char *argv[]) {
         this_hTrkEtaPhi->SetName(Form("trkEtaPhi_%d", i));
         TH2D* this_hTrkEtaPhiRaw = (TH2D *)this_hTrkEtaPhi->Clone(Form("trkEtaPhiRaw_%d", i));
 
+        // pt-eta and pt-phi projections: ROOT convention — second letter = X axis, first letter = Y axis
+        // "yx" → X=pt (x), Y=eta (y); "zx" → X=pt (x), Y=phi (z)
+        TH2D* this_hTrkPtEta = (TH2D*)this_hTrkPtEtaPhi->Project3D("yx");
+        this_hTrkPtEta->SetName(Form("trkPtEta_%d", i));
+        TH2D* this_hTrkPtEtaRaw = (TH2D*)this_hTrkPtEta->Clone(Form("trkPtEtaRaw_%d", i));
+
+        TH2D* this_hTrkPtPhi = (TH2D*)this_hTrkPtEtaPhi->Project3D("zx");
+        this_hTrkPtPhi->SetName(Form("trkPtPhi_%d", i));
+        TH2D* this_hTrkPtPhiRaw = (TH2D*)this_hTrkPtPhi->Clone(Form("trkPtPhiRaw_%d", i));
+
         if(UseWorkflowInputs == true)
         {
             double NZ = hNZ->GetBinContent(1);
@@ -127,6 +141,8 @@ int main(int argc, char *argv[]) {
                 this_hTrkEta->Scale(1.0 / NZ);
                 this_hTrkPhi->Scale(1.0 / NZ);
                 this_hTrkEtaPhi->Scale(1.0 / NZ);
+                this_hTrkPtEta->Scale(1.0 / NZ);
+                this_hTrkPtPhi->Scale(1.0 / NZ);
             }
         }
 
@@ -139,6 +155,10 @@ int main(int argc, char *argv[]) {
         hTrkPhi.push_back(this_hTrkPhi);
         hTrkEtaPhiRaw.push_back(this_hTrkEtaPhiRaw);
         hTrkEtaPhi.push_back(this_hTrkEtaPhi);
+        hTrkPtEtaRaw.push_back(this_hTrkPtEtaRaw);
+        hTrkPtEta.push_back(this_hTrkPtEta);
+        hTrkPtPhiRaw.push_back(this_hTrkPtPhiRaw);
+        hTrkPtPhi.push_back(this_hTrkPtPhi);
 
         i++;
     }
@@ -279,6 +299,76 @@ int main(int argc, char *argv[]) {
 
         drawHeatmap(hTrkEtaPhiGen, "MC GEN weighted counts", "eta-phi-gen");
         drawHeatmap(hTrkEtaPhiCorrected, "MC RECO corrected weighted counts", "eta-phi-corrected");
+    }
+
+    // --- pt-eta and pt-phi maps (log pt x-axis, log z color scale) ---
+    auto drawPtHeatmap = [&](TH2D *histogram, const string &xTitle, const string &yTitle,
+        const string &zTitle, const string &suffix, bool logZ, double zMin, double zMax)
+    {
+        histogram->SetTitle(Form(";%s;%s;%s", xTitle.c_str(), yTitle.c_str(), zTitle.c_str()));
+        histogram->SetMinimum(zMin);
+        histogram->SetMaximum(zMax);
+        histogram->SetContour(100);
+        gStyle->SetOptStat(0);
+
+        TCanvas *canvas = new TCanvas(Form("cPt_%s", suffix.c_str()),
+            Form("cPt_%s", suffix.c_str()), 700, 600);
+        canvas->SetRightMargin(0.18);
+        canvas->SetLeftMargin(0.12);
+        canvas->SetBottomMargin(0.12);
+        canvas->SetLogx();
+        if(logZ) canvas->SetLogz();
+
+        histogram->Draw("COLZ");
+        AddCMSHeader((TPad *)canvas, "Internal", false);
+        AddUPCHeader((TPad *)canvas, (collisionType == "pp") ? "5.02 TeV" : "8.16 TeV", collisionType);
+
+        canvas->Update();
+        canvas->SaveAs(Form("%s-%s.pdf", output.c_str(), suffix.c_str()));
+    };
+
+    if(hTrkPtEtaRaw.size() >= 3)
+    {
+        gStyle->SetPalette(kBird);
+        const double sharedMaxPtEta = max(hTrkPtEtaRaw[0]->GetMaximum(), hTrkPtEtaRaw[2]->GetMaximum());
+        const double zMaxPtEta = (sharedMaxPtEta > 0) ? sharedMaxPtEta : 1;
+        const double zMinPtEta = 1; // log z: minimum must be positive
+
+        TH2D *hPtEtaGen       = (TH2D*)hTrkPtEtaRaw[0]->Clone("hPtEtaGen");
+        TH2D *hPtEtaCorrected = (TH2D*)hTrkPtEtaRaw[2]->Clone("hPtEtaCorrected");
+
+        drawPtHeatmap(hPtEtaGen,       "p_{T}^{ch} (GeV)", "#eta_{ch}", "MC GEN weighted counts",
+            "pt-eta-gen",       true,  zMinPtEta, zMaxPtEta);
+        drawPtHeatmap(hPtEtaCorrected, "p_{T}^{ch} (GeV)", "#eta_{ch}", "MC RECO corrected weighted counts",
+            "pt-eta-corrected", true,  zMinPtEta, zMaxPtEta);
+
+        TH2D *hPtEtaRatio = (TH2D*)hTrkPtEta[2]->Clone("hPtEtaRatio");
+        hPtEtaRatio->SetTitle(";p_{T}^{ch} (GeV);#eta_{ch};MC RECO corrected / GEN");
+        hPtEtaRatio->Divide(hTrkPtEta[0]);
+        drawPtHeatmap(hPtEtaRatio, "p_{T}^{ch} (GeV)", "#eta_{ch}", "MC RECO corrected / GEN",
+            "pt-eta-ratio", false, 0.8, 1.2);
+    }
+
+    if(hTrkPtPhiRaw.size() >= 3)
+    {
+        gStyle->SetPalette(kBird);
+        const double sharedMaxPtPhi = max(hTrkPtPhiRaw[0]->GetMaximum(), hTrkPtPhiRaw[2]->GetMaximum());
+        const double zMaxPtPhi = (sharedMaxPtPhi > 0) ? sharedMaxPtPhi : 1;
+        const double zMinPtPhi = 1;
+
+        TH2D *hPtPhiGen       = (TH2D*)hTrkPtPhiRaw[0]->Clone("hPtPhiGen");
+        TH2D *hPtPhiCorrected = (TH2D*)hTrkPtPhiRaw[2]->Clone("hPtPhiCorrected");
+
+        drawPtHeatmap(hPtPhiGen,       "p_{T}^{ch} (GeV)", "#phi_{ch}", "MC GEN weighted counts",
+            "pt-phi-gen",       true,  zMinPtPhi, zMaxPtPhi);
+        drawPtHeatmap(hPtPhiCorrected, "p_{T}^{ch} (GeV)", "#phi_{ch}", "MC RECO corrected weighted counts",
+            "pt-phi-corrected", true,  zMinPtPhi, zMaxPtPhi);
+
+        TH2D *hPtPhiRatio = (TH2D*)hTrkPtPhi[2]->Clone("hPtPhiRatio");
+        hPtPhiRatio->SetTitle(";p_{T}^{ch} (GeV);#phi_{ch};MC RECO corrected / GEN");
+        hPtPhiRatio->Divide(hTrkPtPhi[0]);
+        drawPtHeatmap(hPtPhiRatio, "p_{T}^{ch} (GeV)", "#phi_{ch}", "MC RECO corrected / GEN",
+            "pt-phi-ratio", false, 0.8, 1.2);
     }
 
     return 0;

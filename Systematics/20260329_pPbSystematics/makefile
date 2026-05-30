@@ -1,4 +1,4 @@
-default: ExecuteCalculateSystematics ExecutePlotSystematics ExecutePlotPUComparison ExecutePlotTrackSelectionDiff ExecutePlotTrackCorrectionDiff ExecutePlotMuonTrackComparison ExecutePlotEnergyExtrapolationComparison
+default: ExecuteCalculateSystematics ExecutePlotSystematics ExecutePlotPUComparison ExecutePlotTrackSelectionDiff ExecutePlotTrackCorrectionDiff ExecutePlotMuonTrackComparison ExecutePlotEnergyExtrapolationComparison ExecutePlotMetColorsExample
 
 ExecuteCalculateSystematics: CalculateSystematics.cpp
 	g++ CalculateSystematics.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecuteCalculateSystematics `root-config --cflags --glibs`
@@ -20,3 +20,6 @@ ExecutePlotMuonTrackComparison: PlotMuonTrackComparison.cpp PlotComparisonUtilit
 
 ExecutePlotEnergyExtrapolationComparison: PlotEnergyExtrapolationComparison.cpp PlotComparisonUtilities.h
 	g++ PlotEnergyExtrapolationComparison.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecutePlotEnergyExtrapolationComparison `root-config --cflags --glibs`
+
+ExecutePlotMetColorsExample: PlotMetColorsExample.cpp
+	g++ PlotMetColorsExample.cpp -O3 -I$(ProjectBase)/CommonCode/include -o ExecutePlotMetColorsExample `root-config --cflags --glibs`

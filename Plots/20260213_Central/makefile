@@ -1,4 +1,4 @@
-default: clean ExecuteCentralPlot ExecuteCentralSBPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot ExecuteEnergyExtrapolationPlot ExecutePPPlot ExecutePUPlot ExecuteVZPlot ExecuteCentralOverlayPPbPbPPlot ExecutePaperPlot ExecutePPEEPlot
+default: clean ExecuteCentralPlot ExecuteCentralSBPlot ExecuteZSpectrumPlot ExecuteZMassPlot ExecuteDataMCComparison ExecuteCentralCombinedPlot ExecuteEnergyExtrapolationPlot ExecutePPPlot ExecutePUPlot ExecuteVZPlot ExecuteCentralOverlayPPbPbPPlot ExecutePaperPlot ExecutePPEEPlot ExecuteCorr2DMapBin12x12 ExecuteCorr2DMapPPbPbP
 
 ExecuteCentralPlot: plot_central.cpp
 	g++ plot_central.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
@@ -60,6 +60,10 @@ ExecutePaperPlot: plot_paper.cpp
 		-o ExecutePaperPlot `root-config --cflags --glibs` \
 		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
 
+ExecuteCorr2DMapPPbPbP: plot_2d_pPbPbp_comparison.cpp
+	g++ plot_2d_pPbPbp_comparison.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include \
+		-o ExecuteCorr2DMapPPbPbP `root-config --cflags --glibs`
+
 clean:
 	rm -f ExecuteCentralPlot
 	rm -f ExecuteCentralSBPlot
@@ -74,8 +78,14 @@ clean:
 	rm -f ExecuteVZPlot
 	rm -f ExecutePaperPlot
 	rm -f ExecutePPEEPlot
+	rm -f ExecuteCorr2DMapBin12x12
+	rm -f ExecuteCorr2DMapPPbPbP
 
 ExecutePPEEPlot: plot_pp_ee.cpp
 	g++ plot_pp_ee.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
 		-o ExecutePPEEPlot `root-config --cflags --glibs` \
 		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
+
+ExecuteCorr2DMapBin12x12: plot_2d_corr_bin12x12.cpp
+	g++ plot_2d_corr_bin12x12.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include \
+		-o ExecuteCorr2DMapBin12x12 `root-config --cflags --glibs`

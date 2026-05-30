@@ -1,0 +1,245 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{graphicx}
+\setbeamersize{text margin left=0.15cm, text margin right=0.15cm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+
+\title{pPb/Pbp compatibility studies (12$\times$12)}
+\subtitle{Nominal $\cdot$ Half-splits $\cdot$ $|v_z|$ window $\cdot$ Signed $\Delta\eta/\Delta\phi$ $\cdot$ MC reco $\cdot$ |DeltaVZ| mixing $\cdot$ MC full stats $\cdot$ Raw data $\cdot$ $N_{\rm mix}$ sensitivity}
+\date{}
+
+% ---- plot macros ----
+\newcommand{\pp}[1]{\begin{minipage}[t]{0.327\textwidth}\centering
+  {\tiny #1\par}\vspace{0.15em}
+  \includegraphics[width=\linewidth]{#1}
+\end{minipage}}
+
+% Three panels across one row: SE / ME / Result
+\newcommand{\etarow}[3]{%
+  \vspace{-0.2em}\centering
+  \pp{#1}\hspace{0.003\textwidth}\pp{#2}\hspace{0.003\textwidth}\pp{#3}%
+}
+
+% ---- section-title frame ----
+\newcommand{\sectionframe}[2]{%
+  \begin{frame}[c]
+    \centering\Large #1\\\normalsize\vspace{0.6em}#2
+  \end{frame}
+}
+
+% ---- standard 3-panel content slide ----
+% #1 title  #2 label left  #3 label mid  #4 label right
+% #5 file1  #6 file2  #7 file3
+\newcommand{\threepanel}[7]{%
+  \begin{frame}[t]{#1}
+    \vspace{-0.3em}\centering
+    \begin{minipage}[t]{0.327\textwidth}\centering
+      {\tiny #2\par}\vspace{0.15em}
+      \includegraphics[width=\linewidth]{#5}
+    \end{minipage}\hspace{0.003\textwidth}%
+    \begin{minipage}[t]{0.327\textwidth}\centering
+      {\tiny #3\par}\vspace{0.15em}
+      \includegraphics[width=\linewidth]{#6}
+    \end{minipage}\hspace{0.003\textwidth}%
+    \begin{minipage}[t]{0.327\textwidth}\centering
+      {\tiny #4\par}\vspace{0.15em}
+      \includegraphics[width=\linewidth]{#7}
+    \end{minipage}
+  \end{frame}
+}
+
+% Shorthand for a study's two slides (eta row + phi row)
+% #1 title prefix  #2 plotdir prefix  (e.g. "../plots/12x12_vz10/vz10")
+\newcommand{\studyslides}[2]{%
+  \threepanel{#1 --- $\Delta y_{ch,Z}$}%
+    {same-event}{mixed-event}{result}%
+    {#2-SameEvent-DeltaEta.pdf}%
+    {#2-MixedEvent-DeltaEta.pdf}%
+    {#2-Result-DeltaEta.pdf}%
+  \threepanel{#1 --- $\Delta\phi_{ch,Z}$}%
+    {same-event}{mixed-event}{result}%
+    {#2-SameEvent-DeltaPhi.pdf}%
+    {#2-MixedEvent-DeltaPhi.pdf}%
+    {#2-Result-DeltaPhi.pdf}%
+}
+
+% ---- path roots ----
+\newcommand{\no}{../plots/12x12_nominal}
+\newcommand{\hs}{../plots/12x12_halfsplit}
+\newcommand{\vz}{../plots/12x12_vz10}
+\newcommand{\sg}{../plots/12x12_signed}
+\newcommand{\mc}{../plots/12x12_mc}
+\newcommand{\dv}{../plots/12x12_deltavz}
+\newcommand{\fs}{../plots/12x12_mc_fullstats}
+\newcommand{\rw}{../plots/12x12_raw}
+\newcommand{\nm}{../plots/12x12_nmix20}
+
+% ---- document ----
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ================================================================
+\begin{frame}[t]{Overview}
+  \small
+  All studies use the full correction stack (event $+$ VZ $+$ Z $+$ track $+$ residual),
+  12$\times$12 result binning, $0<p_T^Z<500$\,GeV, $0.5<p_T^{trk}<15$\,GeV,
+  $n_{\rm mix}=10$, 8.16\,TeV pPb, $|\Delta v_z^{\rm mix}|<0.5$\,cm (unless study varies it).
+  Jackknife statistical uncertainties on corrected-data legs.\par
+  \vspace{0.4em}
+  Each slide shows three panels: \textbf{same-event} / \textbf{mixed-event} / \textbf{result (SE$-$ME)}.
+  Lower panels: ratio pPb/Pbp (SE, ME) or difference pPb$-$Pbp (result).\par
+  \vspace{0.5em}
+  \begin{tabular}{lll}
+    \hline
+    Study & Description & Slides \\
+    \hline
+    0 & Nominal pPb vs Pbp (baseline, full corrections) & \ref{sec:no_start}--\ref{sec:no_end} \\
+    1 & Run half-splits (4 independent comparisons) & \ref{sec:hs_start}--\ref{sec:hs_end} \\
+    2 & $|v_z|<10$\,cm with $|v_z|<15$\,cm overlay (4 lines) & \ref{sec:vz_start}--\ref{sec:vz_end} \\
+    3 & Signed $\Delta\eta$ and $\Delta\phi$ (no folding, full range) & \ref{sec:sg_start}--\ref{sec:sg_end} \\
+    4 & MC reco Z-count-matched to data & \ref{sec:mc_start}--\ref{sec:mc_end} \\
+    5 & |DeltaVZ| mixing requirement sensitivity (6 lines) & \ref{sec:dv_start}--\ref{sec:dv_end} \\
+    6 & MC reco full statistics pPb vs Pbp & \ref{sec:fs_start}--\ref{sec:fs_end} \\
+    7 & Raw uncorrected data pPb vs Pbp & \ref{sec:rw_start}--\ref{sec:rw_end} \\
+    8 & $N_{\rm mix}$ sensitivity: $N_{\rm mix}=20$ vs $N_{\rm mix}=10$ (4 lines) & \ref{sec:nm_start}--\ref{sec:nm_end} \\
+    \hline
+  \end{tabular}
+\end{frame}
+
+% ================================================================
+% Study 0: Nominal pPb vs Pbp
+% ================================================================
+\sectionframe{Study 0: Nominal pPb vs Pbp}{%
+  Fully corrected data with nominal settings.\\[0.3em]
+  $|v_z|<15$\,cm, |DeltaVZ|<0.5\,cm, $N_{\rm mix}=10$, full correction stack.\\[0.3em]
+  Baseline comparison before any splitting or variation.}
+
+\label{sec:no_start}
+
+\studyslides{Nominal: pPb vs Pbp}{\no/nominal}
+
+\begin{frame}[c]\label{sec:no_end}\end{frame}
+
+% ================================================================
+% Study 1: Run half-splits
+% ================================================================
+\sectionframe{Study 1: Run half-splits}{%
+  Each comparison holds one system at full stats and splits the other at the run-number median.\\[0.3em]
+  pPb split at Run\,$286302$;\quad Pbp split at Run\,$285549$.\\[0.3em]
+  Lower panels: ratio to the full-stats curve.}
+
+\label{sec:hs_start}
+
+\studyslides{pPb first half ($R<286302$) vs Pbp full}{\hs/halfsplit_pPbFirst}
+\studyslides{pPb second half ($R\geq286302$) vs Pbp full}{\hs/halfsplit_pPbSecond}
+\studyslides{Pbp first half ($R<285549$) vs pPb full}{\hs/halfsplit_PbPFirst}
+\studyslides{Pbp second half ($R\geq285549$) vs pPb full}{\hs/halfsplit_PbPSecond}
+
+\begin{frame}[c]\label{sec:hs_end}\end{frame}% label anchor
+
+% ================================================================
+% Study 2: |vz| window
+% ================================================================
+\sectionframe{Study 2: $|v_z|$ window sensitivity}{%
+  Solid lines: $|v_z|<10$\,cm. Dashed lines: nominal $|v_z|<15$\,cm.\\[0.3em]
+  VZ reweighting applied in both cases; tests sensitivity to vertex-distribution tails.\\[0.3em]
+  Lower panels: two curves (one per $v_z$ window).}
+
+\label{sec:vz_start}
+
+\studyslides{$|v_z|$ window: pPb vs Pbp}{\vz/vz10}
+
+\begin{frame}[c]\label{sec:vz_end}\end{frame}
+
+% ================================================================
+% Study 3: Signed DeltaEta and DeltaPhi
+% ================================================================
+\sectionframe{Study 3: Signed $\Delta\eta$ and $\Delta\phi$ (no folding)}{%
+  Fills genuine $\eta_{trk}^{CM}-\eta_Z^{CM}$ and $\phi_{trk}-\phi_Z$ without symmetrisation.\\[0.3em]
+  $\Delta\phi$ shown on full signed range $[-\pi,\pi]$;\quad $\Delta\eta$ on $[-4,4]$.\\[0.3em]
+  pPb (p-going $+\eta$) and Pbp (Pb-going $+\eta$) should show opposite $\Delta\eta$ asymmetry.}
+
+\label{sec:sg_start}
+
+\studyslides{Signed $\Delta\eta$, $\Delta\phi$: pPb vs Pbp}{\sg/signed}
+
+\begin{frame}[c]\label{sec:sg_end}\end{frame}
+
+% ================================================================
+% Study 4: MC reco Z-matched
+% ================================================================
+\sectionframe{Study 4: MC reco, Z-count-matched to data}{%
+  EPOS+DY MC reco fully corrected; sample fractions chosen to match data Z counts.\\[0.3em]
+  pPb fraction $\approx0.034$ (data $N_Z=10\,324$ / MC $N_Z=302\,326$);
+  Pbp fraction $\approx0.020$ (data $N_Z=5\,943$ / MC $N_Z=303\,036$).\\[0.3em]
+  Tests whether corrected MC reco shows the same pPb/Pbp compatibility as data.}
+
+\label{sec:mc_start}
+
+\studyslides{MC reco: pPb vs Pbp (Z-matched)}{\mc/mc_matched}
+
+\begin{frame}[c]\label{sec:mc_end}\end{frame}
+
+% ================================================================
+% Study 5: DeltaVZ mixing requirement sensitivity
+% ================================================================
+\sectionframe{Study 5: |DeltaVZ| mixing requirement sensitivity}{%
+  6 lines per panel: pPb (blue) and Pbp (green) for three |DeltaVZ| settings.\\[0.3em]
+  \textbf{Solid}: |DeltaVZ|<0.5\,cm (nominal);\quad
+  \textbf{Long-dash}: |DeltaVZ| off (no requirement);\quad
+  \textbf{Dotted}: |DeltaVZ|<1.0\,cm.\\[0.3em]
+  Lower panels: three ratio/difference curves, one per |DeltaVZ| setting.}
+
+\label{sec:dv_start}
+
+\studyslides{|DeltaVZ| sensitivity: pPb vs Pbp}{\dv/deltavz}
+
+\begin{frame}[c]\label{sec:dv_end}\end{frame}
+
+% ================================================================
+% Study 6: MC reco full statistics
+% ================================================================
+\sectionframe{Study 6: MC reco full statistics}{%
+  pPb and Pbp MC reco fully corrected at full MC statistics (no Z-count matching).\\[0.3em]
+  Cross-check of Study 4 without the Z-count fraction constraint.\\[0.3em]
+  Normalization differences between systems expected from differing MC $N_Z$.}
+
+\label{sec:fs_start}
+
+\studyslides{MC reco full stats: pPb vs Pbp}{\fs/mc_fullstats}
+
+\begin{frame}[c]\label{sec:fs_end}\end{frame}
+
+% ================================================================
+% Study 7: Raw uncorrected data
+% ================================================================
+\sectionframe{Study 7: Raw uncorrected data}{%
+  All corrections turned off: event, VZ, Z, track, and residual weights all set to 1.\\[0.3em]
+  Jackknife statistical uncertainties kept; $|\Delta v_z^{\rm mix}|<0.5$\,cm retained.\\[0.3em]
+  Baseline check of raw-level pPb/Pbp agreement before corrections.}
+
+\label{sec:rw_start}
+
+\studyslides{Raw uncorrected data: pPb vs Pbp}{\rw/raw}
+
+\begin{frame}[c]\label{sec:rw_end}\end{frame}
+
+% ================================================================
+% Study 8: Nmix sensitivity
+% ================================================================
+\sectionframe{Study 8: $N_{\rm mix}$ sensitivity}{%
+  Solid lines: $N_{\rm mix}=20$. Dashed lines: nominal $N_{\rm mix}=10$.\\[0.3em]
+  Full correction stack; jackknife statistical uncertainties; |DeltaVZ|<0.5 cm.\\[0.3em]
+  Lower panels: two ratio/difference curves, one per $N_{\rm mix}$ setting.}
+
+\label{sec:nm_start}
+
+\studyslides{$N_{\rm mix}$ sensitivity: pPb vs Pbp}{\nm/nmix20}
+
+\begin{frame}[c]\label{sec:nm_end}\end{frame}
+
+\end{document}

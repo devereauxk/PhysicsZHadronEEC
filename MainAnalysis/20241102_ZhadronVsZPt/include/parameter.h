@@ -41,6 +41,7 @@ public:
    bool useVZWeight;          // Flag to see if we use VZ efficiency correction
    bool useVZWindow;          // Apply the analysis |vz| < 15 requirement
    bool useFastMixing;        // Use precomputed mixing metadata to reduce candidate scanning
+   float MaxMixDeltaVZ;       // Maximum |signal VZ - mix VZ| allowed; 0 = no requirement
    bool useJackknife;        // Persist per-event contributions and replace final statistical errors with jackknife
    int ResultDEtaBins;       // Result-stage DeltaEta bins: maintained 20x20 official, shifted 10x10, or modified 12x12
    int ResultDPhiBins;       // Result-stage DeltaPhi bins: maintained 20x20 official, shifted 10x10, or modified 12x12
@@ -53,7 +54,12 @@ public:
    string TrackTreeName;      // Input tree name
    bool isPPb;            // Flag to check if this is a PPb analysis
    float yBoost;          // Rapidity boost for pPb analysis
-   
+   int MinRun;            // Minimum run number (inclusive); 0 = no lower bound
+   int MaxRun;            // Maximum run number (exclusive); INT_MAX = no upper bound
+   double VZWindowSize;   // Half-width of |vz| window in cm (default 15)
+   bool fillSigned;       // When true, fill signed DeltaEta instead of |DeltaEta| fold
+   bool flipDeltaEta;    // When true (with fillSigned), negate trackDeta before filling
+
    void printParameters() const {
       cout << "Input file: " << input << endl;
       cout << "Output file: " << output << endl;
@@ -77,6 +83,7 @@ public:
         cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
         cout << "UseVZWindow: " << (useVZWindow ? "true" : "false") << endl;
       cout << "UseFastMixing: " << (useFastMixing ? "true" : "false") << endl;
+      cout << "MaxMixDeltaVZ: " << MaxMixDeltaVZ << " cm" << endl;
       cout << "UseJackknife: " << (useJackknife ? "true" : "false") << endl;
       cout << "ResultDEtaBins: " << ResultDEtaBins << endl;
       cout << "ResultDPhiBins: " << ResultDPhiBins << endl;
