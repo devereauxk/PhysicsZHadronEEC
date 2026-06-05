@@ -30,7 +30,7 @@ COMMON=(
     --yBoost 0 --nMix 10
     --ResultDEtaBins 12 --ResultDPhiBins 12
     --FillSigned true
-    --MaxMixDeltaVZ 0.5
+    --MaxMixDeltaVZ 1.0
 )
 
 echo "=== pPb signed ==="

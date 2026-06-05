@@ -7,8 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
-TAG="${OFFICIAL_TAG_PPB}"
-MAIN=/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 
 make ExecutePlot12x12PPbPbP
 
@@ -16,12 +15,14 @@ OUTDIR="plots/12x12_signed"
 mkdir -p "$OUTDIR"
 
 ./ExecutePlot12x12PPbPbP \
-    --pPbFile "${MAIN}/plots/pPb_trkResidual_${TAG}_12x12_signed_ZPT0_500-result.root" \
-    --PbPFile "${MAIN}/plots/PbP_trkResidual_${TAG}_12x12_signed_ZPT0_500-result.root" \
+    --pPbFile "${OFFICIAL_PPB_BIN12_SIGNED_PREFIX}_ZPT0_500-result.root" \
+    --PbPFile "${OFFICIAL_PBP_BIN12_SIGNED_PREFIX}_ZPT0_500-result.root" \
+    --ppFile  "${OFFICIAL_PP_BIN12_SIGNED_PREFIX}_ZPT0_500-result.root" \
     --OutputDir "$OUTDIR" \
     --Tag "signed" \
-    --pPbLabel "pPb DATA" \
-    --PbPLabel "Pbp DATA" \
+    --pPbLabel "pPb data" \
+    --PbPLabel "Pbp data" \
+    --ppLabel  "pp 8.16 TeV" \
     --ShowSignedEta true \
     --ShowFullPhi true
 

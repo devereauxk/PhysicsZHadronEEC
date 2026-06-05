@@ -3,17 +3,17 @@
 set -euo pipefail
 
 THISDIR=$(cd "$(dirname "$0")" && pwd)
-ANALYSISDIR=/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots
-
 cd /home/kdeverea/PhysicsZHadronEEC
 source /home/kdeverea/PhysicsZHadronEEC/SetupAnalysis.sh
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
+ANALYSISDIR="${OFFICIAL_RESULT_DIR}"
 
 cd "$THISDIR"
 make
 
-PP_TAG="${PP_TAG_OVERRIDE:-EEV5_ZV9_trkV27_nmix10_bin12x12_20260507}"
-PPB_TAG="${PPB_TAG_OVERRIDE:-ZV9_trkV27_nmix10_bin12x12_20260507}"
+PP_TAG="${PP_TAG_OVERRIDE:-${OFFICIAL_TAG_PP}_bin12x12_20260602}"
+PPB_TAG="${PPB_TAG_OVERRIDE:-${OFFICIAL_TAG_PPB}_bin12x12_20260602}"
 SYSTEMS_CSV="${SYSTEMS:-pp,pPb,PbP,pPbPbp}"
 DO_CALC="${DO_CALC:-1}"
 DO_PLOT="${DO_PLOT:-1}"

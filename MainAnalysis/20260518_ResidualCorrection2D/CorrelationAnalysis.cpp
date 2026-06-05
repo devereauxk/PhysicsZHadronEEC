@@ -129,9 +129,9 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
    int deltaI = (iEnd-iStart)/100+1;
    TrackResidualCorrector2D corrector(par.residualFile.c_str());
 
-   TrackResidualCorrector *Zcorrector = nullptr;
+   ZCorrector *Zcorrector = nullptr;
    if (par.ZWeightFile != "") {
-      Zcorrector = new TrackResidualCorrector(par.ZWeightFile.c_str());
+      Zcorrector = new ZCorrector(par.ZWeightFile.c_str());
    }
 
    VZCorrector *vzCorrector = nullptr;
@@ -157,7 +157,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, const 
       float zY  = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       if (zPhi < 0) zPhi += 2 * M_PI;
-      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
+      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY) : 1;
       ZWeight *= (par.isOO) ? MZSignal->ZWeight : 1;
 
       float this_eventWeight = ZWeight * MZSignal->EventWeight;

@@ -5,8 +5,9 @@ set -euo pipefail
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 make ExecuteCorr2DMapPPbPbP
 
-TAG="ZV9_trkV28_nmix10_bin12x12_20260507"
-INDIR="/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots"
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
+TAG="${TAG:-ZV10_trkV29_nmix10_bin12x12_20260602}"
+INDIR="${INDIR:-${OFFICIAL_RESULT_DIR}}"
 OUTDIR="plots/2d_pPbPbp_comparison"
 
 mkdir -p "$OUTDIR"

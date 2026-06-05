@@ -49,6 +49,7 @@ public:
    bool useResidualWeight;   // Flag to see if we use residual correction
    string residualWeightFile; // Residual weight file
    string EnergyExtraFile; // Input file for energy extrapolation
+   string ZCorrectionFile; // Direct 2D Z (yCM, phi) event-weight correction file
    string VZWeightFile;      // VZ weight file
    string TrackSelectionMode; // Track selection systematic mode
    string TrackTreeName;      // Input tree name
@@ -59,6 +60,10 @@ public:
    double VZWindowSize;   // Half-width of |vz| window in cm (default 15)
    bool fillSigned;       // When true, fill signed DeltaEta instead of |DeltaEta| fold
    bool flipDeltaEta;    // When true (with fillSigned), negate trackDeta before filling
+   double TrackEtaMin;   // Signed lower bound on track eta acceptance (default -2.4)
+   double TrackEtaMax;   // Signed upper bound on track eta acceptance (default +2.4)
+   double ZYSignedMin;   // Signed lower bound on Z rapidity acceptance (default -200)
+   double ZYSignedMax;   // Signed upper bound on Z rapidity acceptance (default +200)
 
    void printParameters() const {
       cout << "Input file: " << input << endl;

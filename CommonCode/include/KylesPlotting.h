@@ -746,8 +746,7 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
             hRatio->SetLineWidth(2);
             hRatio->Draw("HIST SAME");
 
-            // Draw statistical bars only for marker-style curves; line-style curves stay bar-free.
-            if (errorBars && (linestyles[i] == 0 || linestyles[i] == -1))
+            if (errorBars)
                 hRatio->Draw("E SAME");
             else
                 hRatio->Draw("HIST SAME");

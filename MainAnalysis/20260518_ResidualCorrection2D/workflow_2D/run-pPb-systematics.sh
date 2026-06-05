@@ -26,7 +26,8 @@ export NAME_TAG
     cd "$SCRIPT_DIR"
     TRACK_EXTRA_WEIGHT=1.024 VARIANT_TAG=TrackCorrection1p024 ./run-pPb.sh "$@"
 )
-(
-    cd "$SCRIPT_DIR"
-    VARIANT_TAG=IsPURejectTrue ./run-pPb-pu.sh "$@"
-)
+# IsPURejectTrue not computed for ZV10 (PU-reject Z/R weights not in dictionary)
+# (
+#     cd "$SCRIPT_DIR"
+#     VARIANT_TAG=IsPURejectTrue ./run-pPb-pu.sh "$@"
+# )

@@ -128,6 +128,17 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
 - **`threader.sh` knobs**: `NTHREAD`, `NSLICE_FACTOR`, `ANALYSIS_EXECUTABLE`.
   Benchmark pp MC Gen `ZPT40_350` × `trkPT={1_2,2_4,4_10}` dropped 224 s → 76 s
   (~2.94 × / 66 %) with identical histograms.
+- **NTHREAD parallelism constraints**: I/O is the binding resource — multiple legs
+  that read the **same** skim file must share its 55-thread cap; legs reading
+  **different** skim files can run simultaneously without I/O conflict. Hard limits:
+  ≤ 55 threads per skim file; ≤ 85 total threads at any moment.
+  `CUT_PARALLELISM` × `NTHREAD` = threads per file per leg; with multiple legs
+  reading different files in parallel, keep `CUT_PARALLELISM=1` and maximize
+  `NTHREAD`. Optimal for 4-leg parallel run (pPb data / PbP data / pPbMC Gen /
+  PbPMC Gen — each a different skim): `NTHREAD=21`, `CUT_PARALLELISM=1` →
+  4 × 21 = 84 total ≤ 85 ✓, 21/file ≤ 55 ✓. Wall time = 7 × T(NTHREAD=21) for
+  7 sequential kinematic bins; MC Gen adds zero extra wall time because it reads
+  a different skim than data.
 - **Minimal usage**: `export SKIP_CLEAN=1; export CUT_PARALLELISM=3;
   export NTHREAD=8; ./system-analysis.sh ...` (`NSLICE_FACTOR`/`CONFIG_FILE` optional).
 - **ROOT-first toolchain**: builds use `g++` + ``root-config --cflags --glibs`` and
@@ -160,9 +171,20 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   `PbPData_Reco.root` / `PbPMC_{Reco,Gen}.root`; EPOS helpers remain on the merged
   EPOS paths.
 - **Official tag convention**: `OFFICIAL_TAG_PP` / `OFFICIAL_TAG_PPB` exported from
-  the dictionary. Current V0.3 campaign uses `EEV5_ZV9_trkV28_nmix10` (pp) and
-  `ZV9_trkV28_nmix10` (pPb/PbP). Never invent ad hoc descriptive suffixes
+  the dictionary. Current V0.3 campaign uses `EEV6_ZV10_trkV29_nmix10` (pp) and
+  `ZV10_trkV29_nmix10` (pPb/PbP). Never invent ad hoc descriptive suffixes
   (`newVZFix`, `skimVZOff`, etc.); if physics changes, increment `ZV*` / `trkV*`.
+- **Official product dictionary**: source `OfficialProductDictionary.sh` (after
+  `OfficialWeightDictionary.sh`) to get canonical ROOT file prefixes for note-facing
+  products. Exports: `OFFICIAL_RESULT_DIR` (the `plots/` output dir of
+  `20241102_ZhadronVsZPt`), closure dirs `OFFICIAL_ZCORR_CLOSURE_DIR` /
+  `OFFICIAL_TRKCORR_CLOSURE_DIR`, MC prefix variables for pp/pPb/PbP at four
+  correction stages (`_GEN_`, `_RECO_`, `_ZRESIDUAL_`, `_TRKRESIDUAL_` prefixes),
+  result/nosub file prefixes `OFFICIAL_{PP,PPB,PBP}_{RESULT,NOSUB}_PREFIX` (20-bin,
+  currently blank/TBD) and `OFFICIAL_{PP,PPB,PBP}_{RESULT,NOSUB}_PREFIX_BIN12` (12×12
+  surface; current pp tag `_bin12x12_20260602`, pPb/PbP `_bin12x12_20260603`), and
+  helper `assert_product_exists()` to abort if a production ROOT file is missing.
+  Usage pattern: `${OFFICIAL_PPB_NOSUB_PREFIX_BIN12}_ZPT0_500-nosub.root`.
 
 ### Private MC (pp Pythia+MadGraph)
 - **20260403 private generator**: `SampleGeneration/20260403_PythiaMadgraph/` is the
@@ -225,6 +247,12 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
 - **|vz| window**: VZ reweighting production runs **without** the analysis `|vz| < 15`
   cut; all subsequent correction/analysis workflows default to enforcing `|vz| < 15`
   unless a VZ-study runner sets `--UseVZWindow false`.
+- **MaxMixDeltaVZ default**: `CorrelationAnalysis.cpp` defaults to `MaxMixDeltaVZ=1.0`,
+  applying a `|ΔVZ| < 1.0 cm` requirement between signal and mixed events in the mixing
+  loop. This cut applies to ALL analysis curves — Gen, RECO, and every correction level.
+  Never pass `--MaxMixDeltaVZ 0` to disable it unless explicitly studying the effect.
+  (Changed from 0.5 cm: the 0.5 cm cut non-monotonically amplified pPb/PbP DeltaEta
+  tension due to opposite-beam Vz asymmetry; 1.0 cm restores good agreement.)
 - **Energy-extrapolation systematic**: `systematics.sh` is the maintained pp
   corrected-data entrypoint for `_EEPrivate` — swap only
   `EEWeightFile_PP_PRIVATE` for the nominal EE weight while keeping the official pp
@@ -256,7 +284,7 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
 - **Overview**: replaces the triple-1D (`pT × η × φ`) track residual correction with a
   `pT × (η,φ)` correction — one 1D ratio for `pT` and one simultaneous 2D ratio for
   `(η, φ)`, preserving angular correlations. Three iterations, same as 1D. Promoted at
-  `trkV28`; the 1D workflow at `20251211_ResidualCorrection` is kept as a fallback.
+  `trkV29`; the 1D workflow at `20251211_ResidualCorrection` is kept as a fallback.
 - **Header**: `CommonCode/include/TrackResidualCorrector.h` exports both
   `TrackResidualCorrector` (1D, still used by `EnergyCorrector`/`Zcorrector`) and
   `TrackResidualCorrector2D` (reads `hPtCorrTotal` TH1D + `hEtaPhiCorrTotal` TH2D,
@@ -274,11 +302,26 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   `output/closure_inputs/`.
 - **Closure plots**: `Plots/20251202_trackResidualClosure/` generates 1D
   `pt`/`eta`/`phi` closure PDFs plus 2D `eta-phi-{corrected,gen,ratio}` heat maps from
-  `workflow_2D/output/closure_inputs/`. The 3×2 correction convergence plots
-  (`corrections_2D_*.pdf`) are produced by `workflow_2D/plot_corrections_2D.sh`.
-- **Official weight paths**: 84 files at
-  `workflow_2D/output/20260519_ZV9_trkV28_TrackResidualCorrection_*` keyed in
-  `OfficialWeightDictionary.sh` as `OFFICIAL_R_WEIGHT_FILE_{PP,PPB,PBP}[_variant]`.
+  `workflow_2D/output/closure_inputs/`. The correction convergence PDFs
+  (`corrections_2D_{system}_{tag}_{ZPT}.pdf`) are produced automatically by each run
+  script via `plot_corrections_2D.C`; to refresh standalone, run
+  `INPUT_TAG=<tag> bash Plots/20251202_trackResidualClosure/plot-track.sh`.
+- **ZCorrector in 2D residual workflow**: `MainAnalysis/20260518_ResidualCorrection2D/CorrelationAnalysis.cpp`
+  uses `ZCorrector *Zcorrector` with the 2-arg `GetCorrectionFactor(zPt, zY)` form.
+  ZV10 Z weight files are 2D (pT × η) and contain only `hPtCorrTotal` + `hEtaCorrTotal`
+  — no `hPhiCorrTotal`. The old 3-arg `TrackResidualCorrector` would segfault on these
+  files. Do not revert to 3-arg without re-introducing `hPhiCorrTotal` in the Z weight files.
+- **Official weight paths**: 72 files at
+  `workflow_2D/output/20260601_ZV10_trkV29_TrackResidualCorrection_*` (24 per system:
+  4 nominal + 20 systematic). Keyed in `OfficialWeightDictionary.sh` as
+  `OFFICIAL_R_WEIGHT_FILE_{PP,PPB,PBP}[_variant]`. PU-reject R weights are not computed
+  for ZV10; the `IsPURejectTrue` block is commented out in `run-pp-systematics.sh` and
+  `run-pPb-systematics.sh`.
+- **Inclusive ZPT0-500 closure inputs**: produced by hadd-ing the 4 ZPT bin closure
+  inputs from `output/closure_inputs/` for each system × type (gen/reco/corrected).
+  Required to generate the `*_ZPT0_500_*-nosub-closure-pt-{eta,phi}-*.pdf` 2D heat maps
+  used in the pt–η/φ correlation appendix. Run `ExecuteClosureTest --zPtRange 0_500`
+  after creating these combined files.
 
 ### TnP weights
 - **20250929 skimmer TnP**: pp / PA MC keep `MZHadron.ZWeight = 1` and `ExtraZWeight = 1`.
@@ -384,8 +427,9 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   semi-official study (tags `*_bin10x10shifted_20260506`) — keep its runners and
   exploratory presentation but prefer the newer `12 × 12` set for note Results. The
   maintained `12 × 12` surface uses tags
-  `EEV5_ZV9_trkV28_nmix10_bin12x12_20260507` (pp) and
-  `ZV9_trkV28_nmix10_bin12x12_20260507` (pPb/PbP). Refresh the inclusive
+  `EEV6_ZV10_trkV29_nmix10_bin12x12_20260602` (pp) and
+  `ZV10_trkV29_nmix10_bin12x12_20260603` (pPb/PbP; `_20260602` for pp since pp was not
+  rerun in the 2026-06-03 MaxMixDeltaVZ=1 cm campaign). Refresh the inclusive
   `ZPT0_500`/`trkPT0.5_15` plus six scan bins through
   `MainAnalysis/20241102_ZhadronVsZPt/{result-study-bin12x12-20260507.sh,
   systematics-bin12x12-20260507.sh}`,
@@ -394,8 +438,8 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   seven-slide presentation as
   `Plots/20260213_Central/presentations/central_combined_bin12x12_20260507.pdf`.
 - **Modified-bin Overleaf**: `12 × 12` updates copy the inclusive PDFs
-  `all_ZPT0_500_trkPT0.5_15_*_bin12x12_20260507-{DeltaPhi,DeltaEta}-result.pdf` and
-  the scan composites
+  `all_ZPT0_500_trkPT0.5_15_*_bin12x12_20260602-{DeltaPhi,DeltaEta}-result.pdf` (pp) /
+  `20260603` (pPb/PbP) and the scan composites
   `overleaf_pdf_composites/overleaf_result_scan_bin12x12_{deltaphi,deltaeta}_combined.pdf`
   into `~/OverleafZHadronInPPb/figures/result/`, preserving source basenames and
   replacing older `10 × 10` additions in `src/results.tex`.
@@ -413,6 +457,28 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   legs; the pPb-vs-PbP compatibility recalculation lives in
   `MainAnalysis/20260506_Jackknife/`; `plot-central-overlay-PPbPbP.sh` defaults to the
   finalized note bins (`0_30`, `30_500`, `0_500` × `0.5_2`, `2_4`, `4_15`, `0.5_15`).
+- **pPb/PbP compatibility tests**: `MainAnalysis/20260506_Jackknife/` provides two
+  complementary tests via `run-pPbPbp-compatibility.sh` and `run-pPbPbp-ks.sh`.
+  Both read the 12×12 surface result files tagged by `TAG12` (default from
+  `OfficialProductDictionary.sh`).
+  - *Chi-squared test* (`ExecuteCompatibility`): reads `JackknifeProjection0.5_15`
+    TTree from each `*-result.root`; builds N×N covariance matrix from
+    leave-one-Z-event-out resampling; inverts via SVD Moore-Penrose pseudoinverse;
+    reports p-values for three error models: `Sumw2` (diagonal stat), `Diagonal`
+    (jackknife diagonal only), `FullCovariance` (full N×N matrix). DeltaEta ndf=6
+    (symmetry halves the SVD rank). Use `--EtaFirstBin 6 --EtaLastBin 11
+    --PhiFirstBin 3 --PhiLastBin 8` for the 12×12 projection window. Outputs
+    `output_12x12/pPbPbp_compatibility.tsv` and two correlation-matrix PDFs.
+  - *KS test* (`ExecuteKS`): computes D_KS = max|CDF_pPb − CDF_PbP| between
+    normalized cumulative distributions. The p-value is derived from the asymptotic
+    Kolmogorov distribution using weighted Z-event counts as effective sample sizes.
+    This is a heuristic for weighted, background-subtracted observables (not a
+    calibrated KS p-value), but it is sensitive to systematic offsets that persist
+    across bins — complementary to the chi-squared shape test. Outputs
+    `output_12x12/pPbPbp_ks.tsv`.
+  - Note: the 0.5 cm `MaxMixDeltaVZ` cut non-monotonically worsened pPb/PbP
+    DeltaEta FullCov agreement (p=0.017) relative to no cut (p=0.28) or 1 cm (p=0.35)
+    due to opposite-beam Vz asymmetry; the default was changed to 1.0 cm.
 - **pp energy-extrapolation study**: `MainAnalysis/20241102_ZhadronVsZPt/pp-EE.sh` /
   `Plots/20260213_Central/plot_energyExtrapolation.cpp` run on the finalized
   note-facing bins, include the maintained pp VZ weighting in all curves, apply the
@@ -574,20 +640,24 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
 - `Plots/20260115_ZResidualClosure/`: Z-correction closure outputs (e.g.
   `ZPT0_500_Zclosure-closure-*.pdf` under `plots/{pp,pPb,PbP}`).
 - `MainAnalysis/20251211_ResidualCorrection/workflow/plots/`: 1D track residual
-  correction-iteration outputs (fallback); superseded by 2D for `trkV28`.
+  correction-iteration outputs (fallback); superseded by 2D for `trkV29`.
 - `MainAnalysis/20260518_ResidualCorrection2D/workflow_2D/`: 2D track residual
-  correction derivation. Official `trkV28` weight files in `output/`, correction
+  correction derivation. Official `trkV29` weight files in `output/`, correction
   convergence PDFs (`corrections_2D_*.pdf`) and 1D closure PDFs in `plots/`, closure
   inputs in `output/closure_inputs/`.
 - `Plots/20251202_trackResidualClosure/plots/`: track-level no-subtraction closure
-  outputs (`*-nosub-closure-*`) including `trkV28` 2D eta-phi heat maps
+  outputs (`*-nosub-closure-*`) including `trkV29` 2D eta-phi heat maps
   (`*-nosub-closure-eta-phi-{corrected,gen,ratio}.pdf`).
 - `Plots/20260120_CentralClosure/plots/`: background-subtracted and pre-subtraction
   closure outputs (`*-closure-Delta{Eta,Phi}-{all,bkg,result}.pdf`), including
-  `trkV28` updated figures. For current-tag closure refreshes, run
+  `trkV29` updated figures. For current-tag closure refreshes, run
   `ExecuteClosureTest` directly for each `collisionType` over
   `ZPT={0_10,10_20,20_40,40_500}`, `trkPtRange=0.5_15`, `tag=$OFFICIAL_TAG_PP` (or
   `$OFFICIAL_TAG_PPB`); `plot-central.sh` runs all three systems.
+  `plot_closure.cpp` shows exactly **4 curves**: MC DY-GEN, MC DY-RECO, + Z correction,
+  + Z + track correction. The former 5th `|ΔVZ| < 0.5 cm` comparison curve and
+  `tagDeltaVZ` parameter have been removed since `MaxMixDeltaVZ=1.0` is now the universal
+  default applied to all curves including Gen.
 - `SampleGeneration/20250929_ReducedTreePA/`: PA reduced-tree skimming that produced
   the V0.2 skim inputs. `ReduceForest.cpp` converts forest ROOT inputs into skim
   trees; `make Prepare` creates `Samples/{PAMC,APMC,PAData}` symlinks. Forest-side

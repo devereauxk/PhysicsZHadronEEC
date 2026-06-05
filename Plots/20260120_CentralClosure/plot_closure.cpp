@@ -31,20 +31,21 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Tag: "<<tag<<endl;
 
-    string tagDeltaVZ = CL.Get("tagDeltaVZ", "");
     string mctag = (collisionType == "pp" ? "pythia" : collisionType);
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("%s/%sMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/%sMC_nominal_%s_ZPT%s", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/%sMC_ZResidual_%s_ZPT%s", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/%sMC_trkResidual_%s_ZPT%s", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "MC DY-GEN",
@@ -52,12 +53,6 @@ int main(int argc, char *argv[]) {
         "  & Z correction",
         "  & Z + track correction"
     };
-    if (!tagDeltaVZ.empty()) {
-        input_ZPT_files.push_back(
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s",
-                 mctag.c_str(), tagDeltaVZ.c_str(), zPtRange.c_str()));
-        labels.push_back("  & |#DeltaVZ| < 0.5 cm");
-    }
     string output = Form("plots/%s/%s_ZPT%s_trkPT%s_%s-closure", collisionType.c_str(), collisionType.c_str(), zPtRange.c_str(), trkPtRange.c_str(), tag.c_str());
 
     vector<TH1*> hDeltaEta_all;

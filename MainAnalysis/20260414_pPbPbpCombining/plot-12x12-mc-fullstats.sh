@@ -7,8 +7,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
-TAG="${OFFICIAL_TAG_PPB}"
-MAIN=/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 
 make ExecutePlot12x12PPbPbP
 
@@ -16,8 +15,8 @@ OUTDIR="plots/12x12_mc_fullstats"
 mkdir -p "$OUTDIR"
 
 ./ExecutePlot12x12PPbPbP \
-    --pPbFile "${MAIN}/plots/pPbMC_trkResidual_${TAG}_12x12_fullstats_ZPT0_500-result.root" \
-    --PbPFile "${MAIN}/plots/PbPMC_trkResidual_${TAG}_12x12_fullstats_ZPT0_500-result.root" \
+    --pPbFile "${OFFICIAL_PPB_BIN12_MC_FULLSTATS_PREFIX}_ZPT0_500-result.root" \
+    --PbPFile "${OFFICIAL_PBP_BIN12_MC_FULLSTATS_PREFIX}_ZPT0_500-result.root" \
     --OutputDir "$OUTDIR" \
     --Tag "mc_fullstats" \
     --pPbLabel "pPb MC reco" \

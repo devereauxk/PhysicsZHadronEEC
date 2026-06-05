@@ -25,6 +25,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 cd "$SCRIPT_DIR"
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 
 ZPT_RANGE=${ZPT_RANGE:-0_500}
 TRK_RANGE=${TRK_RANGE:-0.5_15}
@@ -32,7 +33,7 @@ PPTAG=${PPTAG:-${OFFICIAL_TAG_PP}}
 TAG5020=${TAG5020:-madgraphPP5020_nmix10}
 TAG8160=${TAG8160:-madgraphPP8160_nmix10}
 
-MAIN_PLOTS=/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots
+MAIN_PLOTS="${OFFICIAL_RESULT_DIR}"
 
 ensure_main_outputs() {
     local missing=()

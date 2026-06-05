@@ -27,6 +27,7 @@ void plot_corrections(const char* inputFileName = "correction.root",
     hPtCorr1->SetLineColor(kRed);
     hPtCorr1->SetTitle("Z p_{T} Dependent Correction");
     hPtCorr1->GetYaxis()->SetRangeUser(0,2);
+    hPtCorr1->GetXaxis()->SetRangeUser(0.5, 500);
     hPtCorr1->GetXaxis()->CenterTitle();
     hPtCorr1->SetTitleOffset(1.1,"X");
     hPtCorr1->SetTitleSize(0.04,"X");

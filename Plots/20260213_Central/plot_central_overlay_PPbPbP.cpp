@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("pPbtag", "V16_nmix5");
     string mcTag = CL.Get("pPbMCTag", tag);
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
 
     cout<<"=================================================="<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -31,12 +33,12 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", mcTag.c_str(), zPtRange.c_str()),
-        //Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_nominal_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", mcTag.c_str(), zPtRange.c_str())
+        //Form("%s/pPb_nominal_%s_ZPT%s", baseDir.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/pPb_trkResidual_%s_ZPT%s", baseDir.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/pPbMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mcTag.c_str(), zPtRange.c_str()),
+        //Form("%s/PbP_nominal_%s_ZPT%s", baseDir.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/PbP_trkResidual_%s_ZPT%s", baseDir.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/PbPMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mcTag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         //"PPb DATA, uncorrected",

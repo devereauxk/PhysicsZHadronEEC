@@ -3,6 +3,7 @@
 set -euo pipefail
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 make
 
 TAG="${1:-${OFFICIAL_TAG_PPB}}"
@@ -14,6 +15,6 @@ do
     echo "Processing zPtRange: $zPtRange"
     for system in "${PLOT_SYSTEMS[@]}"
     do
-        ./ExecuteClosureTest --collisionType "$system" --zPtRange "$zPtRange" --trkPtRange 0.5_15 --tag "$TAG" --inputTag "$INPUT_TAG"
+        ./ExecuteClosureTest --collisionType "$system" --zPtRange "$zPtRange" --trkPtRange 0.5_15 --tag "$TAG" --inputTag "$INPUT_TAG" --BaseDir "${OFFICIAL_RESULT_DIR}" --ClosureInputBaseDir "${OFFICIAL_TRKCORR_CLOSURE_DIR}"
     done
 done

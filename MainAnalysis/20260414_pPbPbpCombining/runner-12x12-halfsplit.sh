@@ -32,7 +32,7 @@ COMMON=(
     --UseVZWeight true --UseJackknife true
     --yBoost 0 --nMix 10
     --ResultDEtaBins 12 --ResultDPhiBins 12
-    --MaxMixDeltaVZ 0.5
+    --MaxMixDeltaVZ 1.0
 )
 
 run_pPb() {

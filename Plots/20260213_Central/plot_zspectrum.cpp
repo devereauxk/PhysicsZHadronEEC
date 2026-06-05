@@ -24,6 +24,8 @@ int main(int argc, char *argv[]) {
     string tag = CL.Get("pPbtag", "V16_nmix5");
     string tag_pp = CL.Get("pptag", "V16_nmix5");
     bool doCombine = CL.GetBool("doCombine", false);
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
 
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Track Pt Range: "<<trkPtRange<<endl;
@@ -32,11 +34,11 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_ZResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EExtrapolation_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str())
+        Form("%s/pPb_ZResidual_%s_ZPT%s", baseDir.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/pp_ZResidual_%s_ZPT%s", baseDir.c_str(), tag_pp.c_str(), zPtRange.c_str()),
+        Form("%s/pp_EExtrapolation_%s_ZPT%s", baseDir.c_str(), tag_pp.c_str(), zPtRange.c_str())
     };
-    string input_ZPT_file_pbp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_ZResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str());
+    string input_ZPT_file_pbp = Form("%s/PbP_ZResidual_%s_ZPT%s", baseDir.c_str(), tag.c_str(), zPtRange.c_str());
     vector<string> labels = {
         "pPb 8 TeV, corrected",
         "pp 5 TeV, corrected",

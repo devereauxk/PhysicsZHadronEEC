@@ -399,17 +399,20 @@ void writeTSV(const string &path, const vector<CompatibilityResult> &results)
 void writeTeX(const string &path, const vector<CompatibilityResult> &results)
 {
     ofstream out(path);
-    out << "\\begin{table}[htbp]\n\\centering\n";
+    // Output just the tabular (no floating table wrapper) so the caller
+    // can embed it in a beamer frame with \resizebox or similar.
     out << "\\begin{tabular}{|l|l|r|r|r|r|r|}\n\\hline\n";
     out << "Observable & Error model & $N_{\\mathrm{bins}}$ & $\\chi^2$ & ndf & $\\chi^2/\\mathrm{ndf}$ & $p$-value \\\\\n\\hline\n";
+    auto escTeX = [](const string &s) {
+        string t; for (char c : s) { if (c == '_') t += "\\_"; else t += c; }
+        return t;
+    };
     out << setprecision(4);
     for (const CompatibilityResult &r : results)
-        out << "\\texttt{" << r.ObservableLabel << "} & " << r.ErrorModel << " & "
+        out << "\\texttt{" << escTeX(r.ObservableLabel) << "} & " << r.ErrorModel << " & "
             << r.UsedBins << " & " << r.Chi2 << " & " << r.UsedBins << " & "
             << r.Chi2PerNDF << " & " << r.PValue << " \\\\\n";
     out << "\\hline\n\\end{tabular}\n";
-    out << "\\caption{pPb vs Pbp compatibility comparison using Sumw2, diagonal jackknife, and full jackknife covariance statistical uncertainties.}\n";
-    out << "\\label{tab:ppbp-compatibility}\n\\end{table}\n";
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -433,8 +436,15 @@ int main(int argc, char *argv[])
     const int phiFirstBin  = CL.GetInt("PhiFirstBin",  5);
     const int phiLastBin   = CL.GetInt("PhiLastBin",  14);
 
-    const string pPbFileName = baseDir + "/pPb_trkResidual_" + tag + "_ZPT0_500-result.root";
-    const string PbPFileName = baseDir + "/PbP_trkResidual_" + tag + "_ZPT0_500-result.root";
+    // Explicit file overrides (optional; defaults to tag-based paths above)
+    const string pPbFileOverride = CL.Get("pPbFile", "");
+    const string PbPFileOverride = CL.Get("PbPFile", "");
+    const string pPbFileName = pPbFileOverride.empty()
+        ? (baseDir + "/pPb_trkResidual_" + tag + "_ZPT0_500-result.root")
+        : pPbFileOverride;
+    const string PbPFileName = PbPFileOverride.empty()
+        ? (baseDir + "/PbP_trkResidual_" + tag + "_ZPT0_500-result.root")
+        : PbPFileOverride;
 
     TFile pPbFile(pPbFileName.c_str(), "READ");
     TFile PbPFile(PbPFileName.c_str(), "READ");

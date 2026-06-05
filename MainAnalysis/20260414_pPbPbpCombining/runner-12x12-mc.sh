@@ -1,8 +1,9 @@
 #!/bin/bash
 # Study 4: pPb and Pbp MC reco fully corrected, Z-count-matched to data.
-# Fractions computed from:
-#   data NZ  pPb=10323.5, PbP=5942.57  (from pPb/PbP_trkResidual_<TAG>_ZPT0_500-result.root)
-#   MC NZ    pPb=302326,  PbP=303036   (summed over ZPT bins from existing MC reco result files)
+# Fractions computed dynamically from hNZData_0.5_15 in:
+#   data: pPb/PbP_trkResidual_<TAG>_12x12_full_ZPT0_500-result.root  (from halfsplit runner)
+#   MC:   pPbMC/PbPMC_trkResidual_<TAG>_12x12_fullstats_ZPT0_500-result.root  (from mc-fullstats runner)
+# Run halfsplit and mc-fullstats runners first.
 # Produces 2 result files in MainAnalysis/20241102_ZhadronVsZPt/plots/.
 
 set -euo pipefail
@@ -25,9 +26,23 @@ PT_RANGES=("0.5_15")
 EOF
 export CONFIG_FILE="$CONFIG"
 
-# Fractions to match data Z-event statistics
-FRAC_PPB="0.034150"   # pPb  data NZ 10323.5 / MC NZ 302326
-FRAC_PBP="0.019611"   # PbP  data NZ 5942.57 / MC NZ 303036
+# Compute fractions dynamically from ZV10 result files
+get_nz() {
+    root -l -b -q -e "TFile f(\"$1\"); TH1D *h=(TH1D*)f.Get(\"hNZData_0.5_15\"); if(h) cout<<h->GetBinContent(1)<<endl; else cout<<0<<endl;" 2>/dev/null | tail -1
+}
+
+NZ_DATA_PPB=$(get_nz "${MAIN}/plots/pPb_trkResidual_${TAG}_12x12_full_ZPT0_500-result.root")
+NZ_MC_PPB=$(get_nz "${MAIN}/plots/pPbMC_trkResidual_${TAG}_12x12_fullstats_ZPT0_500-result.root")
+NZ_DATA_PBP=$(get_nz "${MAIN}/plots/PbP_trkResidual_${TAG}_12x12_full_ZPT0_500-result.root")
+NZ_MC_PBP=$(get_nz "${MAIN}/plots/PbPMC_trkResidual_${TAG}_12x12_fullstats_ZPT0_500-result.root")
+
+echo "NZ data pPb=${NZ_DATA_PPB}  MC pPb=${NZ_MC_PPB}"
+echo "NZ data PbP=${NZ_DATA_PBP}  MC PbP=${NZ_MC_PBP}"
+
+FRAC_PPB=$(python3 -c "print('{:.6f}'.format(${NZ_DATA_PPB}/${NZ_MC_PPB}))")
+FRAC_PBP=$(python3 -c "print('{:.6f}'.format(${NZ_DATA_PBP}/${NZ_MC_PBP}))")
+
+echo "Fractions: pPb=${FRAC_PPB}  PbP=${FRAC_PBP}"
 
 COMMON=(
     --IsPP false --IsGenZ false --IsData false
@@ -36,7 +51,7 @@ COMMON=(
     --UseVZWeight true
     --yBoost 0 --nMix 10
     --ResultDEtaBins 12 --ResultDPhiBins 12
-    --MaxMixDeltaVZ 0.5
+    --MaxMixDeltaVZ 1.0
 )
 
 echo "=== pPb MC reco (Fraction=${FRAC_PPB}) ==="

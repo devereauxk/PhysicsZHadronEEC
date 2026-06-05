@@ -258,6 +258,8 @@ int main(int argc, char *argv[]) {
     string outputBase = CL.Get("outputBase", "plots/central_combined");
     string systematicsDir = CL.Get("systematicsDir",
         "/home/kdeverea/PhysicsZHadronEEC/Systematics/20260329_pPbSystematics/output");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
 
     cout<<"=================================================="<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -266,16 +268,16 @@ int main(int argc, char *argv[]) {
     cout<<"pp Tag: "<<tag_pp<<endl;
 
     // files to load
-    string input_ZPT_files_pp = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_trkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str());
+    string input_ZPT_files_pp = Form("%s/pp_trkResidual_%s_ZPT%s", baseDir.c_str(), tag_pp.c_str(), zPtRange.c_str());
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPb_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("%s/pPb_trkResidual_%s_ZPT%s", baseDir.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> input_ZPT_files_pbp = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbP_trkResidual_%s_ZPT%s", tag.c_str(), zPtRange.c_str())
+        Form("%s/PbP_trkResidual_%s_ZPT%s", baseDir.c_str(), tag.c_str(), zPtRange.c_str())
     };
     if (includeMC) {
-        input_ZPT_files.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pPbMC_Gen_nominal_%s_ZPT%s", mcTag.c_str(), zPtRange.c_str()));
-        input_ZPT_files_pbp.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/PbPMC_Gen_nominal_%s_ZPT%s", mcTag.c_str(), zPtRange.c_str()));
+        input_ZPT_files.push_back(Form("%s/pPbMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mcTag.c_str(), zPtRange.c_str()));
+        input_ZPT_files_pbp.push_back(Form("%s/PbPMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mcTag.c_str(), zPtRange.c_str()));
     }
     vector<string> labels = {
         "pp",

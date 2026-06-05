@@ -1,6 +1,6 @@
 #!/bin/bash
 # Study 7: pPb and Pbp raw uncorrected data — all corrections turned off.
-# Keep jackknife for statistical errors; keep MaxMixDeltaVZ 0.5.
+# Keep jackknife for statistical errors; MaxMixDeltaVZ 1.0 (nominal).
 # Produces 2 result files in MainAnalysis/20241102_ZhadronVsZPt/plots/.
 
 set -euo pipefail
@@ -30,7 +30,7 @@ COMMON=(
     --UseVZWeight false --UseJackknife true
     --yBoost 0 --nMix 10
     --ResultDEtaBins 12 --ResultDPhiBins 12
-    --MaxMixDeltaVZ 0.5
+    --MaxMixDeltaVZ 1.0
 )
 
 echo "=== pPb raw (all corrections off) ==="

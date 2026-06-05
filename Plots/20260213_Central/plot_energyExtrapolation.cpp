@@ -22,6 +22,8 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "0_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_15");
     string tag_pp = CL.Get("pptag", "V16_nmix5");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
 
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Track Pt Range: "<<trkPtRange<<endl;
@@ -29,10 +31,10 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_nominal_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_ZResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EEtrkResidual_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/pp_EExtrapolation_%s_ZPT%s", tag_pp.c_str(), zPtRange.c_str())
+        Form("%s/pp_nominal_%s_ZPT%s", baseDir.c_str(), tag_pp.c_str(), zPtRange.c_str()),
+        Form("%s/pp_ZResidual_%s_ZPT%s", baseDir.c_str(), tag_pp.c_str(), zPtRange.c_str()),
+        Form("%s/pp_EEtrkResidual_%s_ZPT%s", baseDir.c_str(), tag_pp.c_str(), zPtRange.c_str()),
+        Form("%s/pp_EExtrapolation_%s_ZPT%s", baseDir.c_str(), tag_pp.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "pp 5.02 TeV baseline",

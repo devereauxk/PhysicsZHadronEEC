@@ -8,8 +8,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
-TAG="${OFFICIAL_TAG_PPB}"
-MAIN=/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 
 make ExecutePlot12x12PPbPbP
 
@@ -31,12 +30,12 @@ run_plot() {
         --PbPLabel "$pbp_label"
 }
 
-FULL_PPB="${MAIN}/plots/pPb_trkResidual_${TAG}_12x12_full_ZPT0_500-result.root"
-FULL_PBP="${MAIN}/plots/PbP_trkResidual_${TAG}_12x12_full_ZPT0_500-result.root"
-FIRST_PPB="${MAIN}/plots/pPb_trkResidual_${TAG}_12x12_pPbFirst_ZPT0_500-result.root"
-SECOND_PPB="${MAIN}/plots/pPb_trkResidual_${TAG}_12x12_pPbSecond_ZPT0_500-result.root"
-FIRST_PBP="${MAIN}/plots/PbP_trkResidual_${TAG}_12x12_PbPFirst_ZPT0_500-result.root"
-SECOND_PBP="${MAIN}/plots/PbP_trkResidual_${TAG}_12x12_PbPSecond_ZPT0_500-result.root"
+FULL_PPB="${OFFICIAL_PPB_BIN12_NTHREAD40_PREFIX}_ZPT0_500-result.root"
+FULL_PBP="${OFFICIAL_PBP_BIN12_NTHREAD40_PREFIX}_ZPT0_500-result.root"
+FIRST_PPB="${OFFICIAL_PPB_BIN12_PPB_FIRST_PREFIX}_ZPT0_500-result.root"
+SECOND_PPB="${OFFICIAL_PPB_BIN12_PPB_SECOND_PREFIX}_ZPT0_500-result.root"
+FIRST_PBP="${OFFICIAL_PBP_BIN12_PBP_FIRST_PREFIX}_ZPT0_500-result.root"
+SECOND_PBP="${OFFICIAL_PBP_BIN12_PBP_SECOND_PREFIX}_ZPT0_500-result.root"
 
 echo "=== pPb first half vs Pbp full ==="
 run_plot "$FIRST_PPB"  "$FULL_PBP"  "halfsplit_pPbFirst"  "pPb first half"  "Pbp full"

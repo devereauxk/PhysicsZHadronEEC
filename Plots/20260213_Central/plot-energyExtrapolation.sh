@@ -3,13 +3,14 @@
 set -euo pipefail
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 make ExecuteEnergyExtrapolationPlot
 
 run_one() {
     local zPtRange=$1
     local trkPtRange=$2
     echo "Processing zPtRange: $zPtRange, trkPtRange: $trkPtRange"
-    ./ExecuteEnergyExtrapolationPlot --zPtRange "$zPtRange" --trkPtRange "$trkPtRange" --pptag "$OFFICIAL_TAG_PP"
+    ./ExecuteEnergyExtrapolationPlot --zPtRange "$zPtRange" --trkPtRange "$trkPtRange" --pptag "$OFFICIAL_TAG_PP" --BaseDir "${OFFICIAL_RESULT_DIR}"
 }
 
 if [ -n "${CONFIG_FILE:-}" ]; then

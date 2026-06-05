@@ -127,7 +127,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
    unsigned long mix_i = iStart;
    unsigned long mixstart_i = mix_i;
    int deltaI = (iEnd-iStart)/100+1;
-   TrackResidualCorrector corrector(par.residualFile.c_str());              
+   ZCorrector corrector(par.residualFile.c_str());
    TrackResidualCorrector energy_extrapolator(par.EnergyExtraFile.c_str());
 
    // open VZ correction if needed
@@ -152,7 +152,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       if (zPhi < 0) zPhi += 2 * M_PI;
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
-      float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, zPhi);
+      float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY);
 
       // fill histograms
       float this_eventWeight = MZSignal->EventWeight;
@@ -200,13 +200,16 @@ public:
   void analyze(Parameters& par) {
     // First histogram with mix=false
     par.mix = false;
-    const int nbinsX = 50;
+    const int nLogBins = 25;
     const double xMin = 0.5;
     const double xMax = 100;
-    std::vector<double> binEdgesX(nbinsX + 1);
-    
-    for (int i = 0; i <= nbinsX; ++i) binEdgesX[i] = xMin * std::pow(xMax / xMin, double(i) / nbinsX);
-    binEdgesX[nbinsX]=1000;
+    // 1 bin [0,0.5] + 25 log bins [0.5,100] + 1 bin [100,1000] = 27 total
+    std::vector<double> binEdgesX(nLogBins + 3);
+    binEdgesX[0] = 0.0;
+    for (int i = 0; i <= nLogBins; ++i)
+        binEdgesX[i + 1] = xMin * std::pow(xMax / xMin, double(i) / nLogBins);
+    binEdgesX[nLogBins + 2] = 1000.0;
+    const int nbinsX = nLogBins + 2;
 
     const int nbinsY = 25;
     const double yMin = -2.4;

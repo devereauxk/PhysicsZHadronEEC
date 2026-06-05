@@ -3,9 +3,9 @@
 set -e
 
 THISDIR=$(cd "$(dirname "$0")" && pwd)
-ANALYSISDIR=/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots
-
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
+ANALYSISDIR="${OFFICIAL_RESULT_DIR}"
 
 cd "$THISDIR"
 

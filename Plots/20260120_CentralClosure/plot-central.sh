@@ -3,20 +3,18 @@
 set -euo pipefail
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 make ExecuteClosureTest
 
 PPB_TAG="${OFFICIAL_TAG_PPB}"
 PP_TAG="${OFFICIAL_TAG_PP}"
 
-PP_DVZ_TAG="${PP_TAG}_vzmatch0.5cm"
-PPB_DVZ_TAG="${PPB_TAG}_vzmatch0.5cm"
-
 run_one() {
     local ZPT=$1
     local TRKPT=$2
-    ./ExecuteClosureTest --collisionType pp  --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PP_TAG"  --tagDeltaVZ "$PP_DVZ_TAG"
-    ./ExecuteClosureTest --collisionType pPb --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PPB_TAG" --tagDeltaVZ "$PPB_DVZ_TAG"
-    ./ExecuteClosureTest --collisionType PbP --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PPB_TAG" --tagDeltaVZ "$PPB_DVZ_TAG"
+    ./ExecuteClosureTest --collisionType pp  --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PP_TAG" --BaseDir "${OFFICIAL_RESULT_DIR}"
+    ./ExecuteClosureTest --collisionType pPb --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PPB_TAG" --BaseDir "${OFFICIAL_RESULT_DIR}"
+    ./ExecuteClosureTest --collisionType PbP --zPtRange "$ZPT" --trkPtRange "$TRKPT" --tag "$PPB_TAG" --BaseDir "${OFFICIAL_RESULT_DIR}"
 }
 
 if [ -n "${CONFIG_FILE:-}" ]; then

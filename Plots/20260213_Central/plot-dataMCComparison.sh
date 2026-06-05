@@ -6,13 +6,14 @@ THISDIR=$(cd "$(dirname "$0")" && pwd)
 cd "$THISDIR"
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 
 make ExecuteDataMCComparison
 
 SYSTEMS_CSV=${SYSTEMS:-pp,pPb,PbP}
 ZPT_RANGES_CSV=${ZPT_RANGES:-0_500}
 TRACK_RANGES_CSV=${TRACK_RANGES:-0.5_15}
-INPUT_ROOT_DIR=${INPUT_ROOT_DIR:-/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots}
+INPUT_ROOT_DIR=${INPUT_ROOT_DIR:-${OFFICIAL_RESULT_DIR}}
 OUTPUT_DIR=${OUTPUT_DIR:-plots/detaMCComparison}
 PP_TAG_BASE=${PP_TAG_BASE:-${OFFICIAL_TAG_PP/%_nmix10/_nmix0}}
 PA_TAG_BASE=${PA_TAG_BASE:-${OFFICIAL_TAG_PPB/%_nmix10/_nmix0}}

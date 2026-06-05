@@ -9,7 +9,9 @@
 #include <TFile.h>
 
 #include <climits>
+#include <cmath>
 #include <iostream>
+#include <memory>
 #include <utility>
 
 using namespace std;
@@ -20,6 +22,55 @@ using namespace std;
 #include "CommandLine.h"            // Yi's Commandline bundle
 #include "ProgressBar.h"            // Yi's fish progress bar
 #include "TrackResidualCorrector.h" // Residual correction
+
+class ZYDirectCorrector
+{
+public:
+   ZYDirectCorrector(const string &filename)
+   {
+      File = new TFile(filename.c_str());
+      Weight = (TH2D *)File->Get("hWeightToApply");
+   }
+
+   ~ZYDirectCorrector()
+   {
+      if(File != nullptr)
+      {
+         File->Close();
+         delete File;
+      }
+   }
+
+   double GetCorrectionFactor(double yCM, double phi) const
+   {
+      if(Weight == nullptr)
+         return 1;
+
+      while(phi < 0)          phi += 2 * M_PI;
+      while(phi >= 2 * M_PI)  phi -= 2 * M_PI;
+
+      const TAxis *yAxis = Weight->GetXaxis();
+      const TAxis *phiAxis = Weight->GetYaxis();
+
+      int yBin = yAxis->FindBin(yCM);
+      int phiBin = phiAxis->FindBin(phi);
+
+      if(yCM <= yAxis->GetXmin()) yBin = 1;
+      if(yCM >= yAxis->GetXmax()) yBin = yAxis->GetNbins();
+      if(phi <= phiAxis->GetXmin()) phiBin = 1;
+      if(phi >= phiAxis->GetXmax()) phiBin = phiAxis->GetNbins();
+
+      double correction = Weight->GetBinContent(yBin, phiBin);
+      if(!std::isfinite(correction) || correction <= 0)
+         correction = 1;
+
+      return correction;
+   }
+
+private:
+   TFile *File = nullptr;
+   TH2D *Weight = nullptr;
+};
 
 //============================================================//
 // Function to check for configuration errors
@@ -185,11 +236,11 @@ bool rejectMuonMatchedTrack(ZHadronMessenger *b, const Parameters &par, int j,
 bool trackSelection(ZHadronMessenger *b, const Parameters &par, int j,
    const pair<int, int> &closestMuonTracks = {-1, -1}) {
    if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
-   if ((*b->trackPt)[j] > par.MaxTrackPT) return false;  
+   if ((*b->trackPt)[j] > par.MaxTrackPT) return false;
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
-   if ((*b->trackEta)[j] > 2.4) return false;
-   if ((*b->trackEta)[j] < -2.4) return false;
+   if ((*b->trackEta)[j] > par.TrackEtaMax) return false;
+   if ((*b->trackEta)[j] < par.TrackEtaMin) return false;
    return true;
 }
 
@@ -200,8 +251,8 @@ bool trackSelectionNoPt(ZHadronMessenger *b, const Parameters &par, int j,
    const pair<int, int> &closestMuonTracks = {-1, -1}) {
    if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
-   if ((*b->trackEta)[j] > 2.4) return false;
-   if ((*b->trackEta)[j] < -2.4) return false;
+   if ((*b->trackEta)[j] > par.TrackEtaMax) return false;
+   if ((*b->trackEta)[j] < par.TrackEtaMin) return false;
    return true;
 }
 
@@ -219,6 +270,11 @@ bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) > 120) return 0;
    if (fabs((par.isGenZ ? (*b->genZY)[0] : (*b->zY)[0])) <= par.MinZY) return 0;
    if (fabs((par.isGenZ ? (*b->genZY)[0] : (*b->zY)[0])) >= par.MaxZY) return 0;
+   {
+      float zY_raw = (par.isGenZ ? (*b->genZY)[0] : (*b->zY)[0]);
+      if (zY_raw < par.ZYSignedMin) return 0;
+      if (zY_raw > par.ZYSignedMax) return 0;
+   }
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0]) < par.MinZPT) return 0;
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0]) > par.MaxZPT) return 0;
 
@@ -399,9 +455,9 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    }
 
    // open Z correction if needed
-   TrackResidualCorrector *Zcorrector;
+   ZCorrector *Zcorrector = nullptr;
    if (par.useZWeight && par.ZWeightFile != "") {
-      Zcorrector = new TrackResidualCorrector(par.ZWeightFile.c_str());
+      Zcorrector = new ZCorrector(par.ZWeightFile.c_str());
    }
 
    // open VZ correction if needed
@@ -409,6 +465,11 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    if (par.useVZWeight) {
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
    }
+
+   // open direct Z (yCM, phi) correction if needed
+   unique_ptr<ZYDirectCorrector> ZCorrectionCorrector;
+   if (par.ZCorrectionFile != "")
+      ZCorrectionCorrector = make_unique<ZYDirectCorrector>(par.ZCorrectionFile);
 
    // open track residual correctors if needed (2D eta-phi version)
    TrackResidualCorrector2D *corrector;
@@ -503,7 +564,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       //==================================================//
       // calculate event weights
       //==================================================//
-      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
+      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY) : 1;
       if (par.ExtraZWeight >= 0) ZWeight *= MZSignal->ExtraZWeight[par.ExtraZWeight];
       else if (par.isData) ZWeight *= MZSignal->ZWeight;
 
@@ -518,6 +579,12 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       if (par.EnergyExtraFile != "" && par.isPP) {
          float energyExtrapolationWeight = EnergyCorrector->GetCorrectionFactor(zPt, 1, 1);
          eventWeightSignal *= energyExtrapolationWeight;
+      }
+
+      // direct 2D Z (yCM, phi) correction
+      if (ZCorrectionCorrector) {
+         double zY_CM = zY - par.yBoost;
+         eventWeightSignal *= ZCorrectionCorrector->GetCorrectionFactor(zY_CM, zPhi);
       }
 
       if (jackknifeEvent != nullptr && par.mix == false)
@@ -616,7 +683,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             float zYMix = (par.isGenZ ? (*MMix->genZY)[0] : (*MMix->zY)[0]);
             float zPhiMix = (par.isGenZ ? (*MMix->genZPhi)[0] : (*MMix->zPhi)[0]);
             if (zPhiMix < 0) zPhiMix += 2 * M_PI;
-            float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, zPhiMix) : 1;
+            float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix) : 1;
             if (par.ExtraZWeight >= 0) ZWeightMix *= MMix->ExtraZWeight[par.ExtraZWeight];
             else if (par.isData) ZWeightMix *= MMix->ZWeight;
             
@@ -972,11 +1039,12 @@ int main(int argc, char *argv[])
    par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
+   par.ZCorrectionFile = CL.Get      ("ZCorrectionFile", "");
    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
    par.useVZWeight       = CL.GetBool  ("UseVZWeight", false);
    par.useVZWindow       = CL.GetBool  ("UseVZWindow", true);
    par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
-   par.MaxMixDeltaVZ   = CL.GetDouble("MaxMixDeltaVZ", 0);
+   par.MaxMixDeltaVZ   = CL.GetDouble("MaxMixDeltaVZ", 1.0);
    par.useJackknife    = CL.GetBool  ("UseJackknife", false);
    par.ResultDEtaBins  = CL.GetInt   ("ResultDEtaBins", 20);
    par.ResultDPhiBins  = CL.GetInt   ("ResultDPhiBins", 20);
@@ -1000,6 +1068,10 @@ int main(int argc, char *argv[])
    par.VZWindowSize  = CL.GetDouble("VZWindowSize", 15.0);  // |vz| window half-width in cm
    par.fillSigned    = CL.GetBool  ("FillSigned", false);   // Fill signed DeltaEta instead of folded |DeltaEta|
    par.flipDeltaEta  = CL.GetBool  ("FlipDeltaEta", false); // Negate trackDeta before filling (only active with FillSigned)
+   par.TrackEtaMin   = CL.GetDouble("TrackEtaMin",  -2.4);  // Signed lower bound on track eta acceptance
+   par.TrackEtaMax   = CL.GetDouble("TrackEtaMax",   2.4);  // Signed upper bound on track eta acceptance
+   par.ZYSignedMin   = CL.GetDouble("ZYSignedMin",  -200.0); // Signed lower bound on Z rapidity acceptance
+   par.ZYSignedMax   = CL.GetDouble("ZYSignedMax",   200.0); // Signed upper bound on Z rapidity acceptance
    par.mix = 0;
    par.isPP = IsPP;
    par.isData = IsData;

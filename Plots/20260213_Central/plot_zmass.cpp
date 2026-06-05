@@ -44,6 +44,8 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -64,18 +66,18 @@ int main(int argc, char *argv[]) {
     }
 
     vector<string> dataCandidates = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s-nosub.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("%s/%s_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), collisionType.c_str(), tag.c_str(), zPtRange.c_str())
     };
     if(collisionType != "pp")
-        dataCandidates.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT5_500-nosub.root", collisionType.c_str(), tag.c_str()));
+        dataCandidates.push_back(Form("%s/%s_nominal_%s_ZPT5_500-nosub.root", baseDir.c_str(), collisionType.c_str(), tag.c_str()));
     string dataFile = PickExistingFile(dataCandidates, Form("%s data", collisionType.c_str()));
 
     string mcGenFile = "";
     string mcRecoFile = "";
-    string mcClosureGenFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str());
-    string mcClosureRecoFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str());
-    string mcTaggedGenFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
-    string mcTaggedRecoFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
+    string mcClosureGenFile = Form("%s/%sMC_Gen_nominal_Zclosure_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), zPtRange.c_str());
+    string mcClosureRecoFile = Form("%s/%sMC_nominal_Zclosure_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), zPtRange.c_str());
+    string mcTaggedGenFile = Form("%s/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
+    string mcTaggedRecoFile = Form("%s/%sMC_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
 
     if(FileExists(mcTaggedGenFile) && FileExists(mcTaggedRecoFile)) {
         mcGenFile = mcTaggedGenFile;
@@ -88,14 +90,14 @@ int main(int argc, char *argv[]) {
     else {
         mcGenFile = PickExistingFile({
             mcTaggedGenFile,
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT0_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT5_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
+            Form("%s/%sMC_Gen_nominal_%s_ZPT0_500-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str()),
+            Form("%s/%sMC_Gen_nominal_%s_ZPT5_500-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str()),
             mcClosureGenFile
         }, Form("%s MC Gen", collisionType.c_str()));
         mcRecoFile = PickExistingFile({
             mcTaggedRecoFile,
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT0_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT5_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
+            Form("%s/%sMC_nominal_%s_ZPT0_500-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str()),
+            Form("%s/%sMC_nominal_%s_ZPT5_500-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str()),
             mcClosureRecoFile
         }, Form("%s MC Reco", collisionType.c_str()));
     }

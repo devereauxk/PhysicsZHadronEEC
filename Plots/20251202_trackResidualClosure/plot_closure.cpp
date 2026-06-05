@@ -35,6 +35,10 @@ int main(int argc, char *argv[]) {
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
     string inputTag = CL.Get("inputTag", "");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
+    string closureInputBaseDir = CL.Get("ClosureInputBaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260518_ResidualCorrection2D/workflow_2D/output/closure_inputs");
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -45,20 +49,19 @@ int main(int argc, char *argv[]) {
     if(UseWorkflowInputs == true)
     {
         string zPtRangeDash = ReplaceAll(zPtRange, "_", "-");
-        string base = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260518_ResidualCorrection2D/workflow_2D/output/closure_inputs";
         inputNosubFiles = {
-            Form("%s/%s_%s_zPt%s_gen.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
-            Form("%s/%s_%s_zPt%s_reco.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
-            Form("%s/%s_%s_zPt%s_corrected.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str())
+            Form("%s/%s_%s_zPt%s_gen.root", closureInputBaseDir.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
+            Form("%s/%s_%s_zPt%s_reco.root", closureInputBaseDir.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
+            Form("%s/%s_%s_zPt%s_corrected.root", closureInputBaseDir.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str())
         };
     }
     else
     {
         string mctag = (collisionType == "pp" ? "pythia" : collisionType);
         inputNosubFiles = {
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str())
+            Form("%s/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%sMC_ZResidual_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%sMC_trkResidual_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str())
         };
     }
     vector<string> labels = {

@@ -108,12 +108,13 @@ static vector<TFile*> gOpenFiles;
 
 BinResult LoadBin(const string &zPt, const string &trkPt,
     const string &tag_pp, const string &tag_ppb,
-    bool includeMC, const string &systematicsDir)
+    bool includeMC, const string &systematicsDir,
+    const string &baseDir)
 {
     BinResult r;
     r.zPt = zPt;
     r.trkPt = trkPt;
-    string plotsDir = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots";
+    string plotsDir = baseDir;
 
     // --- pp ---
     string ppPath = Form("%s/pp_trkResidual_%s_ZPT%s-nosub.root", plotsDir.c_str(), tag_pp.c_str(), zPt.c_str());
@@ -287,6 +288,8 @@ int main(int argc, char *argv[]) {
     string outputBase = CL.Get("outputBase", "plots/paper");
     string systematicsDir = CL.Get("systematicsDir",
         "/home/kdeverea/PhysicsZHadronEEC/Systematics/20260329_pPbSystematics/output");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
 
     gSystem->mkdir(Form("%s/%s", outputBase.c_str(), tag_pp.c_str()), true);
     string outPrefix = Form("%s/%s/paper", outputBase.c_str(), tag_pp.c_str());
@@ -302,7 +305,7 @@ int main(int argc, char *argv[]) {
     // ============================
     // Load all bins
     // ============================
-    BinResult inc = LoadBin("0_500", "0.5_15", tag_pp, tag_ppb, includeMC, systematicsDir);
+    BinResult inc = LoadBin("0_500", "0.5_15", tag_pp, tag_ppb, includeMC, systematicsDir, baseDir);
 
     struct ScanCell { string zPt; string trkPt; };
     vector<ScanCell> scanCells = {
@@ -311,7 +314,7 @@ int main(int argc, char *argv[]) {
     };
     vector<BinResult> scan(6);
     for (int i = 0; i < 6; i++)
-        scan[i] = LoadBin(scanCells[i].zPt, scanCells[i].trkPt, tag_pp, tag_ppb, includeMC, systematicsDir);
+        scan[i] = LoadBin(scanCells[i].zPt, scanCells[i].trkPt, tag_pp, tag_ppb, includeMC, systematicsDir, baseDir);
 
     // ============================
     // PDF 1: DeltaPhi inclusive

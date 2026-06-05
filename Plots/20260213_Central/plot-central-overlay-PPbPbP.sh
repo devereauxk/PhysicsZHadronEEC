@@ -6,13 +6,14 @@ set -euo pipefail
 make ExecuteCentralOverlayPPbPbPPlot
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 PPB_TAG="${PPB_TAG:-$OFFICIAL_TAG_PPB}"
 PPB_MC_TAG="${PPB_MC_TAG:-$PPB_TAG}"
 
 run_one() {
     local ZPT=$1
     local TRKPT=$2
-    ./ExecuteCentralOverlayPPbPbPPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG"
+    ./ExecuteCentralOverlayPPbPbPPlot --zPtRange "$ZPT" --trkPtRange "$TRKPT" --pPbtag "$PPB_TAG" --pPbMCTag "$PPB_MC_TAG" --BaseDir "${OFFICIAL_RESULT_DIR}"
 }
 
 if [ -n "${CONFIG_FILE:-}" ]; then

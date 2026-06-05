@@ -1,8 +1,8 @@
 #!/bin/bash
-# Study 5: ΔVZ mixing sensitivity — compare MaxMixDeltaVZ=off vs 1.0 cm.
+# Study 5: ΔVZ mixing sensitivity — nominal is MaxMixDeltaVZ=1.0 (_12x12_full from halfsplit).
 # Produces 4 result files in MainAnalysis/20241102_ZhadronVsZPt/plots/:
-#   pPb/Pbp × dvzOff (MaxMixDeltaVZ=0) and dvz1 (MaxMixDeltaVZ=1.0)
-# Nominal dvz0.5 reuses existing _12x12_full files.
+#   pPb/Pbp × dvz0p5 (MaxMixDeltaVZ=0.5, variation) and dvzOff (MaxMixDeltaVZ=0, variation).
+# Nominal (1.0 cm) reuses existing _12x12_full files; dvz1 no longer produced separately.
 
 set -euo pipefail
 
@@ -59,17 +59,17 @@ run_PbP() {
         "$@"
 }
 
-echo "=== pPb dvzOff (MaxMixDeltaVZ=0, disabled) ==="
+echo "=== pPb dvz0p5 (MaxMixDeltaVZ=0.5, variation) ==="
+run_pPb "12x12_dvz0p5" --MaxMixDeltaVZ 0.5
+
+echo "=== Pbp dvz0p5 ==="
+run_PbP "12x12_dvz0p5" --MaxMixDeltaVZ 0.5
+
+echo "=== pPb dvzOff (MaxMixDeltaVZ=0, no requirement) ==="
 run_pPb "12x12_dvzOff" --MaxMixDeltaVZ 0
 
 echo "=== Pbp dvzOff ==="
 run_PbP "12x12_dvzOff" --MaxMixDeltaVZ 0
-
-echo "=== pPb dvz1 (MaxMixDeltaVZ=1.0) ==="
-run_pPb "12x12_dvz1" --MaxMixDeltaVZ 1.0
-
-echo "=== Pbp dvz1 ==="
-run_PbP "12x12_dvz1" --MaxMixDeltaVZ 1.0
 
 rm -f "$CONFIG"
 echo "=== Done: deltavz analysis complete ==="

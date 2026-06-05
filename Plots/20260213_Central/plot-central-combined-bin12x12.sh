@@ -5,11 +5,13 @@ set -euo pipefail
 THISDIR=$(cd "$(dirname "$0")" && pwd)
 cd /home/kdeverea/PhysicsZHadronEEC
 source /home/kdeverea/PhysicsZHadronEEC/SetupAnalysis.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 cd "$THISDIR"
 make ExecuteCentralCombinedPlot
 
-PP_TAG="${PP_TAG_OVERRIDE:-EEV5_ZV9_trkV28_nmix10_bin12x12}"
-PPB_TAG="${PPB_TAG_OVERRIDE:-ZV9_trkV28_nmix10_bin12x12}"
+PP_TAG="${PP_TAG_OVERRIDE:-${OFFICIAL_TAG_PP}_bin12x12_20260602}"
+PPB_TAG="${PPB_TAG_OVERRIDE:-${OFFICIAL_TAG_PPB}_bin12x12_20260602}"
 PLOT_OUTPUT_BASE="${PLOT_OUTPUT_BASE:-plots/central_combined_bin12x12}"
 SCAN_CONFIG="/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/config_note_bin12x12_scan.sh"
 INCLUSIVE_CONFIG="/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/config_note_bin12x12_inclusive.sh"
@@ -30,7 +32,8 @@ for config in "$SCAN_CONFIG" "$INCLUSIVE_CONFIG"; do
                 --includeMC true \
                 --UseSystematics true \
                 --UseModified12x12 true \
-                --outputBase "$PLOT_OUTPUT_BASE"
+                --outputBase "$PLOT_OUTPUT_BASE" \
+                --BaseDir "${OFFICIAL_RESULT_DIR}"
         done
     done
 done
