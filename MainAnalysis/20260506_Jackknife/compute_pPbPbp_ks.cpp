@@ -179,8 +179,14 @@ int main(int argc, char *argv[])
     const string outDir   = CL.Get("OutputDir", "output");
     const string trkRange = CL.Get("TrkRange",  "0.5_15");
 
-    const string pPbFile = baseDir + "/pPb_trkResidual_" + tag + "_ZPT0_500-result.root";
-    const string PbPFile = baseDir + "/PbP_trkResidual_" + tag + "_ZPT0_500-result.root";
+    const string pPbFileOverride = CL.Get("pPbFile", "");
+    const string PbPFileOverride = CL.Get("PbPFile", "");
+    const string pPbFile = pPbFileOverride.empty()
+        ? (baseDir + "/pPb_trkResidual_" + tag + "_ZPT0_500-result.root")
+        : pPbFileOverride;
+    const string PbPFile = PbPFileOverride.empty()
+        ? (baseDir + "/PbP_trkResidual_" + tag + "_ZPT0_500-result.root")
+        : PbPFileOverride;
 
     TFile fpPb(pPbFile.c_str(), "READ");
     TFile fPbP(PbPFile.c_str(), "READ");

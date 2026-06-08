@@ -89,7 +89,8 @@ bool ValidateModified12x12Histogram(const TH2D *histogram)
         return false;
     if(AxisHasExactEdge(histogram->GetXaxis(), 0.0) == false)
         return false;
-    if(AxisHasExactEdge(histogram->GetXaxis(), 4.0) == false)
+    if(AxisHasExactEdge(histogram->GetXaxis(), 4.0) == false
+        && AxisHasExactEdge(histogram->GetXaxis(), 3.87) == false)
         return false;
     if(AxisHasExactEdge(histogram->GetYaxis(), 0.0) == false)
         return false;
@@ -233,6 +234,98 @@ void ApplyProjectedJackknifeErrors(TH1D *etaHistogram, TH1D *phiHistogram,
         phiHistogram->SetBinError(i, phiSigma[i - 1]);
 }
 
+void ApplyCombinedDiagonalJackknifeErrors(TH1D *etaHistogram, TH1D *phiHistogram,
+    const vector<JackknifeProjectionContribution> &eventsPPb,
+    const vector<JackknifeProjectionContribution> &eventsPbP,
+    double NZ_pPb, double NZ_PbP)
+{
+    double totalNZ = NZ_pPb + NZ_PbP;
+    double w_pPb = NZ_pPb / totalNZ;
+    double w_PbP = NZ_PbP / totalNZ;
+
+    vector<double> etaSigmaPPb = ComputeProjectedJackknifeSigma(eventsPPb, etaHistogram, true);
+    vector<double> phiSigmaPPb = ComputeProjectedJackknifeSigma(eventsPPb, phiHistogram, false);
+    vector<double> etaSigmaPbP = ComputeProjectedJackknifeSigma(eventsPbP, etaHistogram, true);
+    vector<double> phiSigmaPbP = ComputeProjectedJackknifeSigma(eventsPbP, phiHistogram, false);
+
+    for (int i = 1; i <= etaHistogram->GetNbinsX(); ++i) {
+        double sigma = sqrt(w_pPb * w_pPb * etaSigmaPPb[i-1] * etaSigmaPPb[i-1]
+                          + w_PbP * w_PbP * etaSigmaPbP[i-1] * etaSigmaPbP[i-1]);
+        etaHistogram->SetBinError(i, sigma);
+    }
+    for (int i = 1; i <= phiHistogram->GetNbinsX(); ++i) {
+        double sigma = sqrt(w_pPb * w_pPb * phiSigmaPPb[i-1] * phiSigmaPPb[i-1]
+                          + w_PbP * w_PbP * phiSigmaPbP[i-1] * phiSigmaPbP[i-1]);
+        phiHistogram->SetBinError(i, sigma);
+    }
+}
+
+void Symmetrize2DFourfold(TH2D *h)
+{
+    if(h == nullptr) return;
+    int nx = h->GetNbinsX();
+    int ny = h->GetNbinsY();
+    if(nx != 12 || ny != 12) return;
+
+    TH2D *copy = (TH2D *)h->Clone("_sym2d_tmp");
+    copy->SetDirectory(nullptr);
+
+    for(int i = 1; i <= nx; ++i)
+    {
+        int mi = 13 - i;
+        for(int j = 1; j <= ny; ++j)
+        {
+            int mj = (j <= 6) ? (7 - j) : (19 - j);
+            double v = 0.25 * (copy->GetBinContent(i, j) + copy->GetBinContent(mi, j)
+                             + copy->GetBinContent(i, mj) + copy->GetBinContent(mi, mj));
+            double e = 0.25 * sqrt(pow(copy->GetBinError(i, j), 2)
+                             + pow(copy->GetBinError(mi, j), 2)
+                             + pow(copy->GetBinError(i, mj), 2)
+                             + pow(copy->GetBinError(mi, mj), 2));
+            h->SetBinContent(i, j, v);
+            h->SetBinError(i, j, e);
+        }
+    }
+    delete copy;
+}
+
+void Symmetrize1DEta(TH1D *h)
+{
+    if(h == nullptr) return;
+    int n = h->GetNbinsX();
+    for(int i = 0; i < n / 2; ++i)
+    {
+        int mi = n - 1 - i;
+        double v = 0.5 * (h->GetBinContent(i + 1) + h->GetBinContent(mi + 1));
+        double e = 0.5 * sqrt(pow(h->GetBinError(i + 1), 2) + pow(h->GetBinError(mi + 1), 2));
+        h->SetBinContent(i + 1, v); h->SetBinError(i + 1, e);
+        h->SetBinContent(mi + 1, v); h->SetBinError(mi + 1, e);
+    }
+}
+
+void Symmetrize1DPhi(TH1D *h)
+{
+    if(h == nullptr) return;
+    int n = h->GetNbinsX();
+    if(n != 12) return;
+    for(int j = 0; j < 3; ++j)
+    {
+        int mj = 5 - j;
+        double v = 0.5 * (h->GetBinContent(j + 1) + h->GetBinContent(mj + 1));
+        double e = 0.5 * sqrt(pow(h->GetBinError(j + 1), 2) + pow(h->GetBinError(mj + 1), 2));
+        h->SetBinContent(j + 1, v); h->SetBinError(j + 1, e);
+        h->SetBinContent(mj + 1, v); h->SetBinError(mj + 1, e);
+    }
+    for(int j = 6; j < 9; ++j)
+    {
+        int mj = 17 - j;
+        double v = 0.5 * (h->GetBinContent(j + 1) + h->GetBinContent(mj + 1));
+        double e = 0.5 * sqrt(pow(h->GetBinError(j + 1), 2) + pow(h->GetBinError(mj + 1), 2));
+        h->SetBinContent(j + 1, v); h->SetBinError(j + 1, e);
+        h->SetBinContent(mj + 1, v); h->SetBinError(mj + 1, e);
+    }
+}
+
 
 int main(int argc, char *argv[]) {
 
@@ -260,7 +353,6 @@ int main(int argc, char *argv[]) {
         "/home/kdeverea/PhysicsZHadronEEC/Systematics/20260329_pPbSystematics/output");
     string baseDir = CL.Get("BaseDir",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
-
     cout<<"=================================================="<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
     cout<<"Track Pt Range: "<<trkPtRange<<endl;
@@ -314,8 +406,21 @@ int main(int argc, char *argv[]) {
     hDeltaEta_pp = (TH1D*)hDeltaEta_pp->Clone("hDeltaEta_pp");
     hDeltaPhi_pp->SetDirectory(nullptr);
     hDeltaEta_pp->SetDirectory(nullptr);
+
+    vector<JackknifeProjectionContribution> jackknifePP;
+    AppendJackknifeProjectionContributions(fin_pp, Form("JackknifeProjection%s", trkPtRange.c_str()), jackknifePP);
+    if (jackknifePP.size() >= 2) {
+        ApplyProjectedJackknifeErrors(hDeltaEta_pp, hDeltaPhi_pp, jackknifePP);
+    }
+
     hDeltaPhi_pp->Scale(1. / 2);
     hDeltaEta_pp->Scale(1. / 2);
+
+    if (useModified12x12 && hDeltaEta_pp->GetNbinsX() == 12) {
+        Symmetrize1DEta(hDeltaEta_pp);
+        Symmetrize1DPhi(hDeltaPhi_pp);
+    }
+
     cout<<"pp DeltaPhi integral: "<<hDeltaPhi_pp->Integral()<<endl;
     cout<<"pp DeltaEta integral: "<<hDeltaEta_pp->Integral()<<endl;
 
@@ -444,6 +549,9 @@ int main(int argc, char *argv[]) {
         cout<<"combined S-B integral: "<<S_combined->Integral()<<endl;
         cout<<"SUBTRACTION EFFICIENCY: "<<S_combined->Integral() / B_combined->Integral()<<endl;
 
+        if(useModified12x12)
+            Symmetrize2DFourfold(S_combined);
+
         // projections
         ResultProjectionWindow projectionWindow;
         if(useModified12x12 == true) {
@@ -467,17 +575,24 @@ int main(int argc, char *argv[]) {
         TH1D* hProjX = (TH1D*) S_combined->ProjectionX(Form("DeltaEta_Result%i",i),
             projectionWindow.DeltaEtaYFirst, projectionWindow.DeltaEtaYLast);
         if (i == 0) {
-            vector<JackknifeProjectionContribution> jackknifeEvents = jackknifePPb;
-            if (doCombine)
-                jackknifeEvents.insert(jackknifeEvents.end(), jackknifePbP.begin(), jackknifePbP.end());
-            else if (collisionType == "PbP")
-                jackknifeEvents = jackknifePbP;
-            ApplyProjectedJackknifeErrors(hProjX, hProjY, jackknifeEvents);
+            if (doCombine) {
+                double NZ_pPb = hNZData_ppb[0]->GetBinContent(1);
+                double NZ_PbP = hNZData_pbp[0]->GetBinContent(1);
+                ApplyCombinedDiagonalJackknifeErrors(hProjX, hProjY,
+                    jackknifePPb, jackknifePbP, NZ_pPb, NZ_PbP);
+            } else {
+                ApplyProjectedJackknifeErrors(hProjX, hProjY,
+                    collisionType == "PbP" ? jackknifePbP : jackknifePPb);
+            }
         }
         divideByWidth(hProjY);
         hProjY->Scale(1./2);
         divideByWidth(hProjX);
         hProjX->Scale(1./2);
+        if (useModified12x12 && i == 0) {
+            Symmetrize1DEta(hProjX);
+            Symmetrize1DPhi(hProjY);
+        }
         hDeltaPhi_combined.push_back(hProjY);
         hDeltaEta_combined.push_back(hProjX);
         cout<<"DeltaPhi combined integral: "<<hProjY->Integral()<<endl;
@@ -545,13 +660,13 @@ int main(int argc, char *argv[]) {
         hDeltaEta_combined, topSystematicsEta, differenceSystematicsEta, "", labels,
         lineColors, lineStyles,
         markerColors, markerStyles,
-        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta y_{ch,Z}", useModified12x12 ? -3.87 : -4, useModified12x12 ? 3.87 : 4,
         "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
         differenceLabel.c_str(), -1, -1,
         0, 4,
         0,
         false, false, true,
-        0.2
+        0.35
     );
 
     AddUPCHeader(pResult1, "8.16 TeV", lumiLabel.c_str());
@@ -562,9 +677,9 @@ int main(int argc, char *argv[]) {
     latex.SetNDC();
     latex.SetTextAlign(31);   // right-aligned
     latex.SetTextSize(0.035);
-    latex.DrawLatex(0.8, 0.82, Form("%s < p_{T}^{Z} < %s", zRange.first.c_str(), zRange.second.c_str()));
-    latex.DrawLatex(0.8, 0.77, Form("%s < p_{T}^{ch} < %s", trkRange.first.c_str(), trkRange.second.c_str()));
-    latex.DrawLatex(0.8, 0.72, Form("|y_{Z}| < 2.4, %s", deltaEtaProjectionLabel.c_str()));
+    latex.DrawLatex(0.75, 0.82, Form("%s < p_{T}^{Z} < %s", zRange.first.c_str(), zRange.second.c_str()));
+    latex.DrawLatex(0.75, 0.77, Form("%s < p_{T}^{ch} < %s", trkRange.first.c_str(), trkRange.second.c_str()));
+    latex.DrawLatex(0.75, 0.72, Form("|y_{Z}| < 2.4, %s", deltaEtaProjectionLabel.c_str()));
 
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));

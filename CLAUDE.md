@@ -131,14 +131,11 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
 - **NTHREAD parallelism constraints**: I/O is the binding resource — multiple legs
   that read the **same** skim file must share its 55-thread cap; legs reading
   **different** skim files can run simultaneously without I/O conflict. Hard limits:
-  ≤ 55 threads per skim file; ≤ 85 total threads at any moment.
+  ≤ 55 threads per skim file; ≤ 90 total threads at any moment.
   `CUT_PARALLELISM` × `NTHREAD` = threads per file per leg; with multiple legs
   reading different files in parallel, keep `CUT_PARALLELISM=1` and maximize
-  `NTHREAD`. Optimal for 4-leg parallel run (pPb data / PbP data / pPbMC Gen /
-  PbPMC Gen — each a different skim): `NTHREAD=21`, `CUT_PARALLELISM=1` →
-  4 × 21 = 84 total ≤ 85 ✓, 21/file ≤ 55 ✓. Wall time = 7 × T(NTHREAD=21) for
-  7 sequential kinematic bins; MC Gen adds zero extra wall time because it reads
-  a different skim than data.
+  `NTHREAD`. Standard 3-leg parallel run (pp / pPb / PbP — each a different skim):
+  `NTHREAD=30`, `CUT_PARALLELISM=1` → 3 × 30 = 90 total ≤ 90 ✓, 30/file ≤ 55 ✓.
 - **Minimal usage**: `export SKIP_CLEAN=1; export CUT_PARALLELISM=3;
   export NTHREAD=8; ./system-analysis.sh ...` (`NSLICE_FACTOR`/`CONFIG_FILE` optional).
 - **ROOT-first toolchain**: builds use `g++` + ``root-config --cflags --glibs`` and
@@ -180,11 +177,12 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   `20241102_ZhadronVsZPt`), closure dirs `OFFICIAL_ZCORR_CLOSURE_DIR` /
   `OFFICIAL_TRKCORR_CLOSURE_DIR`, MC prefix variables for pp/pPb/PbP at four
   correction stages (`_GEN_`, `_RECO_`, `_ZRESIDUAL_`, `_TRKRESIDUAL_` prefixes),
-  result/nosub file prefixes `OFFICIAL_{PP,PPB,PBP}_{RESULT,NOSUB}_PREFIX` (20-bin,
-  currently blank/TBD) and `OFFICIAL_{PP,PPB,PBP}_{RESULT,NOSUB}_PREFIX_BIN12` (12×12
-  surface; current pp tag `_bin12x12_20260602`, pPb/PbP `_bin12x12_20260603`), and
-  helper `assert_product_exists()` to abort if a production ROOT file is missing.
-  Usage pattern: `${OFFICIAL_PPB_NOSUB_PREFIX_BIN12}_ZPT0_500-nosub.root`.
+  result/nosub file prefixes `OFFICIAL_{PP,PPB,PBP}_{RESULT,NOSUB}_PREFIX` (signed
+  common-CM convention, 12×12, DEtaRange=3.87; uses base official tags without
+  suffix) and `OFFICIAL_{PP,PPB,PBP}_{RESULT,NOSUB}_PREFIX_BIN12` (12×12 study
+  surface; pp `_bin12x12_20260603`, pPb/PbP `_bin12x12_20260603`), and helper
+  `assert_product_exists()` to abort if a production ROOT file is missing.
+  Usage pattern: `${OFFICIAL_PPB_NOSUB_PREFIX}_ZPT0_500-nosub.root`.
 
 ### Private MC (pp Pythia+MadGraph)
 - **20260403 private generator**: `SampleGeneration/20260403_PythiaMadgraph/` is the
@@ -223,8 +221,78 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
 
 ### Main analysis (20241102_ZhadronVsZPt)
 - **Canonical runners**: maintained entrypoints are `closure-VZ.sh`, `closure-Z.sh`,
-  `closure-trk.sh`, `central.sh`. Fix bugs in these directly rather than creating
-  `*-newVZFix.sh` variants.
+  `closure-trk.sh`, `central.sh`, `central-signed.sh`. Fix bugs in these directly
+  rather than creating `*-newVZFix.sh` variants.
+- **Signed common-CM convention** (`central-signed.sh`, `systematics-signed.sh`):
+  the signed convention expresses pPb and Pbp in a common signed longitudinal frame
+  before combination. Key parameters: `--FillSigned true`, `--DEtaRange 3.87`,
+  `--ResultDEtaBins 12 --ResultDPhiBins 12`, `--MaxMixDeltaVZ 1.0`, `--UseJackknife true`,
+  `--nMix 10`, `--yBoost 0`. Pbp uses `--FlipDeltaEta true --IsPPb false`. Fiducial
+  acceptance: `|eta_cm| < 1.935` (pPb lab: `[-1.470, 2.400]`, Pbp lab:
+  `[-2.400, 1.470]`, pp: `[-1.935, 1.935]`). Output 2D histograms span
+  `[-3.87, 3.87]` in DeltaEta (12 equal bins) and `[-π/2, 3π/2]` in DeltaPhi
+  (12 equal bins). Projection windows: DeltaPhi → x bins 7..12 (DeltaEta ≥ 0),
+  DeltaEta → y bins 4..6 (DeltaPhi ∈ [0, π/2]). Tags use existing official tags
+  (no extra suffix): `EEV6_ZV10_trkV29_nmix10` (pp), `ZV10_trkV29_nmix10` (pPb/PbP).
+  Inclusive only: `ZPT 0_500`, `trkPT 0.5_15`.
+- **Signed convention symmetrization**: after combining pPb + Pbp (N_Z-weighted sum
+  of 2D nosub histograms, then background subtraction), apply fourfold 2D
+  symmetrization before projecting to 1D. Mirror indices (1-indexed, 12×12):
+  DeltaEta: `mi = 13 - i`; DeltaPhi near-side: `mj = 7 - j` for `j = 1..6`,
+  away-side: `mj = 19 - j` for `j = 7..12`. Formula:
+  `R_sym(i,j) = 0.25 * (R(i,j) + R(mi,j) + R(i,mj) + R(mi,mj))`. After projecting
+  to 1D, the projected histograms are already symmetric. 1D symmetrization helper
+  functions (`Symmetrize1DEta`, `Symmetrize1DPhi`) are applied to individual system
+  results (pp, single pPb, single Pbp) that don't go through the 2D combine path.
+  1D DeltaEta mirror (0-indexed): `mirror(i) = n-1-i`. 1D DeltaPhi mirror
+  (0-indexed, 12 bins): near-side `mirror(j) = 5-j` for `j=0..2`, away-side
+  `mirror(j) = 17-j` for `j=6..8`. 1D formula:
+  `h_sym[k] = 0.5*(h[k] + h[mirror(k)])`,
+  `err = 0.5*sqrt(e[k]^2 + e[mirror(k)]^2)`.
+- **Signed convention statistical uncertainties**: jackknife resampling is computed
+  per-system (pPb and Pbp independently). For display on result and overlay plots,
+  only the diagonal variance is used (no covariance). Full covariance is retained
+  for the chi-squared compatibility tests in `20260506_Jackknife/`. Combined pPb
+  stat errors propagated via:
+  `σ²_comb(i) = w²_pPb σ²_pPb(i) + w²_Pbp σ²_Pbp(i)` where
+  `w_sys = N_Z,sys / (N_Z,pPb + N_Z,Pbp)`. Through symmetrization:
+  `σ²_sym(i) = 0.25*(σ²_comb(i) + σ²_comb(mirror(i)))`. This diagonal
+  approximation is conservative: it overestimates the symmetrized error because the
+  neglected partner-bin covariance is positive (shared N_Z normalization). pp uses
+  the same diagonal JK → symmetrize pipeline independently.
+- **Signed convention end-to-end pipeline** (to reproduce all note-facing signed
+  products from scratch):
+  ```
+  # 1. Production (corrected data + systematics)
+  cd MainAnalysis/20241102_ZhadronVsZPt
+  NTHREAD=25 ./central-signed.sh          # nominal pp, pPb, PbP
+  NTHREAD=25 ./systematics-signed.sh 1 1 1 # all systematic variations
+
+  # 2. TrackCorrection fix (MUST use nominal residual, not dedicated TC residual)
+  bash rerun-trackcorrection-signed.sh     # pp, pPb, PbP × TC0p976/TC1p024
+
+  # 3. Systematics harvesting
+  cd ../../Systematics/20260329_pPbSystematics
+  SYSTEMS=pp,pPb,PbP,pPbPbp ZPT_RANGES=0_500 TRACK_RANGES=0.5_15 bash run.sh
+  # Also run standalone comparison plots:
+  SYSTEMS=pp,pPb,PbP,pPbPbp ZPT_RANGES=0_500 TRACK_RANGES=0.5_15 bash run-track-correction.sh
+
+  # 4. pPb-vs-Pbp overlay (Phase 1 verification)
+  cd ../../Plots/20260213_Central
+  bash plot-central-overlay-PPbPbP.sh      # → plots/central_overlay_PPbPbP/
+
+  # 5. Result plots (Phase 3)
+  USE_MODIFIED_12x12=true PLOT_INCLUDE_MC=false USE_SYSTEMATICS=true \
+    bash plot-central-combined.sh          # → plots/central_combined/
+
+  # 6. Copy to Overleaf
+  # overlay → ~/OverleafZHadronInPPb/figures/analysis/combining/
+  # result  → ~/OverleafZHadronInPPb/figures/result/
+  # sys     → ~/OverleafZHadronInPPb/figures/sys/
+  ```
+- **DEtaRange CLI parameter**: `CorrelationAnalysis.cpp` accepts `--DEtaRange <double>`
+  (default 4.0). Creates 12 equal-width DeltaEta bins from `[-range, +range]`.
+  `makeProjection.C` validates both 3.87 and 4.0 as acceptable DeltaEta edges.
 - **Systematics runner**: `systematics.sh` enumerates corrected-data variations. pp:
   `Loose`, `Tight`, `IsMuTaggedFalse`, `IsPURejectTrue`, `MuVar0..3`, inclusive
   `TrackCorrection0p976/1p024`, `_EEPrivate`. pPb/PbP: same minus `_EEPrivate`.
@@ -234,6 +302,10 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   all three collisions, else reruns leave stale track-correction variations behind.
   pp PU family: `NVertex == 1` is a corrected-data selection only — do not impose on
   pp MC legs of VZ/Z/residual derivations.
+- **Signed systematics runner**: `systematics-signed.sh` mirrors `systematics.sh` but
+  adds `FillSigned`, `FlipDeltaEta` (Pbp), acceptance cuts, `DEtaRange 3.87`. Same
+  variation families as the unsigned runner. Usage:
+  `NTHREAD=25 ./systematics-signed.sh <DOPP> <DOPPB> <DOPBP>`.
 - **V0.3 muon-rejection residual**: corrected-data muon-rejection systematic uses the
   dedicated `IsMuTaggedFalse` residual/data branches for pp/pPb/PbP. Nominal stays at
   skim default `--IsMuTagged true` (`trackMuDR = 0.0025`). The `TrackMuDR0p004` family
@@ -349,7 +421,10 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   `run-pu.sh`, `run-track-selection.sh`, `run-track-correction.sh`) feed the helper
   paired `*-nosub.root` for `pPbPbp` — using `*-result.root` inflates the
   reconstructed combined central values. Note-facing combined label is `pPb`, not
-  `pPb + Pbp`.
+  `pPb + Pbp`. `run.sh` passes `--UseModified12x12 true` for the `pPbPbp` system so
+  `BuildCombinedResultHistogram` projects the 2D nosub histograms using the 12×12
+  projection windows. `ValidateModified12x12Histogram` in
+  `ResultCombinationUtilities.h` accepts both DEtaRange=4.0 and DEtaRange=3.87.
 - **pp/heavy-ion difference systematics**: keep `pPb` and `PbP` fully correlated inside
   the `pPbPbp` builder, but treat combined heavy-ion and pp as uncorrelated when
   building `Difference*` families. The `Difference<Family>_*` path takes bin-by-bin
@@ -520,6 +595,15 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   `trackMuTagged` / `trackMuDR` get `false` / `-1`.
 
 ### pPb/PbP combining sandbox (20260414_pPbPbpCombining)
+- **Pooled JK combination + 2D symmetrization**:
+  `plot_12x12_pooled_symmetrized.cpp` + `run-pooled-symmetrized.sh` implement the
+  signed common-CM combination pipeline. Pools pPb + Pbp event-level jackknife
+  entries into a single leave-one-out estimator, applies fourfold 2D symmetrization
+  (DeltaEta mirror: `i ↔ 13-i`; DeltaPhi mirror on `[-π/2, 3π/2]`: near-side
+  `j ↔ 7-j` for `j ≤ 6`, away-side `j ↔ 19-j` for `j > 6`), then projects to 1D
+  and computes jackknife covariance. Reads nosub + raw (Jackknife2DData) files from
+  `20241102_ZhadronVsZPt/output/`. Outputs comparison plots and TeX p-value table to
+  `plots/pooled_symmetrized/`.
 - **Sandbox scope**: self-contained pPb/PbP comparison. Observables: trkPt, trkEta,
   ZPt, Zy, Mult, DEta, DPhi, DEtaDPhi 2D ratio, presentation-only ZEtaPhi 2D ratio. No
   DR. `trackCharge` is empty in V0.2/V0.3 skims (`ReduceForest` never fills it).

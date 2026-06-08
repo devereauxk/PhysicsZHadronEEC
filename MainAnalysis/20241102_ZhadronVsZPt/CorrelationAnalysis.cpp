@@ -158,14 +158,13 @@ TH2D *createShifted10x10ResultHistogram(const string &name)
     return new TH2D(name.c_str(), "", 10, EtaEdges, 10, PhiEdges);
 }
 
-TH2D *createModified12x12ResultHistogram(const string &name)
+TH2D *createModified12x12ResultHistogram(const string &name, double etaRange = 4.0)
 {
-   static const double EtaEdges[13] = {
-      -4.0,        -10.0 / 3.0, -8.0 / 3.0, -2.0,
-      -4.0 / 3.0,  -2.0 / 3.0,   0.0,        2.0 / 3.0,
-       4.0 / 3.0,   2.0,         8.0 / 3.0, 10.0 / 3.0,
-       4.0
-   };
+   double EtaEdges[13];
+   double binWidth = 2.0 * etaRange / 12.0;
+   for (int i = 0; i <= 12; i++)
+      EtaEdges[i] = -etaRange + i * binWidth;
+
    static const double PhiEdges[13] = {
       -M_PI / 2, -M_PI / 3, -M_PI / 6, 0.0,
        M_PI / 6,  M_PI / 3,  M_PI / 2, 2 * M_PI / 3,
@@ -181,7 +180,7 @@ TH2D *createResultHistogram(const string &name, const Parameters &par)
    if (getResultGeometry(par) == ResultGeometry::Shifted10x10)
       return createShifted10x10ResultHistogram(name);
    if (getResultGeometry(par) == ResultGeometry::Modified12x12)
-      return createModified12x12ResultHistogram(name);
+      return createModified12x12ResultHistogram(name, par.DEtaRange);
    return createOfficial20x20ResultHistogram(name);
 }
 
@@ -1072,6 +1071,7 @@ int main(int argc, char *argv[])
    par.TrackEtaMax   = CL.GetDouble("TrackEtaMax",   2.4);  // Signed upper bound on track eta acceptance
    par.ZYSignedMin   = CL.GetDouble("ZYSignedMin",  -200.0); // Signed lower bound on Z rapidity acceptance
    par.ZYSignedMax   = CL.GetDouble("ZYSignedMax",   200.0); // Signed upper bound on Z rapidity acceptance
+   par.DEtaRange     = CL.GetDouble("DEtaRange",      4.0);  // Half-width of DeltaEta axis for 12x12 histograms
    par.mix = 0;
    par.isPP = IsPP;
    par.isData = IsData;

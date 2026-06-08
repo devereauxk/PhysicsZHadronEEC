@@ -64,6 +64,7 @@ public:
    double TrackEtaMax;   // Signed upper bound on track eta acceptance (default +2.4)
    double ZYSignedMin;   // Signed lower bound on Z rapidity acceptance (default -200)
    double ZYSignedMax;   // Signed upper bound on Z rapidity acceptance (default +200)
+   double DEtaRange;     // Half-width of the DeltaEta axis for 12x12 histograms (default 4.0)
 
    void printParameters() const {
       cout << "Input file: " << input << endl;

@@ -64,7 +64,8 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
                 --OutputBase "$OUTPUT_BASE" \
                 --Collision "$SYSTEM" \
                 --ZPTRange "$ZPT" \
-                --TrackPTRange "$TRACK"
+                --TrackPTRange "$TRACK" \
+                --UseModified12x12 true
           else
              NOMINAL_FILE="$ANALYSISDIR/${PREFIX}_trkResidual_${OFFICIAL_TAG}_ZPT${ZPT}-result.root"
              ./ExecutePlotMuonTrackComparison \
@@ -74,7 +75,8 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
                 --OutputBase "$OUTPUT_BASE" \
                 --Collision "$SYSTEM" \
                 --ZPTRange "$ZPT" \
-               --TrackPTRange "$TRACK"
+               --TrackPTRange "$TRACK" \
+               --UseModified12x12 true
          fi
       done
    done

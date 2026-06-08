@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
    string collision = CL.Get("Collision", "pp");
    string zptRange = CL.Get("ZPTRange", "5_500");
    string trackRange = CL.Get("TrackPTRange", "0.5_500");
+   bool useModified12x12 = CL.GetBool("UseModified12x12", false);
 
    TFile *nominalFile = (nominalFileName != "") ? TFile::Open(nominalFileName.c_str()) : nullptr;
    TFile *variationFile = (variationFileName != "") ? TFile::Open(variationFileName.c_str()) : nullptr;
@@ -45,9 +46,9 @@ int main(int argc, char *argv[])
       TH1D *nominal = nullptr;
       TH1D *variation = nullptr;
       if(nominalFile != nullptr)
-         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal");
+         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal", useModified12x12);
       if(variationFile != nullptr)
-         variation = LoadResultHistogram(*variationFile, observable, trackRange, observable + "_EnergyExtrapolation");
+         variation = LoadResultHistogram(*variationFile, observable, trackRange, observable + "_EnergyExtrapolation", useModified12x12);
 
       if(nominal == nullptr || variation == nullptr)
       {
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
       }
 
       vector<TH1 *> histograms = {nominal, variation};
-      pair<double, double> xRange = GetObservableRange(observable);
+      pair<double, double> xRange = GetObservableRange(observable, useModified12x12);
       pair<double, double> yRange = GetComparisonYRange(histograms, observable);
       pair<double, double> differenceRange = GetDifferenceRange(histograms);
 

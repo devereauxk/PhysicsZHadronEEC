@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
    string collision = CL.Get("Collision", "pPb");
    string zptRange = CL.Get("ZPTRange", "40_350");
    string trackRange = CL.Get("TrackPTRange", "2_500");
+   bool useModified12x12 = CL.GetBool("UseModified12x12", false);
 
    TFile *nominalFile = (nominalFileName != "") ? TFile::Open(nominalFileName.c_str()) : nullptr;
    TFile *looseFile = (looseFileName != "") ? TFile::Open(looseFileName.c_str()) : nullptr;
@@ -67,17 +68,17 @@ int main(int argc, char *argv[])
       TH1D *loose = nullptr;
       TH1D *tight = nullptr;
       if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
-         nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, observable + "_Nominal");
+         nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, observable + "_Nominal", false, useModified12x12);
       else if(nominalFile != nullptr)
-         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal");
+         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal", useModified12x12);
       if(loosePPbFile != nullptr && loosePBPFile != nullptr)
-         loose = BuildCombinedResultHistogram(*loosePPbFile, *loosePBPFile, observable, trackRange, observable + "_Loose");
+         loose = BuildCombinedResultHistogram(*loosePPbFile, *loosePBPFile, observable, trackRange, observable + "_Loose", false, useModified12x12);
       else if(looseFile != nullptr)
-         loose = LoadResultHistogram(*looseFile, observable, trackRange, observable + "_Loose");
+         loose = LoadResultHistogram(*looseFile, observable, trackRange, observable + "_Loose", useModified12x12);
       if(tightPPbFile != nullptr && tightPBPFile != nullptr)
-         tight = BuildCombinedResultHistogram(*tightPPbFile, *tightPBPFile, observable, trackRange, observable + "_Tight");
+         tight = BuildCombinedResultHistogram(*tightPPbFile, *tightPBPFile, observable, trackRange, observable + "_Tight", false, useModified12x12);
       else if(tightFile != nullptr)
-         tight = LoadResultHistogram(*tightFile, observable, trackRange, observable + "_Tight");
+         tight = LoadResultHistogram(*tightFile, observable, trackRange, observable + "_Tight", useModified12x12);
 
       if(nominal == nullptr || loose == nullptr || tight == nullptr)
       {
@@ -89,7 +90,7 @@ int main(int argc, char *argv[])
       }
 
       vector<TH1 *> histograms = {nominal, loose, tight};
-      pair<double, double> xRange = GetObservableRange(observable);
+      pair<double, double> xRange = GetObservableRange(observable, useModified12x12);
       pair<double, double> yRange = GetComparisonYRange(histograms, observable);
       pair<double, double> differenceRange = GetDifferenceRange(histograms);
 

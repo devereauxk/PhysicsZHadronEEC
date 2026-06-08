@@ -131,7 +131,9 @@ bool validateModified12x12Axes(const TH2D *input)
     const TAxis *yAxis = input->GetYaxis();
     bool ok = true;
     if (!axisHasExactEdge(xAxis, 0.0)) { std::cerr << "Error (12-bin modified): DeltaEta axis has no exact edge at 0." << std::endl; ok = false; }
-    if (!axisHasExactEdge(xAxis, 4.0)) { std::cerr << "Error (12-bin modified): DeltaEta axis has no exact edge at 4." << std::endl; ok = false; }
+    if (!axisHasExactEdge(xAxis, 4.0) && !axisHasExactEdge(xAxis, 3.87)) {
+        std::cerr << "Error (12-bin modified): DeltaEta axis has no exact edge at 4.0 or 3.87." << std::endl; ok = false;
+    }
     if (!axisHasExactEdge(yAxis, 0.0)) { std::cerr << "Error (12-bin modified): DeltaPhi axis has no exact edge at 0." << std::endl; ok = false; }
     if (!axisHasExactEdge(yAxis, M_PI / 2)) { std::cerr << "Error (12-bin modified): DeltaPhi axis has no exact edge at pi/2." << std::endl; ok = false; }
     if (!axisHasExactEdge(yAxis, M_PI)) { std::cerr << "Error (12-bin modified): DeltaPhi axis has no exact edge at pi." << std::endl; ok = false; }

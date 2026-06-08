@@ -1,0 +1,17 @@
+# pPb vs Pbp compatibility: Sumw2 vs jackknife vs full-covariance
+
+| Observable | Error model | N_bins | chi2 | ndf | chi2/ndf | p-value |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| `DeltaEta_Result2_4` | **Sumw2** | 12 | 6.3316529292356645 | 12 | 0.52763774410297204 | 0.89844940814624175 |
+| `DeltaEta_Result2_4` | **Jackknife** | 12 | 5.7639707572494308 | 12 | 0.48033089643745258 | 0.92750940064318177 |
+| `DeltaEta_Result2_4` | **FullCovariance** | 12 | 6.5110207228277561 | 12 | 0.54258506023564634 | 0.88816665193950317 |
+| `DeltaPhi_Result2_4` | **Sumw2** | 12 | 14.49215246698023 | 12 | 1.2076793722483525 | 0.27038976107532214 |
+| `DeltaPhi_Result2_4` | **Jackknife** | 12 | 13.750344999563614 | 12 | 1.1458620832969679 | 0.31693415682526044 |
+| `DeltaPhi_Result2_4` | **FullCovariance** | 12 | 14.070409729799024 | 12 | 1.1725341441499186 | 0.29623465914608271 |
+
+- `DeltaEta_Result2_4` / **Sumw2** excluded 0 bins because the combined variance was zero.
+- `DeltaEta_Result2_4` / **Jackknife** excluded 0 bins because the combined variance was zero.
+- `DeltaEta_Result2_4` / **FullCovariance** excluded 0 bins because the combined variance was zero.
+- `DeltaPhi_Result2_4` / **Sumw2** excluded 0 bins because the combined variance was zero.
+- `DeltaPhi_Result2_4` / **Jackknife** excluded 0 bins because the combined variance was zero.
+- `DeltaPhi_Result2_4` / **FullCovariance** excluded 0 bins because the combined variance was zero.

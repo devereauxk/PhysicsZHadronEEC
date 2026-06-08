@@ -1029,19 +1029,25 @@ TPad* PlotCMSDiffResultRegion(
     double signalXMin, double signalXMax,
     int baseline = 0, bool logx = false, bool logy = false, bool errorBars = true, float xLegend = 0.55)
 {
+    SetTDRStyle();
+
     double border = 0.06;
-    TPad *pad1 = new TPad(title, title, border, 0.25 + border, 1.0 - border, 1.0 - border);
+    TPad *pad1 = new TPad(title, title, 0, 0.25 + border, 1.0 - border, 1.0 - border);
+    pad1->SetTickx(1);
+    pad1->SetTicky(1);
+    pad1->SetLeftMargin(0.15);
     pad1->SetBottomMargin(0);
     logy ? pad1->SetLogy() : pad1->SetLogy(0);
     logx ? pad1->SetLogx() : pad1->SetLogx(0);
     pad1->Draw();
-    TPad *pad2 = new TPad(title, title, border, border, 1.0 - border, 0.25 + border);
+    TPad *pad2 = new TPad(title, title, 0, 0, 1.0 - border, 0.25 + border);
+    pad2->SetTickx(1);
+    pad2->SetTicky(1);
+    pad2->SetLeftMargin(0.15);
     pad2->SetTopMargin(0);
-    pad2->SetBottomMargin(0.2);
+    pad2->SetBottomMargin(0.25);
     logx ? pad2->SetLogx() : pad2->SetLogx(0);
     pad2->Draw();
-
-    SetTDRStyle();
 
     TLegend* leg = new TLegend(xLegend, 0.7, xLegend + 0.23, 0.85);
     leg->SetBorderSize(0);
@@ -1095,8 +1101,11 @@ TPad* PlotCMSDiffResultRegion(
         delete diff;
     }
     if (!hasDifference) { diff_min = -1; diff_max = 1; }
-    double diff_margin = 0.15 * (diff_max - diff_min);
-    if (diff_margin <= 0) diff_margin = max(fabs(diff_max), 1.0) * 0.15;
+    double diff_absmax = max(fabs(diff_min), fabs(diff_max));
+    double diff_margin = 0.15 * diff_absmax;
+    if (diff_margin <= 0) diff_margin = 0.15;
+    diff_min = -(diff_absmax + diff_margin);
+    diff_max =  (diff_absmax + diff_margin);
 
     bool firstDifference = true;
     for (int i = 0; i < (int)hists.size(); i++) {
@@ -1120,7 +1129,7 @@ TPad* PlotCMSDiffResultRegion(
         hist->GetXaxis()->SetRangeUser(xmin, xmax);
         hist->GetYaxis()->SetTitle(yTitle);
         hist->GetYaxis()->SetTitleSize(0.05);
-        hist->GetYaxis()->SetTitleOffset(0.7);
+        hist->GetYaxis()->SetTitleOffset(1.2);
 
         if (ymin < ymax) {
             if (logy && ymin <= 0) hist->GetYaxis()->SetRangeUser(1, ymax);
@@ -1195,7 +1204,7 @@ TPad* PlotCMSDiffResultRegion(
                 hDiff->GetYaxis()->SetRangeUser(diff_min - diff_margin, diff_max + diff_margin);
             hDiff->GetYaxis()->SetTitleSize(0.08);
             hDiff->GetYaxis()->SetLabelSize(0.06);
-            hDiff->GetYaxis()->SetTitleOffset(0.5);
+            hDiff->GetYaxis()->SetTitleOffset(0.6);
             hDiff->SetLineColor(linecolors[i]);
             hDiff->SetLineStyle(linestyles[i] == 0 ? 1 : linestyles[i]);
             hDiff->SetMarkerColor(markercolors[i]);
@@ -1347,8 +1356,11 @@ TPad* PlotCMSPaperDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, ve
         delete diff;
     }
     if (!hasDifference) { diff_min = -1; diff_max = 1; }
-    double diff_margin = 0.15 * (diff_max - diff_min);
-    if (diff_margin <= 0) diff_margin = max(fabs(diff_max), 1.0) * 0.15;
+    double diff_absmax = max(fabs(diff_min), fabs(diff_max));
+    double diff_margin = 0.15 * diff_absmax;
+    if (diff_margin <= 0) diff_margin = 0.15;
+    diff_min = -(diff_absmax + diff_margin);
+    diff_max =  (diff_absmax + diff_margin);
 
     bool firstDifference = true;
     for (int i = 0; i < (int)hists.size(); i++) {

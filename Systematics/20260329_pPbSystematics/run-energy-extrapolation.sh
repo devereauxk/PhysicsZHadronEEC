@@ -38,7 +38,8 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
             --OutputBase "$OUTPUT_BASE" \
             --Collision "$SYSTEM" \
             --ZPTRange "$ZPT" \
-            --TrackPTRange "$TRACK"
+            --TrackPTRange "$TRACK" \
+            --UseModified12x12 true
       done
    done
 done

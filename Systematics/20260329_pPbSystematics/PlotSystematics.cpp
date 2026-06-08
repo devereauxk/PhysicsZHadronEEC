@@ -89,6 +89,8 @@ string GetLegendLabel(const string &family, bool differenceMode = false)
        return "PU";
     if(family == "EnergyExtrapolation")
        return "Energy extrapolation";
+    if(family == "EventMixing")
+       return "EventMixing";
     return family;
 }
 
@@ -121,7 +123,7 @@ TH1D *LoadNominalHistogram(TFile *nominalFile, TFile *nominalPPbFile, TFile *nom
       return BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, name,
          useShifted10x10, useModified12x12);
     if(nominalFile != nullptr)
-       return LoadSingleResultHistogram(*nominalFile, observable, trackRange, name);
+       return LoadSingleResultHistogram(*nominalFile, observable, trackRange, name, useModified12x12);
     return nullptr;
 }
 
@@ -152,6 +154,7 @@ map<string, int> GetColors()
      colors["PUpPb"] = kAzure + 2;
     colors["ScaleFactor"] = kRed + 1;
     colors["EnergyExtrapolation"] = kViolet + 1;
+    colors["EventMixing"] = kCyan + 2;
     colors["Total"] = kBlack;
     return colors;
 }
@@ -255,10 +258,11 @@ void DrawUncertaintyOverlay(TFile &systematicsFile, TH1D *nominal, const string 
 }
 
 void DrawCentralValue(TFile &nominalFile, TFile &systematicsFile, const string &observable,
-   const string &collision, const string &zptRange, const string &trackRange, const string &outputName)
+   const string &collision, const string &zptRange, const string &trackRange, const string &outputName,
+   bool symmetrize = false)
 {
-   string histogramName = observable + "_Result" + trackRange;
-   TH1D *nominal = CloneHistogram(nominalFile, histogramName, 0.5);
+   TH1D *nominal = LoadSingleResultHistogram(nominalFile, observable, trackRange,
+      "CentralValue_" + observable, symmetrize);
    TH1D *total = CloneHistogram(systematicsFile, "Total_" + observable);
    if(nominal == nullptr || total == nullptr)
    {
@@ -370,8 +374,8 @@ int main(int argc, char *argv[])
 
    if(nominalFile != nullptr)
    {
-      DrawCentralValue(*nominalFile, systematicsFile, "DeltaPhi", collision, zptRange, trackRange, outputBase + "-DeltaPhi-central.pdf");
-      DrawCentralValue(*nominalFile, systematicsFile, "DeltaEta", collision, zptRange, trackRange, outputBase + "-DeltaEta-central.pdf");
+      DrawCentralValue(*nominalFile, systematicsFile, "DeltaPhi", collision, zptRange, trackRange, outputBase + "-DeltaPhi-central.pdf", useModified12x12);
+      DrawCentralValue(*nominalFile, systematicsFile, "DeltaEta", collision, zptRange, trackRange, outputBase + "-DeltaEta-central.pdf", useModified12x12);
    }
    else if(nominalDeltaPhi != nullptr && nominalDeltaEta != nullptr)
    {
