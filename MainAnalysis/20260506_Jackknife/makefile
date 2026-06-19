@@ -1,4 +1,4 @@
-default: ExecuteCompatibility ExecuteProjectionAudit ExecuteKS ExecuteCompatibilitySym ExecuteOverlaySym
+default: ExecuteCompatibility ExecuteProjectionAudit ExecuteKS ExecuteCompatibilitySym ExecuteOverlaySym ExecuteOverlayUnsym
 
 ExecuteCompatibility: compute_pPbPbp_compatibility.cpp
 	g++ compute_pPbPbp_compatibility.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include \
@@ -20,5 +20,9 @@ ExecuteOverlaySym: plot_pPbPbp_sym_overlay.cpp
 	g++ plot_pPbPbp_sym_overlay.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include \
 		-o ExecuteOverlaySym `root-config --cflags --glibs`
 
+ExecuteOverlayUnsym: plot_pPbPbp_unsym_overlay.cpp
+	g++ plot_pPbPbp_unsym_overlay.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include \
+		-o ExecuteOverlayUnsym `root-config --cflags --glibs`
+
 clean:
-	rm -f ExecuteCompatibility ExecuteProjectionAudit ExecuteKS ExecuteCompatibilitySym ExecuteOverlaySym
+	rm -f ExecuteCompatibility ExecuteProjectionAudit ExecuteKS ExecuteCompatibilitySym ExecuteOverlaySym ExecuteOverlayUnsym

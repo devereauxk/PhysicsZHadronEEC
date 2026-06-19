@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
         auto tR = ParseRange("0.5_15");
         lx.DrawLatex(0.21, 0.60, Form("%s < p_{T}^{Z} < %s", zR.first.c_str(), zR.second.c_str()));
         lx.DrawLatex(0.21, 0.53, Form("%s < p_{T}^{ch} < %s", tR.first.c_str(), tR.second.c_str()));
-        lx.DrawLatex(0.21, 0.46, "|y_{Z}| < 2.4");
+        lx.DrawLatex(0.21, 0.46, "|y^{Z}_{CM}| < 1.935");
 
         c->Update();
         c->SaveAs(Form("%s-DeltaPhi-inclusive.pdf", outPrefix.c_str()));
@@ -375,7 +375,7 @@ int main(int argc, char *argv[]) {
         auto tR = ParseRange("0.5_15");
         lx.DrawLatex(0.8, 0.82, Form("%s < p_{T}^{Z} < %s", zR.first.c_str(), zR.second.c_str()));
         lx.DrawLatex(0.8, 0.75, Form("%s < p_{T}^{ch} < %s", tR.first.c_str(), tR.second.c_str()));
-        lx.DrawLatex(0.8, 0.68, "|y_{Z}| < 2.4, |#Delta#varphi_{ch,Z}| < #pi/2");
+        lx.DrawLatex(0.8, 0.68, "|y^{Z}_{CM}| < 1.935, |#Delta#varphi_{ch,Z}| < #pi/2");
 
         c->Update();
         c->SaveAs(Form("%s-DeltaEta-inclusive.pdf", outPrefix.c_str()));

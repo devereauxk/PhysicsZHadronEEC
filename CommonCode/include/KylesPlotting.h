@@ -628,7 +628,8 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
     const char* rTitle, double rmin, double rmax,
     int baseline = 0, bool logx = false, bool logy = false,
     bool errorBars = true,
-    float xLegend = 0.55) {
+    float xLegend = 0.55,
+    float yLegend = 0.70) {
 
     // linestyle options
     // -1: no line, only markers [homemade]
@@ -639,21 +640,23 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
     // Get the canvas pad to pass to other functions
     // Leave a 50% larger border around the figure within the canvas
     double border = 0.06; // 7.5% border on all sides (50% larger than default 5%)
-    TPad *pad1 = new TPad(title, title, border, 0.25 + border, 1.0 - border, 1.0 - border);
+    TPad *pad1 = new TPad(title, title, border, 0.30 + border, 1.0 - border, 1.0 - border);
+    pad1->SetLeftMargin(0.18);
     pad1->SetBottomMargin(0);
     logy ? pad1->SetLogy() : pad1->SetLogy(0);
     logx ? pad1->SetLogx() : pad1->SetLogx(0);
     pad1->Draw();
-    TPad *pad2 = new TPad(title, title, border, border, 1.0 - border, 0.25 + border);
-    pad2->SetTopMargin(0);
-    pad2->SetBottomMargin(0.2);
+    TPad *pad2 = new TPad(title, title, border, border, 1.0 - border, 0.30 + border);
+    pad2->SetLeftMargin(0.18);
+    pad2->SetTopMargin(0.03);
+    pad2->SetBottomMargin(0.25);
     logx ? pad2->SetLogx() : pad2->SetLogx(0);
     pad2->Draw();
-    
+
     // >>> Apply the CMS TDR style <<<
     SetTDRStyle();
 
-    TLegend* leg = new TLegend(xLegend, 0.7, xLegend+0.23, 0.85);
+    TLegend* leg = new TLegend(xLegend, yLegend, xLegend+0.23, yLegend+0.15);
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextFont(42);
@@ -698,8 +701,8 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
         hist->GetXaxis()->SetTitle(xTitle);
         hist->GetXaxis()->SetRangeUser(xmin, xmax);
         hist->GetYaxis()->SetTitle(yTitle);
-        hist->GetYaxis()->SetTitleSize(0.05);
-        hist->GetYaxis()->SetTitleOffset(0.7);
+        hist->GetYaxis()->SetTitleSize(0.055);
+        hist->GetYaxis()->SetTitleOffset(1.05);
 
         // Auto-scale y axis if ymin < ymax, otherwise use global min/max
         if (ymin < ymax) {
@@ -720,7 +723,7 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
         if (linestyles[i] == 0) hist->Draw("SAME");
         else if (linestyles[i] == -1) hist->Draw("P SAME");
         else hist->Draw("HIST SAME");
-        
+
         if (linestyles[i] == 0) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "pl");
         else if (linestyles[i] == -1) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "p");
         else leg->AddEntry(hist, Form("%s", labels[i].c_str()), "l");
@@ -731,14 +734,15 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
             hRatio->Add(hists[baseline], -1);
             setDifferenceErrors(hRatio, hist, hists[baseline]);
             hRatio->GetXaxis()->SetTitle(xTitle);
-            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetTitleSize(0.12);
             hRatio->GetXaxis()->SetLabelSize(0.08);
-            hRatio->GetXaxis()->SetTitleOffset(1);
+            hRatio->GetXaxis()->SetTitleOffset(0.95);
             hRatio->GetYaxis()->SetTitle(rTitle);
             hRatio->GetYaxis()->SetRangeUser(rmin, rmax);
-            hRatio->GetYaxis()->SetTitleSize(0.08);
-            hRatio->GetYaxis()->SetLabelSize(0.06);
-            hRatio->GetYaxis()->SetTitleOffset(0.5);
+            hRatio->GetYaxis()->SetTitleSize(0.065);
+            hRatio->GetYaxis()->SetLabelSize(0.055);
+            hRatio->GetYaxis()->SetTitleOffset(0.85);
+            hRatio->GetYaxis()->SetNdivisions(505);
             hRatio->SetLineColor(linecolors[i]);
             hRatio->SetLineStyle(linestyles[i]);
             hRatio->SetMarkerColor(markercolors[i]);
@@ -1027,15 +1031,17 @@ TPad* PlotCMSDiffResultRegion(
     vector<Int_t> markercolors, vector<Int_t> markerstyles, const char* xTitle, double xmin, double xmax,
     const char* yTitle, double ymin, double ymax, const char* rTitle, double rmin, double rmax,
     double signalXMin, double signalXMax,
-    int baseline = 0, bool logx = false, bool logy = false, bool errorBars = true, float xLegend = 0.55)
+    int baseline = 0, bool logx = false, bool logy = false, bool errorBars = true, float xLegend = 0.55,
+    float textScale = 1.0, float yLegend = -1, float yHeadroom = 1.0)
 {
     SetTDRStyle();
 
     double border = 0.06;
+    float leftMargin = 0.15 * textScale;
     TPad *pad1 = new TPad(title, title, 0, 0.25 + border, 1.0 - border, 1.0 - border);
     pad1->SetTickx(1);
     pad1->SetTicky(1);
-    pad1->SetLeftMargin(0.15);
+    pad1->SetLeftMargin(leftMargin);
     pad1->SetBottomMargin(0);
     logy ? pad1->SetLogy() : pad1->SetLogy(0);
     logx ? pad1->SetLogx() : pad1->SetLogx(0);
@@ -1043,17 +1049,18 @@ TPad* PlotCMSDiffResultRegion(
     TPad *pad2 = new TPad(title, title, 0, 0, 1.0 - border, 0.25 + border);
     pad2->SetTickx(1);
     pad2->SetTicky(1);
-    pad2->SetLeftMargin(0.15);
+    pad2->SetLeftMargin(leftMargin);
     pad2->SetTopMargin(0);
-    pad2->SetBottomMargin(0.25);
+    pad2->SetBottomMargin(0.25 * textScale);
     logx ? pad2->SetLogx() : pad2->SetLogx(0);
     pad2->Draw();
 
-    TLegend* leg = new TLegend(xLegend, 0.7, xLegend + 0.23, 0.85);
+    float yLeg = (yLegend >= 0) ? yLegend : 0.70f;
+    TLegend* leg = new TLegend(xLegend, yLeg, xLegend + 0.23, yLeg + 0.15);
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextFont(42);
-    leg->SetTextSize(0.035);
+    leg->SetTextSize(0.035 * textScale);
 
     // Auto Y-range
     double global_min = 1e30, global_max = -1e30;
@@ -1077,7 +1084,7 @@ TPad* PlotCMSDiffResultRegion(
     if (logy) {
         margin = exp((log(global_max) - log((global_min > 0) ? global_min : 1)) * 1.2);
     } else {
-        margin = 0.2 * (global_max - global_min);
+        margin = yHeadroom * 0.2 * (global_max - global_min);
     }
 
     // Auto difference Y-range
@@ -1128,7 +1135,8 @@ TPad* PlotCMSDiffResultRegion(
         hist->GetXaxis()->SetTitle(xTitle);
         hist->GetXaxis()->SetRangeUser(xmin, xmax);
         hist->GetYaxis()->SetTitle(yTitle);
-        hist->GetYaxis()->SetTitleSize(0.05);
+        hist->GetYaxis()->SetTitleSize(0.05 * textScale);
+        hist->GetYaxis()->SetLabelSize(0.045 * textScale);
         hist->GetYaxis()->SetTitleOffset(1.2);
 
         if (ymin < ymax) {
@@ -1160,6 +1168,7 @@ TPad* PlotCMSDiffResultRegion(
             if (gSig != nullptr) {
                 gSig->SetMarkerColor(markercolors[i]);
                 gSig->SetMarkerStyle(markerstyles[i]);
+                gSig->SetMarkerSize(textScale);
                 gSig->SetLineColor(markercolors[i]);
                 gSig->Draw(errorBars ? "PE SAME" : "P SAME");
             }
@@ -1170,6 +1179,7 @@ TPad* PlotCMSDiffResultRegion(
             if (gOut != nullptr) {
                 gOut->SetMarkerColor(markercolors[i]);
                 gOut->SetMarkerStyle(OpenMarkerStyle(markerstyles[i]));
+                gOut->SetMarkerSize(textScale);
                 gOut->SetLineColor(markercolors[i]);
                 gOut->Draw(errorBars ? "PE SAME" : "P SAME");
             }
@@ -1178,6 +1188,7 @@ TPad* PlotCMSDiffResultRegion(
             TGraph* legProxy = new TGraph(1);
             legProxy->SetMarkerColor(markercolors[i]);
             legProxy->SetMarkerStyle(markerstyles[i]);
+            legProxy->SetMarkerSize(textScale);
             legProxy->SetLineColor(markercolors[i]);
             leg->AddEntry(legProxy, labels[i].c_str(), "p");
         } else {
@@ -1194,16 +1205,17 @@ TPad* PlotCMSDiffResultRegion(
             TH1* bottomSyst = (i < (int)bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
 
             hDiff->GetXaxis()->SetTitle(xTitle);
-            hDiff->GetXaxis()->SetTitleSize(0.1);
-            hDiff->GetXaxis()->SetLabelSize(0.08);
-            hDiff->GetXaxis()->SetTitleOffset(1);
+            hDiff->GetXaxis()->SetTitleSize(0.1 * textScale);
+            hDiff->GetXaxis()->SetLabelSize(0.08 * textScale);
+            hDiff->GetXaxis()->SetTitleOffset(1.0);
             hDiff->GetYaxis()->SetTitle(rTitle);
+            hDiff->GetYaxis()->CenterTitle(true);
             if (rmin < rmax)
                 hDiff->GetYaxis()->SetRangeUser(rmin, rmax);
             else
                 hDiff->GetYaxis()->SetRangeUser(diff_min - diff_margin, diff_max + diff_margin);
-            hDiff->GetYaxis()->SetTitleSize(0.08);
-            hDiff->GetYaxis()->SetLabelSize(0.06);
+            hDiff->GetYaxis()->SetTitleSize(0.08 * textScale);
+            hDiff->GetYaxis()->SetLabelSize(0.06 * textScale);
             hDiff->GetYaxis()->SetTitleOffset(0.6);
             hDiff->SetLineColor(linecolors[i]);
             hDiff->SetLineStyle(linestyles[i] == 0 ? 1 : linestyles[i]);
@@ -1232,6 +1244,7 @@ TPad* PlotCMSDiffResultRegion(
                 if (gSigD != nullptr) {
                     gSigD->SetMarkerColor(markercolors[i]);
                     gSigD->SetMarkerStyle(markerstyles[i]);
+                    gSigD->SetMarkerSize(textScale);
                     gSigD->SetLineColor(markercolors[i]);
                     gSigD->Draw(drawStat ? "PE SAME" : "P SAME");
                 }
@@ -1241,6 +1254,7 @@ TPad* PlotCMSDiffResultRegion(
                 if (gOutD != nullptr) {
                     gOutD->SetMarkerColor(markercolors[i]);
                     gOutD->SetMarkerStyle(OpenMarkerStyle(markerstyles[i]));
+                    gOutD->SetMarkerSize(textScale);
                     gOutD->SetLineColor(markercolors[i]);
                     gOutD->Draw(drawStat ? "PE SAME" : "P SAME");
                 }
@@ -1273,6 +1287,14 @@ TPad* PlotCMSDiffResultRegion(
         }
     }
     pad1->cd();
+    {
+        double x1 = hists[0]->GetXaxis()->GetBinLowEdge(hists[0]->GetXaxis()->GetFirst());
+        double x2 = hists[0]->GetXaxis()->GetBinUpEdge(hists[0]->GetXaxis()->GetLast());
+        TLine *zeroLine = new TLine(x1, 0, x2, 0);
+        zeroLine->SetLineColor(kGray + 1);
+        zeroLine->SetLineStyle(2);
+        zeroLine->Draw("SAME");
+    }
     leg->Draw("SAME");
     AddCMSHeader(pad1, "Preliminary", false);
 

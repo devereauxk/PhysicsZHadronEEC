@@ -43,6 +43,9 @@ apply this contract strictly.
 - **Voice and tense**: present tense for descriptions of method ("We correct…",
   "The correction is applied…"); past tense for completed measurements ("The data
   were collected…"). First-person plural "we" throughout.
+- **American English**: use American spellings throughout — "center" (not "centre"),
+  "behavior" (not "behaviour"), "summarizes" (not "summarises"), "color" (not
+  "colour"), etc. Applies to both running text and figure captions.
 - **Collision system names**: `pp`, `pPb`, `Pbp` in running text (never `PbP` in
   prose; `PbP` appears only in file-name references). `$\rootsNN = 8.16$~\TeV`.
 - **Kinematic ranges**: inline math with custom macros:
@@ -106,13 +109,27 @@ rewrites usually create a new dated directory rather than refactoring old ones i
   (`ReduceForest.cpp` modules).
 - `MainAnalysis/`: correlation and leading-track analyses (`CorrelationAnalysis.cpp`,
   `LeadingTrkAnalysis.cpp`) over reduced samples.
-- `TrackingEfficiency/`: residual correction production and validation.
+- Residual correction derivation lives under `MainAnalysis/20251211_ResidualCorrection/`
+  (1D, fallback) and `MainAnalysis/20260518_ResidualCorrection2D/` (2D, current).
 - `Systematics/`: systematic-harvesting/combination utilities.
 - `Plots/`: plotting/post-processing executables and ROOT macro figure production.
 
-Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Systematics → Plots**.
+Typical flow: **SampleGeneration → MainAnalysis (including residual corrections) → Systematics → Plots**.
 
 ## Key conventions
+
+**The signed common-CM convention is the sole standard for this analysis.** All
+note-facing products, corrections, systematics, and result plots use the signed
+convention exclusively. The unsigned convention is retired and its scripts removed.
+Any new production, plotting, or analysis work must use signed-convention flags
+(`--FillSigned true`, `--DEtaRange 3.87`, 12×12 binning). See the "Main analysis"
+section below for full parameter listing.
+
+**`OfficialProductDictionary.sh`** (sourced after `OfficialWeightDictionary.sh`) is
+the canonical registry for all analysis products — result file prefixes, systematic
+prefixes, scan prefixes, closure dirs. When creating new official products, register
+their paths in this dictionary rather than hardcoding paths in scripts. When looking
+up existing products, source the dictionary and use the exported variables.
 
 ### Build / runner basics
 - **Directory granularity is workflow-level**: each dated folder is self-contained with
@@ -177,12 +194,16 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   `20241102_ZhadronVsZPt`), closure dirs `OFFICIAL_ZCORR_CLOSURE_DIR` /
   `OFFICIAL_TRKCORR_CLOSURE_DIR`, MC prefix variables for pp/pPb/PbP at four
   correction stages (`_GEN_`, `_RECO_`, `_ZRESIDUAL_`, `_TRKRESIDUAL_` prefixes),
-  result/nosub file prefixes `OFFICIAL_{PP,PPB,PBP}_{RESULT,NOSUB}_PREFIX` (signed
+  result/nosub file prefixes `OFFICIAL_{PP,PPB,PBP}_RESULT_PREFIX` (signed
   common-CM convention, 12×12, DEtaRange=3.87; uses base official tags without
-  suffix) and `OFFICIAL_{PP,PPB,PBP}_{RESULT,NOSUB}_PREFIX_BIN12` (12×12 study
-  surface; pp `_bin12x12_20260603`, pPb/PbP `_bin12x12_20260603`), and helper
+  suffix), scan prefixes `OFFICIAL_{PP,PPB,PBP}_RESULT_PREFIX_SCAN`, inclusive
+  systematic prefixes `OFFICIAL_{PP,PPB,PBP}_{LOOSE,TIGHT,MUTAGFALSE,PU,...}_PREFIX`,
+  systematic family arrays `OFFICIAL_{INCLUSIVE,SCAN}_SYST_FAMILIES_{PP,HI}` and
+  `OFFICIAL_SCAN_ZPT_RANGES` for programmatic iteration, pp 5 TeV native-energy
+  prefixes `OFFICIAL_PP_5TEV_RESULT_PREFIX{,_SCAN}`, and helper
   `assert_product_exists()` to abort if a production ROOT file is missing.
-  Usage pattern: `${OFFICIAL_PPB_NOSUB_PREFIX}_ZPT0_500-nosub.root`.
+  Usage pattern: `${OFFICIAL_PPB_RESULT_PREFIX}_ZPT0_500-nosub.root`.
+  Systematic pattern: `${OFFICIAL_PP_RESULT_PREFIX}_${FAMILY}_ZPT0_500-result.root`.
 
 ### Private MC (pp Pythia+MadGraph)
 - **20260403 private generator**: `SampleGeneration/20260403_PythiaMadgraph/` is the
@@ -220,10 +241,15 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   (in `makeProjection.C`); divide only by bin width.
 
 ### Main analysis (20241102_ZhadronVsZPt)
+- **Signed convention is the sole standard**: all note-facing products (inclusive and
+  scan) use the signed common-CM convention exclusively. The unsigned convention
+  (`DEtaRange=4.0`, `|eta|<2.4`, no `FillSigned`) is retired; its scripts have been
+  removed from the codebase. Any new production must use signed-convention flags.
 - **Canonical runners**: maintained entrypoints are `closure-VZ.sh`, `closure-Z.sh`,
-  `closure-trk.sh`, `central.sh`, `central-signed.sh`. Fix bugs in these directly
-  rather than creating `*-newVZFix.sh` variants.
-- **Signed common-CM convention** (`central-signed.sh`, `systematics-signed.sh`):
+  `closure-trk.sh`, `central.sh`, `systematics.sh`, `central-scan.sh`,
+  `systematics-scan.sh`, `run-scan-production.sh`, `rerun-trackcorrection.sh`.
+  Fix bugs in these directly rather than creating `*-newVZFix.sh` variants.
+- **Signed common-CM convention** (`central.sh`, `systematics.sh`):
   the signed convention expresses pPb and Pbp in a common signed longitudinal frame
   before combination. Key parameters: `--FillSigned true`, `--DEtaRange 3.87`,
   `--ResultDEtaBins 12 --ResultDPhiBins 12`, `--MaxMixDeltaVZ 1.0`, `--UseJackknife true`,
@@ -234,7 +260,8 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   (12 equal bins). Projection windows: DeltaPhi → x bins 7..12 (DeltaEta ≥ 0),
   DeltaEta → y bins 4..6 (DeltaPhi ∈ [0, π/2]). Tags use existing official tags
   (no extra suffix): `EEV6_ZV10_trkV29_nmix10` (pp), `ZV10_trkV29_nmix10` (pPb/PbP).
-  Inclusive only: `ZPT 0_500`, `trkPT 0.5_15`.
+  Inclusive: `ZPT 0_500`, `trkPT 0.5_15`. Scan: `ZPT {0_500,0_30,30_500}` ×
+  `trkPT {0.5_2, 2_4, 4_15}` with `_scan` tag suffix.
 - **Signed convention symmetrization**: after combining pPb + Pbp (N_Z-weighted sum
   of 2D nosub histograms, then background subtraction), apply fourfold 2D
   symmetrization before projecting to 1D. Mirror indices (1-indexed, 12×12):
@@ -265,11 +292,14 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   ```
   # 1. Production (corrected data + systematics)
   cd MainAnalysis/20241102_ZhadronVsZPt
-  NTHREAD=25 ./central-signed.sh          # nominal pp, pPb, PbP
-  NTHREAD=25 ./systematics-signed.sh 1 1 1 # all systematic variations
+  NTHREAD=25 ./central.sh                 # nominal pp, pPb, PbP (inclusive)
+  NTHREAD=25 ./systematics.sh 1 1 1       # all systematic variations (inclusive)
+
+  # 1b. Scan bins (ZPT×trkPT differential)
+  bash run-scan-production.sh             # 3-stream orchestrated nominal + systematics
 
   # 2. TrackCorrection fix (MUST use nominal residual, not dedicated TC residual)
-  bash rerun-trackcorrection-signed.sh     # pp, pPb, PbP × TC0p976/TC1p024
+  bash rerun-trackcorrection.sh           # pp, pPb, PbP × TC0p976/TC1p024
 
   # 3. Systematics harvesting
   cd ../../Systematics/20260329_pPbSystematics
@@ -293,19 +323,30 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
 - **DEtaRange CLI parameter**: `CorrelationAnalysis.cpp` accepts `--DEtaRange <double>`
   (default 4.0). Creates 12 equal-width DeltaEta bins from `[-range, +range]`.
   `makeProjection.C` validates both 3.87 and 4.0 as acceptable DeltaEta edges.
-- **Systematics runner**: `systematics.sh` enumerates corrected-data variations. pp:
-  `Loose`, `Tight`, `IsMuTaggedFalse`, `IsPURejectTrue`, `MuVar0..3`, inclusive
-  `TrackCorrection0p976/1p024`, `_EEPrivate`. pPb/PbP: same minus `_EEPrivate`.
-  Loose/Tight/`IsMuTaggedFalse` consume their dedicated residual corrections from the
-  dictionary; `IsPURejectTrue` consumes the dedicated PU-stack VZ/Z/track residuals.
-  Narrowed `CONFIG_FILE` blocks must still include `TrackCorrection0p976/1p024` for
-  all three collisions, else reruns leave stale track-correction variations behind.
-  pp PU family: `NVertex == 1` is a corrected-data selection only — do not impose on
-  pp MC legs of VZ/Z/residual derivations.
-- **Signed systematics runner**: `systematics-signed.sh` mirrors `systematics.sh` but
-  adds `FillSigned`, `FlipDeltaEta` (Pbp), acceptance cuts, `DEtaRange 3.87`. Same
-  variation families as the unsigned runner. Usage:
-  `NTHREAD=25 ./systematics-signed.sh <DOPP> <DOPPB> <DOPBP>`.
+- **Systematics runner (inclusive)**: `systematics.sh` enumerates corrected-data
+  variations in the signed convention. pp: `Loose`, `Tight`, `IsMuTaggedFalse`,
+  `IsPURejectTrue`, `MuVar0..3`, `TrackCorrection0p976/1p024`, `_EEPrivate`.
+  pPb/PbP: same minus `_EEPrivate`. Loose/Tight/`IsMuTaggedFalse` consume their
+  dedicated residual corrections from the dictionary; `IsPURejectTrue` consumes the
+  dedicated PU-stack VZ/Z/track residuals. Narrowed `CONFIG_FILE` blocks must still
+  include `TrackCorrection0p976/1p024` for all three collisions, else reruns leave
+  stale track-correction variations behind. pp PU family: `NVertex == 1` is a
+  corrected-data selection only — do not impose on pp MC legs of VZ/Z/residual
+  derivations. Usage: `NTHREAD=25 ./systematics.sh <DOPP> <DOPPB> <DOPBP>`.
+- **Scan runners**: `central-scan.sh` and `systematics-scan.sh` are the scan-bin
+  equivalents of `central.sh` / `systematics.sh`. They use the same signed-convention
+  flags and append `_scan` to the tag suffix to prevent filename collision with
+  inclusive products. Default scan ranges: `ZPT 0_500`, `trkPT {0.5_2, 2_4, 4_15}`.
+  `systematics-scan.sh` runs reduced families: `TrackSelection` (Loose/Tight),
+  `PU` (IsPURejectTrue), `EnergyExtrapolation` (pp EEPrivate only). Excluded from
+  scan: `MuonRejection`, `ScaleFactor`, `TrackCorrection`.
+- **Scan orchestrator**: `run-scan-production.sh` schedules 3 parallel streams
+  (pPb, PbP, pp) at 30 threads each (90 total). Each stream runs nominal then
+  systematics sequentially on its own skim file. pp EEPrivate runs after all 3
+  streams complete, using the copy skim (`PPData_Reco-copy.root`) to avoid I/O
+  conflict. Orchestration knobs in `systematics-scan.sh`: `DOPP_SKIP_EE=1` (skip
+  EEPrivate), `DOPP_ONLY_EE=1` (run only EEPrivate), `PP_INPUT_OVERRIDE` (alternate
+  pp skim path). Logs: `/tmp/kdeverea/scan_{pPb,PbP,pp,pp_ee}.log`.
 - **V0.3 muon-rejection residual**: corrected-data muon-rejection systematic uses the
   dedicated `IsMuTaggedFalse` residual/data branches for pp/pPb/PbP. Nominal stays at
   skim default `--IsMuTagged true` (`trackMuDR = 0.0025`). The `TrackMuDR0p004` family
@@ -325,10 +366,10 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   Never pass `--MaxMixDeltaVZ 0` to disable it unless explicitly studying the effect.
   (Changed from 0.5 cm: the 0.5 cm cut non-monotonically amplified pPb/PbP DeltaEta
   tension due to opposite-beam Vz asymmetry; 1.0 cm restores good agreement.)
-- **Energy-extrapolation systematic**: `systematics.sh` is the maintained pp
-  corrected-data entrypoint for `_EEPrivate` — swap only
-  `EEWeightFile_PP_PRIVATE` for the nominal EE weight while keeping the official pp
-  tag family unchanged.
+- **Energy-extrapolation systematic**: `systematics.sh` (inclusive) and
+  `systematics-scan.sh` (scan) are the maintained pp corrected-data entrypoints for
+  `_EEPrivate` — swap only `EEWeightFile_PP_PRIVATE` for the nominal EE weight while
+  keeping the official pp tag family unchanged.
 - **20251211 residual systematics runner**: in
   `MainAnalysis/20251211_ResidualCorrection/workflow/`, common wrappers are
   `run-pp-systematics.sh` and `run-pPb-systematics.sh`, covering `Loose`, `Tight`,
@@ -498,40 +539,23 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
   energy-extrapolation are `ZPT={0_30,30_500}` × `trkPT={0.5_2,2_4,4_15}`, plus the
   inclusive `ZPT0_500`, `trkPT0.5_15`. Older `5_30`, `0.5_4`, `4_500`, `0.5_500`
   defaults are stale.
-- **Modified-bin surfaces**: a shifted `10 × 10` surface remains as an older
-  semi-official study (tags `*_bin10x10shifted_20260506`) — keep its runners and
-  exploratory presentation but prefer the newer `12 × 12` set for note Results. The
-  maintained `12 × 12` surface uses tags
-  `EEV6_ZV10_trkV29_nmix10_bin12x12_20260602` (pp) and
-  `ZV10_trkV29_nmix10_bin12x12_20260603` (pPb/PbP; `_20260602` for pp since pp was not
-  rerun in the 2026-06-03 MaxMixDeltaVZ=1 cm campaign). Refresh the inclusive
-  `ZPT0_500`/`trkPT0.5_15` plus six scan bins through
-  `MainAnalysis/20241102_ZhadronVsZPt/{result-study-bin12x12-20260507.sh,
-  systematics-bin12x12-20260507.sh}`,
-  `Systematics/20260329_pPbSystematics/run-bin12x12-20260507.sh`,
-  `Plots/20260213_Central/plot-central-combined-bin12x12-20260507.sh`, then stage the
-  seven-slide presentation as
-  `Plots/20260213_Central/presentations/central_combined_bin12x12_20260507.pdf`.
-- **Modified-bin Overleaf**: `12 × 12` updates copy the inclusive PDFs
-  `all_ZPT0_500_trkPT0.5_15_*_bin12x12_20260602-{DeltaPhi,DeltaEta}-result.pdf` (pp) /
-  `20260603` (pPb/PbP) and the scan composites
-  `overleaf_pdf_composites/overleaf_result_scan_bin12x12_{deltaphi,deltaeta}_combined.pdf`
-  into `~/OverleafZHadronInPPb/figures/result/`, preserving source basenames and
-  replacing older `10 × 10` additions in `src/results.tex`.
-- **Projection windows**: result-stage projections are hard-coded by surface, not
-  auto-detected. Official `20 × 20` keeps `DeltaPhi: x bins 0..10`,
-  `DeltaEta: y bins 6..10`. Shifted `10 × 10`: `DeltaEta` bins `-4..4` and `DeltaPhi`
-  bins `-3π/5..7π/5`, with exact axis edges at `DeltaEta = 0, 4` and `DeltaPhi = 0, π`;
-  project with `DeltaPhi: x bins 6..10` (`0..4` in η) and `DeltaEta: y bins 4..8`
-  (`0..π` in φ). `12 × 12`: `DeltaEta` bins `-4..4` and `DeltaPhi` bins `-π/2..3π/2`,
-  with exact edges at `DeltaEta = 0, 4` and `DeltaPhi = 0, π/2, π`; project with
-  `DeltaPhi: x bins 7..12` (`0..4`) and `DeltaEta: y bins 4..6` (`0..π/2`).
+- **Projection windows (12×12, current standard)**: result-stage projections are
+  hard-coded. `DeltaEta` bins `[-3.87, 3.87]` and `DeltaPhi` bins `[-π/2, 3π/2]`,
+  with exact edges at `DeltaEta = 0, 3.87` and `DeltaPhi = 0, π/2, π`; project with
+  `DeltaPhi: x bins 7..12` (`DeltaEta ≥ 0`) and `DeltaEta: y bins 4..6`
+  (`DeltaPhi ∈ [0, π/2]`). Older `20 × 20` and `10 × 10` projection windows are
+  retired along with the unsigned convention.
+- **Scan result plots**: run `plot-central-combined.sh` with `_scan`-suffixed tags
+  and `PLOT_OUTPUT_BASE=plots/central_combined_scan`. Then build composite PDFs:
+  `cd overleaf_pdf_composites && /home/kdeverea/opt/tectonic-0.15.0-musl/tectonic <file>.tex`
+  for each scan composite TeX file. Outputs are copied to
+  `~/OverleafZHadronInPPb/figures/result/`.
 - **Jackknife note plots**: maintained note-facing result and pPb-vs-PbP comparison
-  plots use jackknife statistical uncertainties by default. `central.sh` and the
-  `10 × 10` result-study runner pass `--UseJackknife true` on corrected-data result
-  legs; the pPb-vs-PbP compatibility recalculation lives in
-  `MainAnalysis/20260506_Jackknife/`; `plot-central-overlay-PPbPbP.sh` defaults to the
-  finalized note bins (`0_30`, `30_500`, `0_500` × `0.5_2`, `2_4`, `4_15`, `0.5_15`).
+  plots use jackknife statistical uncertainties by default. `central.sh` passes
+  `--UseJackknife true` on corrected-data result legs; the pPb-vs-PbP compatibility
+  recalculation lives in `MainAnalysis/20260506_Jackknife/`;
+  `plot-central-overlay-PPbPbP.sh` defaults to the finalized note bins
+  (`0_30`, `30_500`, `0_500` × `0.5_2`, `2_4`, `4_15`, `0.5_15`).
 - **pPb/PbP compatibility tests**: `MainAnalysis/20260506_Jackknife/` provides two
   complementary tests via `run-pPbPbp-compatibility.sh` and `run-pPbPbp-ks.sh`.
   Both read the 12×12 surface result files tagged by `TAG12` (default from
@@ -712,6 +736,10 @@ Typical flow: **SampleGeneration → MainAnalysis / TrackingEfficiency → Syste
 - Files intended for `/tmp` should be written under `/tmp/kdeverea`.
 - Default behavior: write plots/products to analysis repo paths unless explicitly told
   otherwise.
+- LaTeX compilation: use `tectonic` at `/home/kdeverea/opt/tectonic-0.15.0-musl/tectonic`
+  (not in PATH). `pdflatex` is **not installed**. For composite PDFs in
+  `Plots/20260213_Central/overleaf_pdf_composites/`, use
+  `build-overleaf-result-scan-signed.sh` or run tectonic directly.
 
 ## User-defined folder meanings
 
@@ -843,12 +871,41 @@ Concrete method:
    pre-existing missing references from those changed in the current task, and
    confirm `git status --short` in `~/OverleafZHadronInPPb` matches the manifest.
 
+## Paper and PAS (`~/PaperZHadronInPPb/OverleafV2/`)
+
+- **Repo path**: `~/PaperZHadronInPPb/OverleafV2/`. Two distinct documents share
+  the same `figures/` directory and `cms-tdr.cls` style class.
+- **Paper**: `HIN-26-007.tex` — the full paper draft. Uses `cms-tdr` class (options
+  set by the TDR build system, not an explicit `\documentclass` line). Sections:
+  Introduction, The CMS detector, Data and simulation samples, Z boson and charged
+  hadron reconstruction, Analysis technique, Systematic uncertainties, Results,
+  Summary. Bibliography via `auto_generated.bib`.
+- **PAS**: `HIN-26-007-PAS.tex` — a Physics Analysis Summary, a distinct shorter
+  document with `\documentclass[...,pas]{cms-tdr}`. Sections mirror the paper but
+  content differs. Both documents reference the same 4 result figures in `figures/`.
+- **Result figures** (referenced identically by both documents):
+  - `figures/all_ZPT0_500_trkPT0.5_15_ZV10_trkV29_nmix10-DeltaPhi-result.pdf` —
+    inclusive DeltaPhi (source: `Plots/20260213_Central/plots/central_combined/`)
+  - `figures/all_ZPT0_500_trkPT0.5_15_ZV10_trkV29_nmix10-DeltaEta-result.pdf` —
+    inclusive DeltaEta
+  - `figures/overleaf_result_scan_signed_deltaphi_combined.pdf` — scan DeltaPhi
+    composite (source: `Plots/20260213_Central/overleaf_pdf_composites/`)
+  - `figures/overleaf_result_scan_signed_deltaeta_combined.pdf` — scan DeltaEta
+    composite
+- **Updating figures**: copy from source and update `\includegraphics{...}` paths
+  in both `HIN-26-007.tex` and `HIN-26-007-PAS.tex`. Use source basenames — do not
+  add version suffixes. Stale old-basename copies (`-1.pdf`, `-2.pdf`) can be
+  removed after confirming no TeX file references them.
+- **Build**: `main.tex` selects which document to compile. Pre-built PDFs
+  (`cms_draft_paper.pdf`, `cms_draft_pas.pdf`, `cms_paper.pdf`, `cms_pas.pdf`) are
+  in the repo root.
+
 ## Correction-stack order and closure
 
 Order: VZ → Z correction → track residual correction → energy extrapolation (pp only).
 VZ feeds Z; VZ and Z both feed track residual. Central result uses all of them. Total
 closure is demonstrated on MC by `MainAnalysis/20241102_ZhadronVsZPt/closure-trk.sh`;
-plots in `Plots/20260120_ZhadronVsZPtClosure/`. Main results from
+plots in `Plots/20260120_CentralClosure/`. Main results from
 `MainAnalysis/20241102_ZhadronVsZPt/central.sh`; plots in `Plots/20260213_Central/`.
 
 ## Known issue context to keep in mind

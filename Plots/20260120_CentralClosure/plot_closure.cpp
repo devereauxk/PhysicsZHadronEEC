@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
     string tag = CL.Get("tag", "V16_nmix5");
     string baseDir = CL.Get("BaseDir",
         "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
+    double diffEtaMax = CL.GetDouble("diffEtaMax", 0.05);
+    double diffPhiMax = CL.GetDouble("diffPhiMax", 0.1);
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -94,8 +96,8 @@ int main(int argc, char *argv[]) {
 
         // mixed
         TH2D* this_hMixData2D = (TH2D*)fin->Get(Form("hMixData_%s", trkPtRange.c_str()));
-        TH1D* this_hDeltaPhi_mix = this_hMixData2D->ProjectionY(Form("hMixPhi_%d", i), 0, 10);
-        TH1D* this_hDeltaEta_mix = this_hMixData2D->ProjectionX(Form("hMixEta_%d", i), 6, 10);
+        TH1D* this_hDeltaPhi_mix = this_hMixData2D->ProjectionY(Form("hMixPhi_%d", i), 7, 12);
+        TH1D* this_hDeltaEta_mix = this_hMixData2D->ProjectionX(Form("hMixEta_%d", i), 4, 6);
 
         divideByWidth(this_hDeltaPhi_mix);
         divideByWidth(this_hDeltaEta_mix);
@@ -157,7 +159,7 @@ int main(int argc, char *argv[]) {
         hDeltaEta_all, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta y_{ch,Z}", -3.87, 3.87,
         "Signal d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
@@ -209,7 +211,7 @@ int main(int argc, char *argv[]) {
         hDeltaEta_mix, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta y_{ch,Z}", -3.87, 3.87,
         "Mixed d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
@@ -254,12 +256,12 @@ int main(int argc, char *argv[]) {
         hDeltaEta, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta y_{ch,Z}", -3.87, 3.87,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "RECO - GEN", -0.05, 0.05,
+        "RECO - GEN", -diffEtaMax, diffEtaMax,
         0,
         false, false, true,
-        0.2
+        0.38, 0.70
     );
 
     AddCMSHeader(
@@ -278,7 +280,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "RECO - GEN", -0.1, 0.1,
+        "RECO - GEN", -diffPhiMax, diffPhiMax,
         0,
         false, false, true,
         0.2

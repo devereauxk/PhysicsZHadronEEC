@@ -1,26 +1,21 @@
 // plot_pPbPbp_sym_overlay.cpp
-// Produces two-panel overlay plots comparing signed+symmetrized pPb vs Pbp results.
-// One PDF per observable (DeltaEta, DeltaPhi).
+// Produces TDR-style overlay plots comparing signed+symmetrized pPb vs Pbp results.
+// Uses PlotCMSDiffResultRegion from KylesPlotting.h (same style as result plots).
 
 #include <TCanvas.h>
 #include <TFile.h>
 #include <TH1D.h>
-#include <TLegend.h>
 #include <TLatex.h>
-#include <TLine.h>
-#include <TPad.h>
-#include <TStyle.h>
 #include <TSystem.h>
 
 #include <cmath>
-#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
-
-#include "../../CommonCode/include/CommandLine.h"
-
 using namespace std;
+
+#include "../../CommonCode/include/KylesPlotting.h"
+#include "../../CommonCode/include/CommandLine.h"
 
 // ── Mirror functions (0-indexed, 12 bins) ──────────────────────────────────────
 int etaMirror(int i) { return 11 - i; }
@@ -51,119 +46,6 @@ TH1D *loadHist(TFile &f, const string &key, const string &name)
     h = (TH1D *)h->Clone(name.c_str());
     h->SetDirectory(nullptr);
     return h;
-}
-
-// ── Style helpers ───────────────────────────────────────────────────────────────
-void setStyle()
-{
-    gStyle->SetOptStat(0);
-    gStyle->SetOptTitle(0);
-    gStyle->SetPadTickX(1);
-    gStyle->SetPadTickY(1);
-    gStyle->SetFrameLineWidth(1);
-    gStyle->SetEndErrorSize(3);
-}
-
-// ── Draw one observable's overlay + ratio pad ───────────────────────────────────
-void drawOverlay(const string &outPath, TH1D *hpPb, TH1D *hPbP,
-                 const string &xTitle, const string &obsLabel)
-{
-    const double scale = 0.5;
-    hpPb->Scale(scale);
-    hPbP->Scale(scale);
-
-    // color / style
-    const int colpPb = kAzure - 2, colPbP = kOrange + 7;
-    hpPb->SetMarkerStyle(20); hpPb->SetMarkerColor(colpPb);
-    hpPb->SetLineColor(colpPb); hpPb->SetMarkerSize(0.9);
-    hPbP->SetMarkerStyle(24); hPbP->SetMarkerColor(colPbP);
-    hPbP->SetLineColor(colPbP); hPbP->SetMarkerSize(0.9);
-
-    // y-range: pad symmetrically around zero
-    double yMax = 0;
-    for (int b = 1; b <= hpPb->GetNbinsX(); ++b) {
-        yMax = max(yMax, fabs(hpPb->GetBinContent(b)) + hpPb->GetBinError(b));
-        yMax = max(yMax, fabs(hPbP->GetBinContent(b)) + hPbP->GetBinError(b));
-    }
-    yMax *= 1.35;
-    hpPb->SetMinimum(-yMax);
-    hpPb->SetMaximum(yMax);
-
-    // Difference histogram
-    TH1D *hDiff = (TH1D *)hpPb->Clone("hDiff");
-    hDiff->SetDirectory(nullptr);
-    hDiff->Add(hPbP, -1.0);
-    // difference errors: sqrt(err_pPb^2 + err_PbP^2)
-    for (int b = 1; b <= hDiff->GetNbinsX(); ++b) {
-        double ep = hpPb->GetBinError(b), eq = hPbP->GetBinError(b);
-        hDiff->SetBinError(b, sqrt(ep * ep + eq * eq));
-    }
-    hDiff->SetMarkerStyle(20); hDiff->SetMarkerColor(kBlack);
-    hDiff->SetLineColor(kBlack); hDiff->SetMarkerSize(0.9);
-
-    double dMax = 0;
-    for (int b = 1; b <= hDiff->GetNbinsX(); ++b)
-        dMax = max(dMax, fabs(hDiff->GetBinContent(b)) + hDiff->GetBinError(b));
-    dMax = max(dMax * 1.5, 1e-4);
-
-    TCanvas *c = new TCanvas("c", "c", 700, 700);
-    TPad *pTop = new TPad("pTop", "", 0, 0.32, 1, 1);
-    TPad *pBot = new TPad("pBot", "", 0, 0,    1, 0.32);
-    pTop->SetBottomMargin(0.015);
-    pBot->SetTopMargin(0.025);
-    pBot->SetBottomMargin(0.30);
-    pTop->Draw(); pBot->Draw();
-
-    // ── top pad ──
-    pTop->cd();
-    hpPb->GetXaxis()->SetLabelSize(0);
-    hpPb->GetYaxis()->SetTitle("1/(N_{Z}) d^{2}N_{ch}/d#Delta y d#Delta#phi");
-    hpPb->GetYaxis()->SetTitleSize(0.048);
-    hpPb->GetYaxis()->SetTitleOffset(1.25);
-    hpPb->Draw("PE");
-    hPbP->Draw("PE SAME");
-
-    TLine *zero = new TLine(hpPb->GetXaxis()->GetXmin(), 0,
-                            hpPb->GetXaxis()->GetXmax(), 0);
-    zero->SetLineStyle(2); zero->SetLineColor(kGray + 1); zero->Draw();
-
-    TLegend *leg = new TLegend(0.18, 0.68, 0.55, 0.88);
-    leg->SetBorderSize(0); leg->SetFillStyle(0); leg->SetTextSize(0.042);
-    leg->AddEntry(hpPb, "pPb 8.16 TeV (symmetrized)", "pe");
-    leg->AddEntry(hPbP, "Pbp 8.16 TeV (symmetrized)", "pe");
-    leg->Draw();
-
-    TLatex lat;
-    lat.SetNDC(); lat.SetTextSize(0.044); lat.SetTextFont(42);
-    lat.DrawLatex(0.18, 0.60, "0 < p_{T}^{Z} < 500 GeV");
-    lat.DrawLatex(0.18, 0.54, "0.5 < p_{T}^{trk} < 15 GeV");
-    lat.SetTextFont(62);
-    lat.DrawLatex(0.60, 0.88, "CMS");
-    lat.SetTextFont(42);
-    lat.DrawLatex(0.60, 0.82, "#it{Preliminary}");
-
-    // ── bottom pad ──
-    pBot->cd();
-    hDiff->SetTitle("");
-    hDiff->SetMinimum(-dMax);
-    hDiff->SetMaximum(dMax);
-    hDiff->GetXaxis()->SetTitle(xTitle.c_str());
-    hDiff->GetXaxis()->SetTitleSize(0.10);
-    hDiff->GetXaxis()->SetLabelSize(0.09);
-    hDiff->GetYaxis()->SetTitle("pPb #minus Pbp");
-    hDiff->GetYaxis()->SetTitleSize(0.09);
-    hDiff->GetYaxis()->SetTitleOffset(0.65);
-    hDiff->GetYaxis()->SetLabelSize(0.08);
-    hDiff->GetYaxis()->SetNdivisions(505);
-    hDiff->Draw("PE");
-    TLine *z2 = new TLine(hDiff->GetXaxis()->GetXmin(), 0,
-                           hDiff->GetXaxis()->GetXmax(), 0);
-    z2->SetLineStyle(2); z2->SetLineColor(kGray + 1); z2->Draw();
-
-    c->SaveAs(outPath.c_str());
-    cout << "Saved: " << outPath << endl;
-
-    delete hDiff; delete c;
 }
 
 // ── main ────────────────────────────────────────────────────────────────────────
@@ -205,23 +87,100 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Symmetrize
     TH1D *pPbEtaS = symmetrize(pPbEta, true,  "pPb_eta_sym");
     TH1D *PbPEtaS = symmetrize(PbPEta, true,  "PbP_eta_sym");
     TH1D *pPbPhiS = symmetrize(pPbPhi, false, "pPb_phi_sym");
     TH1D *PbPPhiS = symmetrize(PbPPhi, false, "PbP_phi_sym");
 
-    setStyle();
+    // Apply 0.5 normalization
+    pPbEtaS->Scale(0.5);
+    PbPEtaS->Scale(0.5);
+    pPbPhiS->Scale(0.5);
+    PbPPhiS->Scale(0.5);
+
     gSystem->mkdir(outDir.c_str(), true);
 
-    // DeltaEta overlay
-    drawOverlay(outDir + "/pPbPbp_signed_sym_ZPT0_500_trkPT" + trkRange + "-DeltaEta-overlay.pdf",
-                pPbEtaS, PbPEtaS,
-                "#Delta y_{ch,Z}", "DeltaEta");
+    // Style vectors: pPb first (baseline=0), Pbp second
+    vector<string> labels = {"pPb (8.16 TeV)", "Pbp (8.16 TeV)"};
+    vector<Int_t> lineColors  = {kAzure - 2, kOrange + 7};
+    vector<Int_t> lineStyles  = {-1, -1};
+    vector<Int_t> markerColors = {kAzure - 2, kOrange + 7};
+    vector<Int_t> markerStyles = {20, 21};
 
-    // DeltaPhi overlay
-    drawOverlay(outDir + "/pPbPbp_signed_sym_ZPT0_500_trkPT" + trkRange + "-DeltaPhi-overlay.pdf",
-                pPbPhiS, PbPPhiS,
-                "#Delta#phi_{ch,Z}", "DeltaPhi");
+    vector<TH1*> emptySystematics;
+
+    // ── DeltaEta overlay ──
+    {
+        vector<TH1*> histsEta = {pPbEtaS, PbPEtaS};
+
+        TCanvas *c1 = new TCanvas("c1", "c1", 600, 600);
+        TPad *p1 = (TPad*)PlotCMSDiffResultRegion(
+            histsEta, emptySystematics, emptySystematics, "eta_overlay", labels,
+            lineColors, lineStyles,
+            markerColors, markerStyles,
+            "#Delta y_{ch,Z}", -3.87, 3.87,
+            "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
+            "Pbp #minus pPb", -1, -1,
+            0, 3.87,
+            0,
+            false, false, true,
+            0.2
+        );
+
+        AddUPCHeader(p1, "8.16 TeV", "pPb, Pbp");
+
+        p1->cd();
+        TLatex latex;
+        latex.SetNDC();
+        latex.SetTextAlign(31);
+        latex.SetTextSize(0.035);
+        latex.DrawLatex(0.75, 0.82, "0 < p_{T}^{Z} < 500 GeV");
+        latex.DrawLatex(0.75, 0.77, "0.5 < p_{T}^{ch} < 15 GeV");
+        latex.DrawLatex(0.75, 0.72, "|y^{Z}_{CM}| < 1.935, 0 < #Delta#varphi_{ch,Z} < #pi/2");
+
+        c1->Update();
+        string etaOut = outDir + "/pPbPbp_signed_sym_ZPT0_500_trkPT" + trkRange + "-DeltaEta-overlay.pdf";
+        c1->SaveAs(etaOut.c_str());
+        cout << "Saved: " << etaOut << endl;
+        delete c1;
+    }
+
+    // ── DeltaPhi overlay ──
+    {
+        vector<TH1*> histsPhi = {pPbPhiS, PbPPhiS};
+
+        TCanvas *c2 = new TCanvas("c2", "c2", 600, 600);
+        TPad *p2 = (TPad*)PlotCMSDiffResultRegion(
+            histsPhi, emptySystematics, emptySystematics, "phi_overlay", labels,
+            lineColors, lineStyles,
+            markerColors, markerStyles,
+            "#Delta#varphi_{ch,Z}", -1.5707, 4.7123,
+            "d#LT#DeltaN_{ch}#GT/d#Delta#varphi_{ch,Z}", -1, -1,
+            "Pbp #minus pPb", -1, -1,
+            0, M_PI,
+            0,
+            false, false, true,
+            0.2
+        );
+
+        AddUPCHeader(p2, "8.16 TeV", "pPb, Pbp");
+
+        p2->cd();
+        TLatex latex2;
+        latex2.SetNDC();
+        latex2.SetTextAlign(11);
+        latex2.SetTextSize(0.035);
+        latex2.DrawLatex(0.21, 0.60, "0 < p_{T}^{Z} < 500 GeV");
+        latex2.DrawLatex(0.21, 0.55, "0.5 < p_{T}^{ch} < 15 GeV");
+        latex2.DrawLatex(0.21, 0.50, "|y^{Z}_{CM}| < 1.935");
+
+        c2->Update();
+        string phiOut = outDir + "/pPbPbp_signed_sym_ZPT0_500_trkPT" + trkRange + "-DeltaPhi-overlay.pdf";
+        c2->SaveAs(phiOut.c_str());
+        cout << "Saved: " << phiOut << endl;
+        delete c2;
+    }
 
     return 0;
 }

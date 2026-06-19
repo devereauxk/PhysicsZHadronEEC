@@ -105,7 +105,8 @@ int main(int argc, char *argv[])
           "variation - nominal", differenceRange.first, differenceRange.second,
           0,
           false, false, true,
-         0.58
+         (observable == "DeltaPhi") ? 0.25f : 0.58f,
+         (observable == "DeltaPhi") ? 0.55f : 0.70f
       );
 
       AddCMSHeader(pad, "Internal", false);

@@ -103,8 +103,8 @@ void ApplyDiagonalJackknifeErrors(TFile *file, const string &trkPtRange,
             varEta += dEta * dEta;
             varPhi += dPhi * dPhi;
         }
-        hEta->SetBinError(b + 1, sqrt((validN - 1.0) / validN * varEta));
-        hPhi->SetBinError(b + 1, sqrt((validN - 1.0) / validN * varPhi));
+        hEta->SetBinError(b + 1, sqrt((validN - 1.0) / validN * varEta) / hEta->GetBinWidth(b + 1));
+        hPhi->SetBinError(b + 1, sqrt((validN - 1.0) / validN * varPhi) / hPhi->GetBinWidth(b + 1));
     }
 }
 

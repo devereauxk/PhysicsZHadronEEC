@@ -1,2 +1,0 @@
-ZPT_RANGES=("0_500")
-PT_RANGES=("0.5_15")

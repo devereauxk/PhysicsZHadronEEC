@@ -210,7 +210,8 @@ int main(int argc, char *argv[])
          markers.push_back(markerPalette[i % markerPalette.size()]);
          fillStyles.push_back(0);
       }
-      double legendX = (histograms.size() > 4) ? 0.45 : 0.62;
+      double legendX = (observable == "DeltaPhi") ? 0.25 : ((histograms.size() > 4) ? 0.45 : 0.62);
+      double legendY = (observable == "DeltaPhi") ? 0.55 : 0.70;
 
       TCanvas canvas(("CanvasMuonTrack" + observable).c_str(), "", 600, 600);
       TPad *pad = (TPad *)plotCMSDiff(
@@ -222,7 +223,8 @@ int main(int argc, char *argv[])
          "variation - nominal", differenceRange.first, differenceRange.second,
          0,
          false, false, true,
-         legendX
+         legendX,
+         legendY
       );
 
       AddCMSHeader(pad, "Internal", false);

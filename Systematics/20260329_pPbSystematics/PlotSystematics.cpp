@@ -110,9 +110,9 @@ void DrawLabels(const string &collision, const string &zptRange, const string &t
    latex.SetNDC();
    latex.SetTextFont(42);
    latex.SetTextSize(0.032);
-   latex.DrawLatex(0.16, 0.84, (collisionLabel + " " + title).c_str());
-   latex.DrawLatex(0.16, 0.79, FormatPTRange(trackRange, "p_{T}^{ch}").c_str());
-   latex.DrawLatex(0.16, 0.74, FormatPTRange(zptRange, "p_{T}^{Z}").c_str());
+   latex.DrawLatex(0.18, 0.84, (collisionLabel + " " + title).c_str());
+   latex.DrawLatex(0.18, 0.79, FormatPTRange(trackRange, "p_{T}^{ch}").c_str());
+   latex.DrawLatex(0.18, 0.74, FormatPTRange(zptRange, "p_{T}^{Z}").c_str());
 }
 
 TH1D *LoadNominalHistogram(TFile *nominalFile, TFile *nominalPPbFile, TFile *nominalPBPFile,
@@ -225,6 +225,12 @@ void DrawUncertaintyOverlay(TFile &systematicsFile, TH1D *nominal, const string 
    world->GetYaxis()->SetTitle(doRelative == true ? "Relative uncertainty" : "Absolute uncertainty");
 
    TCanvas canvas(("Canvas_" + canvasTag).c_str(), "", 900, 700);
+   canvas.SetLeftMargin(0.14);
+   canvas.SetBottomMargin(0.14);
+   world->GetYaxis()->SetTitleSize(0.045);
+   world->GetYaxis()->SetTitleOffset(1.3);
+   world->GetXaxis()->SetTitleSize(0.06);
+   world->GetXaxis()->SetTitleOffset(1.05);
    world->Draw("axis");
 
    TLegend legend(0.60, 0.58, 0.85, 0.84);

@@ -329,16 +329,11 @@ void saveCorrelationHeatmaps(const TMatrixDSym &CpPb, const TMatrixDSym &CPbP,
             minVal = min(minVal, hPbP->GetBinContent(ix, iy));
         }
 
-    bool hasNegative = (minVal < -1e-9);
-    double zLo = hasNegative ? -1.0 : 0.0;
-    cout << "  [" << obsKey << "] min correlation = " << minVal
-         << "  => z-range [" << zLo << ", 1]" << endl;
+    cout << "  [" << obsKey << "] min correlation = " << minVal << endl;
 
-    if (hasNegative) setDivergingPalette();
-    else             setSequentialPalette();
-
-    hpPb->GetZaxis()->SetRangeUser(zLo, 1.0);
-    hPbP->GetZaxis()->SetRangeUser(zLo, 1.0);
+    setSequentialPalette();
+    hpPb->GetZaxis()->SetRangeUser(0.0, 1.0);
+    hPbP->GetZaxis()->SetRangeUser(0.0, 1.0);
 
     TCanvas *c = new TCanvas("cCorr", "cCorr", 1400, 600);
     c->Divide(2, 1);

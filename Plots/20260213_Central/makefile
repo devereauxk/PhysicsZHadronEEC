@@ -90,6 +90,15 @@ ExecutePPbPbPSEME: plot_pPbPbp_se_me.cpp
 	g++ plot_pPbPbp_se_me.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include \
 		-o ExecutePPbPbPSEME `root-config --cflags --glibs`
 
+ExecutePPbPbpUnsymmetrized: plot_pPbPbp_unsymmetrized.cpp
+	g++ plot_pPbPbp_unsymmetrized.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecutePPbPbpUnsymmetrized `root-config --cflags --glibs`
+
+ExecutePPEnergyComparisonPlot: plot_pp_energy_comparison.cpp
+	g++ plot_pp_energy_comparison.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include -I./include \
+		-o ExecutePPEnergyComparisonPlot `root-config --cflags --glibs` \
+		/home/kdeverea/PhysicsZHadronEEC/CommonCode/library/Messenger.o
+
 ExecuteCorr2DMapBin12x12: plot_2d_corr_bin12x12.cpp
 	g++ plot_2d_corr_bin12x12.cpp -O3 -I. -I /home/kdeverea/PhysicsZHadronEEC/CommonCode/include \
 		-o ExecuteCorr2DMapBin12x12 `root-config --cflags --glibs`

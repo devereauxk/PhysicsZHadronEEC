@@ -48,10 +48,11 @@ struct CellPads {
    TPad *ratio;
 };
 
-CellPads MakeCell(TCanvas *c, const char *prefix, int col, int row)
+CellPads MakeCell(TCanvas *c, const char *prefix, int col, int row, int nCols = 2)
 {
-   double xlo = col * 0.5;
-   double xhi = xlo + 0.5;
+   double colW = 1.0 / nCols;
+   double xlo = col * colW;
+   double xhi = xlo + colW;
    double yhi = 1.0 - row * 0.5;
    double ylo = yhi - 0.5;
    double splitFrac = 0.30;
@@ -168,6 +169,50 @@ void DrawRatioPanel(TPad *pad, TH1D *hpPb, TH1D *hPbP,
    unity->Draw();
 }
 
+void DrawDiffPanel(TPad *pad, TH1D *hpPb, TH1D *hPbP,
+                   const string &xTitle, double xmin, double xmax)
+{
+   pad->cd();
+
+   TH1D *diff = (TH1D *)hpPb->Clone("diff_tmp");
+   diff->SetDirectory(nullptr);
+   diff->Add(hPbP, -1.0);
+   for (int b = 1; b <= diff->GetNbinsX(); b++) {
+      double ep = hpPb->GetBinError(b), eq = hPbP->GetBinError(b);
+      diff->SetBinError(b, sqrt(ep * ep + eq * eq));
+   }
+
+   double maxDev = 0;
+   for (int b = 1; b <= diff->GetNbinsX(); b++) {
+      double dev = fabs(diff->GetBinContent(b)) + diff->GetBinError(b);
+      maxDev = max(maxDev, dev);
+   }
+   if (maxDev < 1e-4) maxDev = 1e-4;
+
+   diff->SetMinimum(-maxDev * 1.5);
+   diff->SetMaximum(maxDev * 1.5);
+   diff->GetXaxis()->SetRangeUser(xmin, xmax);
+   diff->GetXaxis()->SetTitle(xTitle.c_str());
+   diff->GetXaxis()->SetTitleSize(0.14);
+   diff->GetXaxis()->SetLabelSize(0.12);
+   diff->GetXaxis()->SetTickLength(0.08);
+   diff->GetYaxis()->SetTitle("pPb#minusPbp");
+   diff->GetYaxis()->SetTitleSize(0.12);
+   diff->GetYaxis()->SetTitleOffset(0.55);
+   diff->GetYaxis()->SetLabelSize(0.10);
+   diff->GetYaxis()->SetNdivisions(505);
+   diff->GetYaxis()->CenterTitle();
+   diff->SetMarkerStyle(20); diff->SetMarkerSize(0.6);
+   diff->SetMarkerColor(kBlack); diff->SetLineColor(kBlack);
+   diff->SetStats(0); diff->SetTitle("");
+
+   diff->Draw("PE");
+
+   TLine *zero = new TLine(xmin, 0.0, xmax, 0.0);
+   zero->SetLineStyle(2); zero->SetLineColor(kGray + 1);
+   zero->Draw();
+}
+
 int main(int argc, char *argv[])
 {
    CommandLine CL(argc, argv);
@@ -183,13 +228,22 @@ int main(int argc, char *argv[])
        baseDir.c_str(), tag.c_str(), zPtRange.c_str());
    string PbPPath = Form("%s/PbP_trkResidual_%s_ZPT%s-nosub.root",
        baseDir.c_str(), tag.c_str(), zPtRange.c_str());
+   string pPbResPath = Form("%s/pPb_trkResidual_%s_ZPT%s-result.root",
+       baseDir.c_str(), tag.c_str(), zPtRange.c_str());
+   string PbPResPath = Form("%s/PbP_trkResidual_%s_ZPT%s-result.root",
+       baseDir.c_str(), tag.c_str(), zPtRange.c_str());
 
-   cout << "pPb: " << pPbPath << endl;
-   cout << "PbP: " << PbPPath << endl;
+   cout << "pPb nosub: " << pPbPath << endl;
+   cout << "PbP nosub: " << PbPPath << endl;
+   cout << "pPb result: " << pPbResPath << endl;
+   cout << "PbP result: " << PbPResPath << endl;
 
    TFile fpPb(pPbPath.c_str(), "READ");
    TFile fPbP(PbPPath.c_str(), "READ");
-   if (fpPb.IsZombie() || fPbP.IsZombie()) {
+   TFile fpPbRes(pPbResPath.c_str(), "READ");
+   TFile fPbPRes(PbPResPath.c_str(), "READ");
+   if (fpPb.IsZombie() || fPbP.IsZombie() ||
+       fpPbRes.IsZombie() || fPbPRes.IsZombie()) {
       cerr << "Failed to open input files" << endl;
       return 1;
    }
@@ -216,6 +270,18 @@ int main(int argc, char *argv[])
    TH1D *PbP_SE_phi = ProjectAndNormalize(PbP_SE, "DeltaPhi", "PbP_SE_phi");
    TH1D *PbP_ME_phi = ProjectAndNormalize(PbP_ME, "DeltaPhi", "PbP_ME_phi");
 
+   string resEtaKey = "DeltaEta_Result" + trkPtRange;
+   string resPhiKey = "DeltaPhi_Result" + trkPtRange;
+
+   TH1D *pPb_res_eta = (TH1D *)((TH1D *)fpPbRes.Get(resEtaKey.c_str()))->Clone("pPb_res_eta");
+   TH1D *PbP_res_eta = (TH1D *)((TH1D *)fPbPRes.Get(resEtaKey.c_str()))->Clone("PbP_res_eta");
+   TH1D *pPb_res_phi = (TH1D *)((TH1D *)fpPbRes.Get(resPhiKey.c_str()))->Clone("pPb_res_phi");
+   TH1D *PbP_res_phi = (TH1D *)((TH1D *)fPbPRes.Get(resPhiKey.c_str()))->Clone("PbP_res_phi");
+   pPb_res_eta->SetDirectory(nullptr); PbP_res_eta->SetDirectory(nullptr);
+   pPb_res_phi->SetDirectory(nullptr); PbP_res_phi->SetDirectory(nullptr);
+   pPb_res_eta->Scale(0.5); PbP_res_eta->Scale(0.5);
+   pPb_res_phi->Scale(0.5); PbP_res_phi->Scale(0.5);
+
    gStyle->SetOptStat(0);
    gStyle->SetOptTitle(0);
    gStyle->SetPadTickX(1);
@@ -223,12 +289,14 @@ int main(int argc, char *argv[])
 
    gSystem->mkdir(outputDir.c_str(), true);
 
-   TCanvas *c = new TCanvas("c", "c", 1000, 1000);
+   TCanvas *c = new TCanvas("c", "c", 1500, 1000);
 
-   CellPads c1 = MakeCell(c, "se_eta", 0, 0);
-   CellPads c2 = MakeCell(c, "me_eta", 1, 0);
-   CellPads c3 = MakeCell(c, "se_phi", 0, 1);
-   CellPads c4 = MakeCell(c, "me_phi", 1, 1);
+   CellPads c1 = MakeCell(c, "se_eta", 0, 0, 3);
+   CellPads c2 = MakeCell(c, "me_eta", 1, 0, 3);
+   CellPads c5 = MakeCell(c, "rs_eta", 2, 0, 3);
+   CellPads c3 = MakeCell(c, "se_phi", 0, 1, 3);
+   CellPads c4 = MakeCell(c, "me_phi", 1, 1, 3);
+   CellPads c6 = MakeCell(c, "rs_phi", 2, 1, 3);
 
    string yLabel = "1/N_{Z} d^{2}N/d#Deltay d#Delta#varphi";
 
@@ -238,11 +306,17 @@ int main(int argc, char *argv[])
    DrawMainPanel(c2.main, pPb_ME_eta, PbP_ME_eta, yLabel, "Mixed-event", -3.87, 3.87, false);
    DrawRatioPanel(c2.ratio, pPb_ME_eta, PbP_ME_eta, "#Delta y_{ch,Z}", -3.87, 3.87);
 
+   DrawMainPanel(c5.main, pPb_res_eta, PbP_res_eta, yLabel, "Result", -3.87, 3.87, false);
+   DrawDiffPanel(c5.ratio, pPb_res_eta, PbP_res_eta, "#Delta y_{ch,Z}", -3.87, 3.87);
+
    DrawMainPanel(c3.main, pPb_SE_phi, PbP_SE_phi, yLabel, "Same-event", -M_PI/2, 3*M_PI/2, false);
    DrawRatioPanel(c3.ratio, pPb_SE_phi, PbP_SE_phi, "#Delta#varphi_{ch,Z}", -M_PI/2, 3*M_PI/2);
 
    DrawMainPanel(c4.main, pPb_ME_phi, PbP_ME_phi, yLabel, "Mixed-event", -M_PI/2, 3*M_PI/2, false);
    DrawRatioPanel(c4.ratio, pPb_ME_phi, PbP_ME_phi, "#Delta#varphi_{ch,Z}", -M_PI/2, 3*M_PI/2);
+
+   DrawMainPanel(c6.main, pPb_res_phi, PbP_res_phi, yLabel, "Result", -M_PI/2, 3*M_PI/2, false);
+   DrawDiffPanel(c6.ratio, pPb_res_phi, PbP_res_phi, "#Delta#varphi_{ch,Z}", -M_PI/2, 3*M_PI/2);
 
    string outPath = Form("%s/%s_ZPT%s_trkPT%s-SE-ME-comparison.pdf",
        outputDir.c_str(), tag.c_str(), zPtRange.c_str(), trkPtRange.c_str());

@@ -1,18 +1,15 @@
 #!/bin/bash
-
+# Build 2x3 composite PDFs for inclusive MC closure plots.
+# Columns: pp | pPb | PbP.  Rows depend on the composite type.
 set -euo pipefail
 
 THISDIR=$(cd "$(dirname "$0")" && pwd)
-OVERLEAF_BASE="../../../../OverleafZHadronInPPb/figures/analysis/closure"
-PP_TAG="EEV5_ZV9_trkV27_nmix10"
-PA_TAG="ZV9_trkV27_nmix10"
+CLOSURE_BASE="../../20260120_CentralClosure/plots"
+PP_TAG="EEV6_ZV10_trkV29_nmix10"
+PA_TAG="ZV10_trkV29_nmix10"
 TRACK_PT="0.5_15"
-ZPTS=("0_10" "10_20" "20_40" "40_500")
-
-if ! command -v tectonic >/dev/null 2>&1; then
-    echo "tectonic is required but was not found in PATH." >&2
-    exit 1
-fi
+ZPT="0_500"
+TECTONIC="/home/kdeverea/opt/tectonic-0.15.0-musl/tectonic"
 
 build_grid_pdf() {
     local output_pdf=$1
@@ -50,53 +47,49 @@ build_grid_pdf() {
 \end{document}
 EOF
 
-    tectonic --outdir "$THISDIR" "$tex_file" >/dev/null
+    "$TECTONIC" --outdir "$THISDIR" "$tex_file" 2>&1 || { echo "WARN: $tex_file failed"; return 1; }
     rm -f "$THISDIR/${stem}.aux" "$THISDIR/${stem}.log"
-
-    if [ ! -f "$THISDIR/$output_pdf" ]; then
-        echo "Failed to build $output_pdf" >&2
-        exit 1
-    fi
 }
 
 closure_path() {
     local system=$1
-    local zpt=$2
-    local observable=$3
-    local suffix=$4
+    local observable=$2
+    local suffix=$3
     local tag="$PA_TAG"
-    if [ "$system" = "pp" ]; then
-        tag="$PP_TAG"
-    fi
-    printf '%s/%s_ZPT%s_trkPT%s_%s-closure-%s-%s.pdf' \
-        "$OVERLEAF_BASE" "$system" "$zpt" "$TRACK_PT" "$tag" "$observable" "$suffix"
+    if [ "$system" = "pp" ]; then tag="$PP_TAG"; fi
+    printf '%s/%s/%s_ZPT%s_trkPT%s_%s-closure-%s-%s.pdf' \
+        "$CLOSURE_BASE" "$system" "$system" "$ZPT" "$TRACK_PT" "$tag" "$observable" "$suffix"
 }
 
-for zpt in "${ZPTS[@]}"; do
-    build_grid_pdf \
-        "overleaf_closure_presub_ZPT${zpt}_deltaphi_2x3.pdf" \
-        "$(closure_path pp  "$zpt" DeltaPhi all)" \
-        "$(closure_path pPb "$zpt" DeltaPhi all)" \
-        "$(closure_path PbP "$zpt" DeltaPhi all)" \
-        "$(closure_path pp  "$zpt" DeltaPhi bkg)" \
-        "$(closure_path pPb "$zpt" DeltaPhi bkg)" \
-        "$(closure_path PbP "$zpt" DeltaPhi bkg)"
+# 1) DeltaPhi w/o background subtraction: top = all, bottom = bkg
+build_grid_pdf \
+    "overleaf_closure_presub_ZPT${ZPT}_deltaphi_2x3.pdf" \
+    "$(closure_path pp  DeltaPhi all)" \
+    "$(closure_path pPb DeltaPhi all)" \
+    "$(closure_path PbP DeltaPhi all)" \
+    "$(closure_path pp  DeltaPhi bkg)" \
+    "$(closure_path pPb DeltaPhi bkg)" \
+    "$(closure_path PbP DeltaPhi bkg)"
 
-    build_grid_pdf \
-        "overleaf_closure_presub_ZPT${zpt}_deltaeta_2x3.pdf" \
-        "$(closure_path pp  "$zpt" DeltaEta all)" \
-        "$(closure_path pPb "$zpt" DeltaEta all)" \
-        "$(closure_path PbP "$zpt" DeltaEta all)" \
-        "$(closure_path pp  "$zpt" DeltaEta bkg)" \
-        "$(closure_path pPb "$zpt" DeltaEta bkg)" \
-        "$(closure_path PbP "$zpt" DeltaEta bkg)"
+# 2) DeltaEta w/o background subtraction: top = all, bottom = bkg
+build_grid_pdf \
+    "overleaf_closure_presub_ZPT${ZPT}_deltaeta_2x3.pdf" \
+    "$(closure_path pp  DeltaEta all)" \
+    "$(closure_path pPb DeltaEta all)" \
+    "$(closure_path PbP DeltaEta all)" \
+    "$(closure_path pp  DeltaEta bkg)" \
+    "$(closure_path pPb DeltaEta bkg)" \
+    "$(closure_path PbP DeltaEta bkg)"
 
-    build_grid_pdf \
-        "overleaf_closure_postsub_ZPT${zpt}_2x3.pdf" \
-        "$(closure_path pp  "$zpt" DeltaPhi result)" \
-        "$(closure_path pPb "$zpt" DeltaPhi result)" \
-        "$(closure_path PbP "$zpt" DeltaPhi result)" \
-        "$(closure_path pp  "$zpt" DeltaEta result)" \
-        "$(closure_path pPb "$zpt" DeltaEta result)" \
-        "$(closure_path PbP "$zpt" DeltaEta result)"
-done
+# 3) DeltaPhi+DeltaEta w/ background subtraction: top = DeltaPhi result, bottom = DeltaEta result
+build_grid_pdf \
+    "overleaf_closure_postsub_ZPT${ZPT}_2x3.pdf" \
+    "$(closure_path pp  DeltaPhi result)" \
+    "$(closure_path pPb DeltaPhi result)" \
+    "$(closure_path PbP DeltaPhi result)" \
+    "$(closure_path pp  DeltaEta result)" \
+    "$(closure_path pPb DeltaEta result)" \
+    "$(closure_path PbP DeltaEta result)"
+
+echo "Done. Output:"
+ls -lh "$THISDIR"/overleaf_closure_*_ZPT${ZPT}_*.pdf 2>/dev/null || echo "No composite PDFs found"

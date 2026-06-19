@@ -168,10 +168,10 @@ inline void DrawKinematicLabels(TPad *pad, const std::string &title,
    TLatex latex;
    latex.SetNDC();
    latex.SetTextFont(42);
-   latex.SetTextSize(0.032);
-   latex.DrawLatex(0.18, 0.84, title.c_str());
-   latex.DrawLatex(0.18, 0.79, FormatPTRange(trackRange, "p_{T}^{ch}").c_str());
-   latex.DrawLatex(0.18, 0.74, FormatPTRange(zptRange, "p_{T}^{Z}").c_str());
+   latex.SetTextSize(0.038);
+   latex.DrawLatex(0.25, 0.84, title.c_str());
+   latex.DrawLatex(0.25, 0.78, FormatPTRange(trackRange, "p_{T}^{ch}").c_str());
+   latex.DrawLatex(0.25, 0.72, FormatPTRange(zptRange, "p_{T}^{Z}").c_str());
 }
 
 #endif

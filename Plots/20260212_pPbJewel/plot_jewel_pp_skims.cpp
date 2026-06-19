@@ -29,11 +29,12 @@ int main(int argc, char *argv[])
    string inputPPbB = CL.Get("InputPPbB");  // v9 pp (for PbPb study)
    string trkPtRange = CL.Get("TrackPTRange", "0.5_15");
    string outputDir  = CL.Get("OutputDir", "plots/pp_skims");
+   double dEtaRange  = CL.GetDouble("DEtaRange", 4.0);
+   string labelPPb   = CL.Get("LabelA", "JEWEL pp 5.02 TeV (pPb study)");
+   string labelPPbB  = CL.Get("LabelB", "JEWEL pp 5.02 TeV (PbPb study)");
 
    gSystem->mkdir(outputDir.c_str(), true);
 
-   string labelPPb  = "JEWEL pp 5.02 TeV (pPb study)";
-   string labelPPbB = "JEWEL pp 5.02 TeV (PbPb study)";
    string ratioLabel = "PbPb study / pPb study";
 
    TFile *fPPb  = TFile::Open(inputPPb.c_str());
@@ -139,8 +140,8 @@ int main(int argc, char *argv[])
       hA = (TH1D *)hA->Clone(("hPPb_" + obs).c_str()); hA->SetDirectory(nullptr); hA->Scale(0.5);
       hB = (TH1D *)hB->Clone(("hPPbB_" + obs).c_str()); hB->SetDirectory(nullptr); hB->Scale(0.5);
 
-      double xLo    = (obs == "DeltaPhi") ? -1.5707 : -4.0;
-      double xHi    = (obs == "DeltaPhi") ?  4.7123 :  4.0;
+      double xLo    = (obs == "DeltaPhi") ? -1.5707 : -dEtaRange;
+      double xHi    = (obs == "DeltaPhi") ?  4.7123 :  dEtaRange;
       string xLabel = (obs == "DeltaPhi") ? "#Delta#phi_{ch,Z}" : "#Deltay_{ch,Z}";
 
       TCanvas c(("c_" + obs).c_str(), "", 600, 600);

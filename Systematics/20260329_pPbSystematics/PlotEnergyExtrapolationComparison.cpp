@@ -74,7 +74,8 @@ int main(int argc, char *argv[])
          "MC-driven - nominal", differenceRange.first, differenceRange.second,
          0,
          false, false, true,
-         0.62
+         (observable == "DeltaPhi") ? 0.25f : 0.62f,
+         (observable == "DeltaPhi") ? 0.55f : 0.70f
       );
 
       AddCMSHeader(pad, "Internal", false);

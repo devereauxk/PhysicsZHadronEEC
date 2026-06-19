@@ -66,9 +66,9 @@ static TH2D *buildSystemMap(const string &file, const string &trk, const char *n
     hD->Add(hM, -1.0);
     hD->Scale(0.5);
     divideByArea(hD);
-    TH2D *sub = extractPhysical(hD, name);
-    delete hD; delete hM;
-    return sub;
+    hD->SetName(name);
+    delete hM;
+    return hD;
 }
 
 // Bin-by-bin difference pPb - Pbp (same units as each map).
@@ -93,7 +93,7 @@ static void drawPad(TVirtualPad *pad, TH2D *h,
                     const string &zTitle)
 {
     pad->cd();
-    pad->SetTopMargin(0.05);
+    pad->SetTopMargin(0.12);
     pad->SetRightMargin(0.18);
     pad->SetLeftMargin(0.14);
     pad->SetBottomMargin(0.14);
@@ -101,24 +101,23 @@ static void drawPad(TVirtualPad *pad, TH2D *h,
     h->GetXaxis()->SetTitle("#Delta y_{ch,Z}");
     h->GetYaxis()->SetTitle("#Delta#phi_{ch,Z}");
     h->GetZaxis()->SetTitle(zTitle.c_str());
-    h->GetXaxis()->SetTitleSize(0.058); h->GetXaxis()->SetLabelSize(0.052);
-    h->GetYaxis()->SetTitleSize(0.058); h->GetYaxis()->SetLabelSize(0.052);
-    h->GetZaxis()->SetTitleSize(0.046); h->GetZaxis()->SetLabelSize(0.043);
-    h->GetYaxis()->SetTitleOffset(1.05);
-    h->GetZaxis()->SetTitleOffset(1.35);
+    h->GetXaxis()->SetTitleSize(0.052); h->GetXaxis()->SetLabelSize(0.048);
+    h->GetYaxis()->SetTitleSize(0.052); h->GetYaxis()->SetLabelSize(0.048);
+    h->GetZaxis()->SetTitleSize(0.042); h->GetZaxis()->SetLabelSize(0.040);
+    h->GetYaxis()->SetTitleOffset(1.10);
+    h->GetZaxis()->SetTitleOffset(1.40);
 
     h->Draw("COLZ");
 
-    // Labels inside frame at top-left
     TLatex tex; tex.SetNDC();
     tex.SetTextColor(kBlack);
     if (!sysLine.empty()) {
-        tex.SetTextFont(62); tex.SetTextSize(0.058);
-        tex.DrawLatex(0.17, 0.87, sysLine.c_str());
+        tex.SetTextFont(62); tex.SetTextSize(0.050);
+        tex.DrawLatex(0.14, 0.92, sysLine.c_str());
     }
     if (!kinLine.empty()) {
-        tex.SetTextFont(42); tex.SetTextSize(0.048);
-        tex.DrawLatex(0.17, 0.78, kinLine.c_str());
+        tex.SetTextFont(42); tex.SetTextSize(0.040);
+        tex.DrawLatex(0.42, 0.92, kinLine.c_str());
     }
 }
 
@@ -153,6 +152,7 @@ int main(int argc, char *argv[])
     const string zpt      = CL.Get("ZPtRange", "0_500");
     const string trkStr   = CL.Get("TrkPtRanges", "0.5_15");
     const string outName  = CL.Get("OutputName", "2d_pPbPbp");
+    const double diffZMax = CL.GetDouble("DiffZMax", -1);
 
     // Parse trkPT list
     vector<string> trkRanges;
@@ -187,8 +187,8 @@ int main(int argc, char *argv[])
         hPPb[iT]->GetZaxis()->SetRangeUser(lo, hi);
         hPbP[iT]->GetZaxis()->SetRangeUser(lo, hi);
 
-        // Symmetric range for difference: ±max(|min|,|max|)
-        double dAbsMax = max(fabs(hDiff[iT]->GetMinimum()), fabs(hDiff[iT]->GetMaximum()));
+        double dAbsMax = (diffZMax > 0) ? diffZMax
+            : max(fabs(hDiff[iT]->GetMinimum()), fabs(hDiff[iT]->GetMaximum()));
         if (dAbsMax < 1e-6) dAbsMax = 0.01;
         hDiff[iT]->GetZaxis()->SetRangeUser(-dAbsMax, dAbsMax);
 
@@ -196,10 +196,10 @@ int main(int argc, char *argv[])
                zpt.c_str(), trkRanges[iT].c_str(), lo, hi, -dAbsMax, dAbsMax);
     }
 
-    // Canvas: nT rows × 3 cols (pPb | Pbp | ratio)
-    // Square condition: padW × 0.68 = padH × 0.81 → padH = padW × 68/81 ≈ padW × 0.840
-    // padW=500, padH=420: frame 340 × 340.2 px (square)
-    const int padW = 500, padH = 420;
+    // Canvas: nT rows × 3 cols (pPb | Pbp | diff)
+    // Square condition: padW × 0.68 = padH × 0.74 → padH = padW × 68/74 ≈ padW × 0.919
+    // padW=500, padH=460: frame 340 × 340.4 px (square)
+    const int padW = 500, padH = 460;
     TCanvas *c = new TCanvas("cComp", "", 3 * padW, nT * padH);
     c->Divide(3, nT, 0, 0);
 

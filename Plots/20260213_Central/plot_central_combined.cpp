@@ -372,7 +372,7 @@ int main(int argc, char *argv[]) {
         input_ZPT_files_pbp.push_back(Form("%s/PbPMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mcTag.c_str(), zPtRange.c_str()));
     }
     vector<string> labels = {
-        "pp",
+        "pp (extrapolated 8.16 TeV)",
         Form("%s", collisionType.c_str())
     };
     if (includeMC)
@@ -411,6 +411,10 @@ int main(int argc, char *argv[]) {
     AppendJackknifeProjectionContributions(fin_pp, Form("JackknifeProjection%s", trkPtRange.c_str()), jackknifePP);
     if (jackknifePP.size() >= 2) {
         ApplyProjectedJackknifeErrors(hDeltaEta_pp, hDeltaPhi_pp, jackknifePP);
+        for (int i = 1; i <= hDeltaEta_pp->GetNbinsX(); ++i)
+            hDeltaEta_pp->SetBinError(i, hDeltaEta_pp->GetBinError(i) / hDeltaEta_pp->GetBinWidth(i));
+        for (int i = 1; i <= hDeltaPhi_pp->GetNbinsX(); ++i)
+            hDeltaPhi_pp->SetBinError(i, hDeltaPhi_pp->GetBinError(i) / hDeltaPhi_pp->GetBinWidth(i));
     }
 
     hDeltaPhi_pp->Scale(1. / 2);
@@ -651,9 +655,11 @@ int main(int argc, char *argv[]) {
     string differenceLabel = doCombine ? "pPb - pp" : Form("%s - pp", collisionType.c_str());
     string lumiLabel = doCombine ? "pPb, pp" : Form("%s, pp", collisionType.c_str());
 
-    string deltaEtaProjectionLabel = "0 < #Delta#varphi_{ch,Z} < #pi/2";
+    string deltaEtaProjectionLabel = "0 < #Delta#varphi_{ch,Z} < #frac{#pi}{2}";
     if(useShifted10x10 == true)
         deltaEtaProjectionLabel = "0 < #Delta#varphi_{ch,Z} < #pi";
+
+    float resultTextScale = 1.3;
 
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
     TPad* pResult1 = (TPad*) PlotCMSDiffResultRegion(
@@ -666,27 +672,69 @@ int main(int argc, char *argv[]) {
         0, 4,
         0,
         false, false, true,
-        0.35
+        0.23, resultTextScale, 0.05, 3.0
     );
 
-    AddUPCHeader(pResult1, "8.16 TeV", lumiLabel.c_str());
+    {
+        pResult1->cd();
+        TLatex lumiLatex;
+        lumiLatex.SetNDC();
+        lumiLatex.SetTextFont(42);
+        lumiLatex.SetTextAlign(31);
+        lumiLatex.SetTextSize(plotTextSize);
+        float t1 = pResult1->GetTopMargin();
+        float r1 = pResult1->GetRightMargin();
+        lumiLatex.DrawLatex(1 - r1, 1 - t1 + 0.015,
+            "pPb (pp) 8.16 TeV  174 nb^{-1} (301 pb^{-1})");
+    }
 
-    // Top-right eta-plot label
     pResult1->cd();
+    {
+        TLegend* legReflEta = new TLegend(0.62, 0.07, 0.92, 0.19);
+        legReflEta->SetBorderSize(0);
+        legReflEta->SetFillStyle(0);
+        legReflEta->SetTextFont(42);
+        legReflEta->SetTextSize(0.035 * resultTextScale);
+        TGraph* gRefPPeta = new TGraph(1);
+        gRefPPeta->SetMarkerColor(cmsBlue);
+        gRefPPeta->SetMarkerStyle(25);
+        gRefPPeta->SetMarkerSize(resultTextScale);
+        gRefPPeta->SetLineColor(cmsBlue);
+        legReflEta->AddEntry(gRefPPeta, "pp reflected", "p");
+        TGraph* gRefPPbeta = new TGraph(1);
+        gRefPPbeta->SetMarkerColor(cmsRed);
+        gRefPPbeta->SetMarkerStyle(24);
+        gRefPPbeta->SetMarkerSize(resultTextScale);
+        gRefPPbeta->SetLineColor(cmsRed);
+        legReflEta->AddEntry(gRefPPbeta, "pPb reflected", "p");
+        legReflEta->Draw("SAME");
+    }
+
     TLatex latex;
     latex.SetNDC();
-    latex.SetTextAlign(31);   // right-aligned
-    latex.SetTextSize(0.035);
-    latex.DrawLatex(0.75, 0.82, Form("%s < p_{T}^{Z} < %s", zRange.first.c_str(), zRange.second.c_str()));
-    latex.DrawLatex(0.75, 0.77, Form("%s < p_{T}^{ch} < %s", trkRange.first.c_str(), trkRange.second.c_str()));
-    latex.DrawLatex(0.75, 0.72, Form("|y_{Z}| < 2.4, %s", deltaEtaProjectionLabel.c_str()));
+    latex.SetTextFont(42);
+    latex.SetTextAlign(11);
+    latex.SetTextSize(0.035 * resultTextScale);
+    float labelY1 = 0.82;
+    if (zPtRange != "0_500") {
+        string zPtLabel = (zRange.first == "0") ?
+            Form("p_{T}^{Z} < %s GeV", zRange.second.c_str()) :
+            Form("p_{T}^{Z} > %s GeV", zRange.first.c_str());
+        latex.DrawLatex(0.25, labelY1, zPtLabel.c_str());
+        labelY1 -= 0.06;
+    }
+    latex.DrawLatex(0.25, labelY1, Form("%s < p_{T}^{ch} < %s GeV", trkRange.first.c_str(), trkRange.second.c_str()));
+    latex.DrawLatex(0.25, labelY1 - 0.06, Form("|y_{CM}| < 1.935, %s", deltaEtaProjectionLabel.c_str()));
 
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
 
+    vector<string> labelsPhi = labels;
+    labelsPhi[0] = "pp (extrapolated 8.16 TeV)";
+
     TCanvas* cResult2 = new TCanvas("cResult2", "cResult2", 600, 600);
     TPad* pResult2 = (TPad*) PlotCMSDiffResultRegion(
-        hDeltaPhi_combined, topSystematicsPhi, differenceSystematicsPhi, "", labels,
+        hDeltaPhi_combined, topSystematicsPhi, differenceSystematicsPhi, "", labelsPhi,
         lineColors, lineStyles,
         markerColors, markerStyles,
         "#Delta#varphi_{ch,Z}", useShifted10x10 ? -3 * M_PI / 5 : -1.5707, useShifted10x10 ? 7 * M_PI / 5 : 4.7123,
@@ -695,20 +743,59 @@ int main(int argc, char *argv[]) {
         0, M_PI,
         0,
         false, false, true,
-        0.2
+        0.23, resultTextScale, 0.50
     );
 
-    AddUPCHeader(pResult2, "8.16 TeV", lumiLabel.c_str());
+    {
+        pResult2->cd();
+        TLatex lumiLatex2;
+        lumiLatex2.SetNDC();
+        lumiLatex2.SetTextFont(42);
+        lumiLatex2.SetTextAlign(31);
+        lumiLatex2.SetTextSize(plotTextSize);
+        float t2 = pResult2->GetTopMargin();
+        float r2 = pResult2->GetRightMargin();
+        lumiLatex2.DrawLatex(1 - r2, 1 - t2 + 0.015,
+            "pPb (pp) 8.16 TeV  174 nb^{-1} (301 pb^{-1})");
+    }
 
-    // Phi-plot labels (lowest line at x=0.5, y=0.3)
     pResult2->cd();
+    {
+        TLegend* legReflected = new TLegend(0.21, 0.38, 0.61, 0.50);
+        legReflected->SetBorderSize(0);
+        legReflected->SetFillStyle(0);
+        legReflected->SetTextFont(42);
+        legReflected->SetTextSize(0.035 * resultTextScale);
+        TGraph* gRefPP = new TGraph(1);
+        gRefPP->SetMarkerColor(cmsBlue);
+        gRefPP->SetMarkerStyle(25);
+        gRefPP->SetMarkerSize(resultTextScale);
+        gRefPP->SetLineColor(cmsBlue);
+        legReflected->AddEntry(gRefPP, "pp reflected", "p");
+        TGraph* gRefPPb = new TGraph(1);
+        gRefPPb->SetMarkerColor(cmsRed);
+        gRefPPb->SetMarkerStyle(24);
+        gRefPPb->SetMarkerSize(resultTextScale);
+        gRefPPb->SetLineColor(cmsRed);
+        legReflected->AddEntry(gRefPPb, "pPb reflected", "p");
+        legReflected->Draw("SAME");
+    }
+
     TLatex latex2;
     latex2.SetNDC();
-    latex2.SetTextAlign(11);   // centered
-    latex2.SetTextSize(0.035);
-    latex2.DrawLatex(0.21, 0.60, Form("%s < p_{T}^{Z} < %s", zRange.first.c_str(), zRange.second.c_str()));
-    latex2.DrawLatex(0.21, 0.55, Form("%s < p_{T}^{ch} < %s", trkRange.first.c_str(), trkRange.second.c_str()));
-    latex2.DrawLatex(0.21, 0.5, "|y_{Z}| < 2.4");
+    latex2.SetTextFont(42);
+    latex2.SetTextAlign(11);
+    latex2.SetTextSize(0.035 * resultTextScale);
+    float labelY2 = 0.82;
+    if (zPtRange != "0_500") {
+        string zPtLabel2 = (zRange.first == "0") ?
+            Form("p_{T}^{Z} < %s GeV", zRange.second.c_str()) :
+            Form("p_{T}^{Z} > %s GeV", zRange.first.c_str());
+        latex2.DrawLatex(0.25, labelY2, zPtLabel2.c_str());
+        labelY2 -= 0.06;
+    }
+    latex2.DrawLatex(0.25, labelY2, Form("%s < p_{T}^{ch} < %s GeV", trkRange.first.c_str(), trkRange.second.c_str()));
+    latex2.DrawLatex(0.25, labelY2 - 0.06, "|y_{CM}| < 1.935");
 
     cResult2->Update();
     cResult2->SaveAs(Form("%s-DeltaPhi-result.pdf", output.c_str()));

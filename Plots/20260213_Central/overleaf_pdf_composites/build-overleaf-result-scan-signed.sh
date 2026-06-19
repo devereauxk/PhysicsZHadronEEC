@@ -11,7 +11,7 @@ for variant in "${VARIANTS[@]}"; do
         TEX="overleaf_result_scan_signed_${obs}${variant}_combined.tex"
         if [ -f "$TEX" ]; then
             echo "Building $TEX ..."
-            pdflatex -interaction=nonstopmode "$TEX" > /dev/null 2>&1 || echo "  WARN: $TEX failed (input PDFs may not exist yet)"
+            /home/kdeverea/opt/tectonic-0.15.0-musl/tectonic "$TEX" 2>&1 || echo "  WARN: $TEX failed (input PDFs may not exist yet)"
         fi
     done
 done

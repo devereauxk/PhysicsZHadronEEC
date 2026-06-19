@@ -25,8 +25,7 @@ if [ -n "${CONFIG_FILE:-}" ]; then
         done
     done
 else
-    run_one "0_30"   "0.5_15"
-    run_one "30_500" "0.5_15"
+    run_one "0_500" "0.5_15"
 fi
 
 exit
