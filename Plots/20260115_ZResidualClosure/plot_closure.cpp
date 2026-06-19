@@ -34,6 +34,10 @@ int main(int argc, char *argv[]) {
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
     string inputTag = CL.Get("inputTag", "");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
+    string closureInputBaseDir = CL.Get("ClosureInputBaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260115_ZCorrection/workflow/output/closure_inputs");
     bool UseWorkflowInputs = (inputTag.empty() == false);
 
     cout<<"Collision Type: "<<collisionType<<endl;
@@ -44,20 +48,19 @@ int main(int argc, char *argv[]) {
     if(inputTag.empty() == false)
     {
         string zPtRangeDash = ReplaceAll(zPtRange, "_", "-");
-        string base = "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20260115_ZCorrection/workflow/output/closure_inputs";
         input_ZPT_files = {
-            Form("%s/%s_%s_zPt%s_gen.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
-            Form("%s/%s_%s_zPt%s_reco.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
-            Form("%s/%s_%s_zPt%s_corrected.root", base.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str())
+            Form("%s/%s_%s_zPt%s_gen.root", closureInputBaseDir.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
+            Form("%s/%s_%s_zPt%s_reco.root", closureInputBaseDir.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str()),
+            Form("%s/%s_%s_zPt%s_corrected.root", closureInputBaseDir.c_str(), collisionType.c_str(), inputTag.c_str(), zPtRangeDash.c_str())
         };
     }
     else
     {
         string mctag = (collisionType == "pp") ? "pythia" : collisionType;
         input_ZPT_files = {
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s-nosub.root", mctag.c_str(), tag.c_str(), zPtRange.c_str())
+            Form("%s/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%sMC_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+            Form("%s/%sMC_ZResidual_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str())
         };
     }
     vector<string> labels = {
@@ -69,9 +72,6 @@ int main(int argc, char *argv[]) {
 
     vector<TH1*> hZPt;
     vector<TH1*> hZEta;
-    vector<TH1*> hZPhi;
-    vector<TH1*> hDeltaEta;
-    vector<TH1*> hDeltaPhi;
 
     // Loop over nosub files
     int i = 0;
@@ -85,29 +85,39 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        // Z pt eta Phi
-        TH3D* this_hZPtEtaPhi = nullptr;
+        TH1D* this_hZPt  = nullptr;
+        TH1D* this_hZEta = nullptr;
         TH1D* hNZ = nullptr;
+
         if(UseWorkflowInputs == true)
         {
-            this_hZPtEtaPhi = (TH3D*)fin->Get("h3D");
+            // Workflow closure inputs use h2D (pT × eta, 2D Z correction)
+            TH2D* this_h2D = (TH2D*)fin->Get("h2D");
             hNZ = (TH1D*)fin->Get("hNZ");
+            if(this_h2D == nullptr || hNZ == nullptr)
+            {
+                cerr << "Missing closure histograms in " << input_ZPT << endl;
+                continue;
+            }
+            this_hZPt  = this_h2D->ProjectionX(Form("ZPt_%s",  labels[i].c_str()));
+            this_hZEta = this_h2D->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
+            cout<<" "<<this_h2D->Integral()<<endl;
         }
         else
         {
-            this_hZPtEtaPhi = (TH3D*)fin->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
+            // Non-workflow inputs from main analysis nosub files (still TH3D hZPtEtaPhi)
+            TH3D* this_hZPtEtaPhi = (TH3D*)fin->Get(Form("hZPtEtaPhi_%s", trkPtRange.c_str()));
             hNZ = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
+            if(this_hZPtEtaPhi == nullptr || hNZ == nullptr)
+            {
+                cerr << "Missing closure histograms in " << input_ZPT << endl;
+                continue;
+            }
+            this_hZPt  = this_hZPtEtaPhi->ProjectionX(Form("ZPt_%s",  labels[i].c_str()));
+            this_hZEta = this_hZPtEtaPhi->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
+            cout<<" "<<this_hZPtEtaPhi->Integral()<<endl;
         }
-        if(this_hZPtEtaPhi == nullptr || hNZ == nullptr)
-        {
-            cerr << "Missing closure histograms in " << input_ZPT << endl;
-            continue;
-        }
-        TH1D* this_hZPt = this_hZPtEtaPhi->ProjectionX(Form("ZPt_%s", labels[i].c_str()));
-        TH1D* this_hZEta = this_hZPtEtaPhi->ProjectionY(Form("ZEta_%s", labels[i].c_str()));
-        TH1D* this_hZPhi = this_hZPtEtaPhi->ProjectionZ(Form("ZPhi_%s", labels[i].c_str()));
 
-        cout<<" "<<this_hZPtEtaPhi->Integral()<<endl;
         cout<<"hNZ bin content: "<<hNZ->Integral()<<endl;
 
         if(UseWorkflowInputs == true)
@@ -117,17 +127,14 @@ int main(int argc, char *argv[]) {
             {
                 this_hZPt->Scale(1.0 / NZ);
                 this_hZEta->Scale(1.0 / NZ);
-                this_hZPhi->Scale(1.0 / NZ);
             }
         }
 
         divideByWidth(this_hZPt);
         divideByWidth(this_hZEta);
-        divideByWidth(this_hZPhi);
 
         hZPt.push_back(this_hZPt);
         hZEta.push_back(this_hZEta);
-        hZPhi.push_back(this_hZPhi);
 
         i++;
     }
@@ -139,7 +146,7 @@ int main(int argc, char *argv[]) {
         hZPt, "", labels,
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
         {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "p_{T}^{Z}", 0, 50,
+        "p_{T}^{Z}", 0.5, 500,
         "(1/N_{Z}) dN_{Z}/dp_{T}^{Z}", -1, -1,
         "Ratio to GEN", 0.9, 1.1,
         0,
@@ -171,22 +178,6 @@ int main(int argc, char *argv[]) {
 
     cZ2->Update();
     cZ2->SaveAs(Form("%s-eta.pdf", output.c_str()));
-
-    TCanvas* cZ3 = new TCanvas("cZ3", "cZ3", 600, 600);
-    TPad* pZ3 = (TPad*) plotCMSRatio(
-        hZPhi, "", labels,
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
-        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
-        "#phi_{Z}", 0, 2*M_PI,
-        "(1/N_{Z}) dN_{Z}/d #phi_{Z}", 0, 0.3,
-        "Ratio to GEN", 0.8, 1.2,
-        0,
-        false, false, false
-    );
-
-    cZ3->Update();
-    cZ3->SaveAs(Form("%s-phi.pdf", output.c_str()));
-    
 
     return 0;
 }

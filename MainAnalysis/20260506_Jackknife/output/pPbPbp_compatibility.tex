@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\begin{tabular}{|l|l|r|r|r|r|r|}
+\hline
+Observable & Error model & $N_{\mathrm{bins}}$ & $\chi^2$ & ndf & $\chi^2/\mathrm{ndf}$ & $p$-value \\
+\hline
+\texttt{DeltaEta_Result0.5_15} & Sumw2 & 20 & 49.41 & 20 & 2.47 & 0.000269 \\
+\texttt{DeltaEta_Result0.5_15} & Jackknife & 20 & 29.23 & 20 & 1.462 & 0.08328 \\
+\texttt{DeltaEta_Result0.5_15} & FullCovariance & 10 & 13.29 & 10 & 1.329 & 0.2081 \\
+\texttt{DeltaPhi_Result0.5_15} & Sumw2 & 20 & 21.18 & 20 & 1.059 & 0.3865 \\
+\texttt{DeltaPhi_Result0.5_15} & Jackknife & 20 & 10.1 & 20 & 0.5049 & 0.9664 \\
+\texttt{DeltaPhi_Result0.5_15} & FullCovariance & 12 & 9.038 & 12 & 0.7532 & 0.6997 \\
+\hline
+\end{tabular}
+\caption{pPb vs Pbp compatibility comparison using Sumw2, diagonal jackknife, and full jackknife covariance statistical uncertainties.}
+\label{tab:ppbp-compatibility}
+\end{table}

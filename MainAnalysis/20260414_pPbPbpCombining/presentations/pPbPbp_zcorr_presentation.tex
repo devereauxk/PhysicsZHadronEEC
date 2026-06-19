@@ -71,28 +71,29 @@
 \end{frame}
 
 \begin{frame}[t]{Z correction: pPb$\to$Pbp}
-  \small
-  \textbf{Method:} iterative 3D ($p_T$, $y_\text{CM}$, $\phi$) reweighting of pPb Z kinematics to match Pbp\par
+  \scriptsize
+  \textbf{Method:} direct 2D reweighting in $(y_\text{CM}, \phi)$ built from the maintained sandbox $+VZ+Z+ZSF$ outputs, with a support-aware balancing step so the displayed $Z\,y_\text{CM}$ and $Z\,\phi$ marginals close exactly on the doubled-bin grid\par
   \vspace{0.3em}
-  \textbf{Iterations:} 3 (corrections converge to $\sim$1.0 by iter 3)\par
+  \textbf{Stored ratio:} raw pPb / Pbp is kept in the derivation file; \textbf{applied weight:} the maintained \texttt{hWeightToApply} surface starts from the raw Pbp / pPb map and then balances the supported bins so the plotted $Z\,y_\text{CM}$ and $Z\,\phi$ closure is exact up to floating-point precision\par
   \vspace{0.3em}
   \textbf{pPb data:} Z correction applied multiplicatively to eventWeight\par
   \textbf{Pbp data:} unchanged (target distribution)\par
   \vspace{0.3em}
-  \textbf{Binning:} $p_T$: 50 log bins [0.5, 100]~GeV;\ $y_\text{CM}$: 12 bins [$-3.5$, 2.5];\ $\phi$: 12 bins [0, $2\pi$]\par
+  \textbf{Binning:} $y_\text{CM}$: 24 bins [$-3.5$, 2.5];\ $\phi$: 12 bins [0, $2\pi$] to match the maintained plotted closure panels exactly\par
   \vspace{0.3em}
-  \textbf{Empty-bin protection:} bins with $<1$ event in denominator set to 1.0\par
-  \vspace{0.5em}
-  {\scriptsize
-  \begin{tabular}{l r r}
-              & pPb NZ    & Pbp NZ \\
-  raw         & 6742      & 6742 \\
-  +VZ         & 7027      & 7035 \\
-  +VZ+Z       & 6017      & 6024 \\
-  +VZ+Z+ZSF   & 5937      & 5943 \\
-  +VZ+Z+ZSF+trk     & 5937      & 5943 \\
-  +VZ+Z+ZSF+trk+res & 5937      & 5943 \\
-  \end{tabular}}
+  \textbf{Protected bins:} empty source/target bins remain protected in the derivation metadata; bins without pPb support still carry no events, so the maintained balancing step adjusts only supported bins when enforcing the displayed 1D closure\par
+  \vspace{0.3em}
+  \textbf{Prompt wording resolution:} the maintained correction/closure surface stays on $(Z\,y_\text{CM}, Z\,\phi)$, while this followup adds separate presentation-only $(Z\,\eta, Z\,\phi)$ Pbp/pPb ratio maps alongside the finer $(|\Delta\eta|, |\Delta\phi|)$ maps\par
+  \vspace{0.3em}
+  \textbf{Closure target:} the corrected pPb / Pbp projections in $y_\text{CM}$ and $\phi$ should be flat at unity within the displayed binning\par
+\end{frame}
+
+\begin{frame}[t]{Z-side closure after direct 2D correction}
+  \centering
+  \vspace{-0.4em}
+  \plotpanel{$Z\,y_\text{CM}$}{../plots/zcorr_closure_Zy.pdf}%
+  \hspace{0.01\textwidth}%
+  \plotpanel{$Z\,\phi$}{../plots/zcorr_closure_ZPhi.pdf}
 \end{frame}
 
 \plotslideA{trkPt (Zcorr)}{trkPt}{}
@@ -127,5 +128,9 @@
 \ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio (Zcorr)}{DEtaDPhi_ratio}{}
 \ratioheatmapslideA{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject (Zcorr)}{DEtaDPhi_ratio}{_PUReject}
 \ratioheatmapslideB{Pbp/pPb $(|\Delta\eta|, |\Delta\phi|)$ ratio + PUReject (Zcorr)}{DEtaDPhi_ratio}{_PUReject}
+\ratioheatmapslideA{Pbp/pPb $(Z\eta, Z\phi)$ ratio (Zcorr)}{ZEtaPhi_ratio}{}
+\ratioheatmapslideB{Pbp/pPb $(Z\eta, Z\phi)$ ratio (Zcorr)}{ZEtaPhi_ratio}{}
+\ratioheatmapslideA{Pbp/pPb $(Z\eta, Z\phi)$ ratio + PUReject (Zcorr)}{ZEtaPhi_ratio}{_PUReject}
+\ratioheatmapslideB{Pbp/pPb $(Z\eta, Z\phi)$ ratio + PUReject (Zcorr)}{ZEtaPhi_ratio}{_PUReject}
 
 \end{document}

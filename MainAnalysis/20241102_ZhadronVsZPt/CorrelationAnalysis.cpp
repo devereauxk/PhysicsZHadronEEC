@@ -8,7 +8,10 @@
 #include <TNtuple.h>
 #include <TFile.h>
 
+#include <climits>
+#include <cmath>
 #include <iostream>
+#include <memory>
 #include <utility>
 
 using namespace std;
@@ -19,6 +22,55 @@ using namespace std;
 #include "CommandLine.h"            // Yi's Commandline bundle
 #include "ProgressBar.h"            // Yi's fish progress bar
 #include "TrackResidualCorrector.h" // Residual correction
+
+class ZYDirectCorrector
+{
+public:
+   ZYDirectCorrector(const string &filename)
+   {
+      File = new TFile(filename.c_str());
+      Weight = (TH2D *)File->Get("hWeightToApply");
+   }
+
+   ~ZYDirectCorrector()
+   {
+      if(File != nullptr)
+      {
+         File->Close();
+         delete File;
+      }
+   }
+
+   double GetCorrectionFactor(double yCM, double phi) const
+   {
+      if(Weight == nullptr)
+         return 1;
+
+      while(phi < 0)          phi += 2 * M_PI;
+      while(phi >= 2 * M_PI)  phi -= 2 * M_PI;
+
+      const TAxis *yAxis = Weight->GetXaxis();
+      const TAxis *phiAxis = Weight->GetYaxis();
+
+      int yBin = yAxis->FindBin(yCM);
+      int phiBin = phiAxis->FindBin(phi);
+
+      if(yCM <= yAxis->GetXmin()) yBin = 1;
+      if(yCM >= yAxis->GetXmax()) yBin = yAxis->GetNbins();
+      if(phi <= phiAxis->GetXmin()) phiBin = 1;
+      if(phi >= phiAxis->GetXmax()) phiBin = phiAxis->GetNbins();
+
+      double correction = Weight->GetBinContent(yBin, phiBin);
+      if(!std::isfinite(correction) || correction <= 0)
+         correction = 1;
+
+      return correction;
+   }
+
+private:
+   TFile *File = nullptr;
+   TH2D *Weight = nullptr;
+};
 
 //============================================================//
 // Function to check for configuration errors
@@ -39,7 +91,97 @@ bool checkError(const Parameters& par) {
       return true;
    }
 
+   if (par.ResultDEtaBins <= 0 || par.ResultDPhiBins <= 0) {
+      std::cout << "Error! ResultDEtaBins and ResultDPhiBins must both be positive." << std::endl;
+      return true;
+   }
+
+   bool useOfficial20Bin = (par.ResultDEtaBins == 20 && par.ResultDPhiBins == 20);
+   bool useShifted10Bin = (par.ResultDEtaBins == 10 && par.ResultDPhiBins == 10);
+   bool useModified12Bin = (par.ResultDEtaBins == 12 && par.ResultDPhiBins == 12);
+   if (useOfficial20Bin == false && useShifted10Bin == false && useModified12Bin == false) {
+      std::cout << "Error! Only the maintained 20x20 official result binning, the shifted 10x10 study binning, and the maintained modified 12x12 result binning are supported." << std::endl;
+      return true;
+   }
+
    return false;    // No errors found
+}
+
+enum class ResultGeometry {
+   Official20x20,
+   Shifted10x10,
+   Modified12x12
+};
+
+ResultGeometry getResultGeometry(const Parameters &par)
+{
+   if (par.ResultDEtaBins == 10 && par.ResultDPhiBins == 10)
+      return ResultGeometry::Shifted10x10;
+   if (par.ResultDEtaBins == 12 && par.ResultDPhiBins == 12)
+      return ResultGeometry::Modified12x12;
+   return ResultGeometry::Official20x20;
+}
+
+TH2D *createOfficial20x20ResultHistogram(const string &name)
+{
+   static const double EtaEdges[21] = {
+      -4.0, -3.6, -3.2, -2.8, -2.4,
+      -2.0, -1.6, -1.2, -0.8, -0.4,
+       0.0,  0.4,  0.8,  1.2,  1.6,
+       2.0,  2.4,  2.8,  3.2,  3.6,
+       4.0
+   };
+   static const double PhiEdges[21] = {
+      -M_PI / 2, -2 * M_PI / 5, -3 * M_PI / 10, -M_PI / 5, -M_PI / 10,
+       0.0,        M_PI / 10,    M_PI / 5,       3 * M_PI / 10, 2 * M_PI / 5,
+       M_PI / 2,   3 * M_PI / 5, 7 * M_PI / 10, 4 * M_PI / 5,   9 * M_PI / 10,
+       M_PI,      11 * M_PI / 10, 6 * M_PI / 5, 13 * M_PI / 10, 7 * M_PI / 5,
+       3 * M_PI / 2
+   };
+
+   return new TH2D(name.c_str(), "", 20, EtaEdges, 20, PhiEdges);
+}
+
+TH2D *createShifted10x10ResultHistogram(const string &name)
+{
+   static const double EtaEdges[11] = {
+      -4.0, -3.2, -2.4, -1.6, -0.8,
+       0.0,  0.8,  1.6,  2.4,  3.2,
+       4.0
+   };
+   static const double PhiEdges[11] = {
+      -3 * M_PI / 5, -2 * M_PI / 5, -M_PI / 5, 0.0, M_PI / 5,
+       2 * M_PI / 5,  3 * M_PI / 5,  4 * M_PI / 5, M_PI, 6 * M_PI / 5,
+       7 * M_PI / 5
+   };
+
+    return new TH2D(name.c_str(), "", 10, EtaEdges, 10, PhiEdges);
+}
+
+TH2D *createModified12x12ResultHistogram(const string &name, double etaRange = 4.0)
+{
+   double EtaEdges[13];
+   double binWidth = 2.0 * etaRange / 12.0;
+   for (int i = 0; i <= 12; i++)
+      EtaEdges[i] = -etaRange + i * binWidth;
+
+   static const double PhiEdges[13] = {
+      -M_PI / 2, -M_PI / 3, -M_PI / 6, 0.0,
+       M_PI / 6,  M_PI / 3,  M_PI / 2, 2 * M_PI / 3,
+       5 * M_PI / 6, M_PI,   7 * M_PI / 6, 4 * M_PI / 3,
+       3 * M_PI / 2
+   };
+
+   return new TH2D(name.c_str(), "", 12, EtaEdges, 12, PhiEdges);
+}
+
+TH2D *createResultHistogram(const string &name, const Parameters &par)
+{
+   if (getResultGeometry(par) == ResultGeometry::Shifted10x10)
+      return createShifted10x10ResultHistogram(name);
+   if (getResultGeometry(par) == ResultGeometry::Modified12x12)
+      return createModified12x12ResultHistogram(name, par.DEtaRange);
+   return createOfficial20x20ResultHistogram(name);
 }
 
 pair<int, int> findClosestMuonTracks(ZHadronMessenger *b, const Parameters &par)
@@ -93,11 +235,11 @@ bool rejectMuonMatchedTrack(ZHadronMessenger *b, const Parameters &par, int j,
 bool trackSelection(ZHadronMessenger *b, const Parameters &par, int j,
    const pair<int, int> &closestMuonTracks = {-1, -1}) {
    if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
-   if ((*b->trackPt)[j] > par.MaxTrackPT) return false;  
+   if ((*b->trackPt)[j] > par.MaxTrackPT) return false;
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
-   if ((*b->trackEta)[j] > 2.4) return false;
-   if ((*b->trackEta)[j] < -2.4) return false;
+   if ((*b->trackEta)[j] > par.TrackEtaMax) return false;
+   if ((*b->trackEta)[j] < par.TrackEtaMin) return false;
    return true;
 }
 
@@ -108,8 +250,8 @@ bool trackSelectionNoPt(ZHadronMessenger *b, const Parameters &par, int j,
    const pair<int, int> &closestMuonTracks = {-1, -1}) {
    if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
-   if ((*b->trackEta)[j] > 2.4) return false;
-   if ((*b->trackEta)[j] < -2.4) return false;
+   if ((*b->trackEta)[j] > par.TrackEtaMax) return false;
+   if ((*b->trackEta)[j] < par.TrackEtaMin) return false;
    return true;
 }
 
@@ -119,13 +261,19 @@ bool trackSelectionNoPt(ZHadronMessenger *b, const Parameters &par, int j,
 //============================================================//
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
    if (par.isPUReject && par.isData && b->NVertex != 1) return 0;
-   if (par.useVZWindow && fabs(b->VZ) >= 15) return 0;
+   if (par.useVZWindow && fabs(b->VZ) >= par.VZWindowSize) return 0;
+   if (b->Run < par.MinRun || b->Run >= par.MaxRun) return 0;
 
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size()) == 0) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) < 60) return 0;
    if ((par.isGenZ ? (*b->genZMass)[0] : (*b->zMass)[0]) > 120) return 0;
    if (fabs((par.isGenZ ? (*b->genZY)[0] : (*b->zY)[0])) <= par.MinZY) return 0;
    if (fabs((par.isGenZ ? (*b->genZY)[0] : (*b->zY)[0])) >= par.MaxZY) return 0;
+   {
+      float zY_raw = (par.isGenZ ? (*b->genZY)[0] : (*b->zY)[0]);
+      if (zY_raw < par.ZYSignedMin) return 0;
+      if (zY_raw > par.ZYSignedMax) return 0;
+   }
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0]) < par.MinZPT) return 0;
    if ((par.isGenZ ? (*b->genZPt)[0] : (*b->zPt)[0]) > par.MaxZPT) return 0;
 
@@ -188,7 +336,7 @@ int getZpTBin(float zPt) {
    return 3;
 }
 
-float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector *corrector) {
+float getMultiplicity(ZHadronMessenger *b, const Parameters& par, TrackResidualCorrector2D *corrector) {
    float mult = 0;
    pair<int, int> closestMuonTracks = findClosestMuonTracks(b, par);
    for (unsigned long j = 0; j < b->trackPt->size(); j++) {
@@ -223,6 +371,50 @@ double* getLinBins(float min, float max, int nBins) {
    return bins;
 }
  
+struct JackknifeEventContribution {
+   double SignalNZ = 0;
+   double MixNZ = 0;
+   vector<float> SignalBins;
+   vector<float> MixBins;
+
+   JackknifeEventContribution() = default;
+   JackknifeEventContribution(int nBins) : SignalBins(nBins, 0), MixBins(nBins, 0) {}
+};
+
+int getRegularBinIndex(const TH2D *h, double x, double y)
+{
+   if(h == nullptr)
+      return -1;
+
+   int xBin = h->GetXaxis()->FindBin(x);
+   int yBin = h->GetYaxis()->FindBin(y);
+
+   if(xBin < 1 || xBin > h->GetNbinsX())
+      return -1;
+   if(yBin < 1 || yBin > h->GetNbinsY())
+      return -1;
+
+   return (xBin - 1) * h->GetNbinsY() + (yBin - 1);
+}
+
+void accumulateEventContribution(const TH2D *h, vector<float> &bins, double x, double y, double weight)
+{
+   int index = getRegularBinIndex(h, x, y);
+   if(index < 0 || index >= (int)bins.size())
+      return;
+
+   bins[index] += weight;
+}
+
+void accumulateReflectedEventContribution(const TH2D *h, vector<float> &bins,
+   double deta, double dphi, double dphi2, double weight)
+{
+   accumulateEventContribution(h, bins, deta, dphi, weight);
+   accumulateEventContribution(h, bins, -deta, dphi, weight);
+   accumulateEventContribution(h, bins, deta, dphi2, weight);
+   accumulateEventContribution(h, bins, -deta, dphi2, weight);
+}
+
 
 //============================================================//
 // Z hadron dphi calculation
@@ -231,7 +423,8 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                ZHadronMessenger *MZUE,
                TH2D *h, TH2D *hSub0, TH3D *hTrkPtEtaPhi, TH3D* hZPtEtaPhi,
                TH1D* hVZ, TH1D* hZmass, TH3D* hTrkResidualCorrectionPtEtaPhi,
-               const Parameters& par, TNtuple *nt = 0) {
+               const Parameters& par, TNtuple *nt = 0,
+               vector<JackknifeEventContribution> *jackknifeEvents = nullptr) {
    double nZ = 0;
    h->Sumw2();
    if (hTrkPtEtaPhi != 0) hTrkPtEtaPhi->Sumw2();
@@ -251,6 +444,8 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    unsigned long mixstart_i = mix_i;
    int deltaI = (iEnd - iStart) / 100 + 1;
    float dPhi_threshold = M_PI / 2;
+   size_t jackknifeIndex = 0;
+   int jackknifeBinCount = h->GetNbinsX() * h->GetNbinsY();
 
    // open pp energy extrapolation file if needed
    TrackResidualCorrector *EnergyCorrector;
@@ -259,9 +454,9 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
    }
 
    // open Z correction if needed
-   TrackResidualCorrector *Zcorrector;
+   ZCorrector *Zcorrector = nullptr;
    if (par.useZWeight && par.ZWeightFile != "") {
-      Zcorrector = new TrackResidualCorrector(par.ZWeightFile.c_str());
+      Zcorrector = new ZCorrector(par.ZWeightFile.c_str());
    }
 
    // open VZ correction if needed
@@ -270,34 +465,51 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
    }
 
-   // open track residual correctors if needed
-   TrackResidualCorrector *corrector;
-   TrackResidualCorrector *corrector_0_10;
-   TrackResidualCorrector *corrector_10_20;
-   TrackResidualCorrector *corrector_20_40;
-   TrackResidualCorrector *corrector_40_500;
+   // open direct Z (yCM, phi) correction if needed
+   unique_ptr<ZYDirectCorrector> ZCorrectionCorrector;
+   if (par.ZCorrectionFile != "")
+      ZCorrectionCorrector = make_unique<ZYDirectCorrector>(par.ZCorrectionFile);
+
+   // open track residual correctors if needed (2D eta-phi version)
+   TrackResidualCorrector2D *corrector;
+   TrackResidualCorrector2D *corrector_0_10;
+   TrackResidualCorrector2D *corrector_10_20;
+   TrackResidualCorrector2D *corrector_20_40;
+   TrackResidualCorrector2D *corrector_40_500;
    if (par.useResidualWeight && par.residualWeightFile != "") {
-      corrector_0_10   = new TrackResidualCorrector(Form("%s0-10.root",   par.residualWeightFile.c_str()));              
-      corrector_10_20  = new TrackResidualCorrector(Form("%s10-20.root",  par.residualWeightFile.c_str()));
-      corrector_20_40  = new TrackResidualCorrector(Form("%s20-40.root",  par.residualWeightFile.c_str()));
-      corrector_40_500 = new TrackResidualCorrector(Form("%s40-500.root", par.residualWeightFile.c_str()));              
+      string rf = par.residualWeightFile;
+      bool singleFile = (rf.size() >= 5 && rf.substr(rf.size()-5) == ".root");
+      if (singleFile) {
+         corrector_0_10   = new TrackResidualCorrector2D(rf);
+         corrector_10_20  = new TrackResidualCorrector2D(rf);
+         corrector_20_40  = new TrackResidualCorrector2D(rf);
+         corrector_40_500 = new TrackResidualCorrector2D(rf);
+      } else {
+         corrector_0_10   = new TrackResidualCorrector2D(Form("%s0-10.root",   rf.c_str()));
+         corrector_10_20  = new TrackResidualCorrector2D(Form("%s10-20.root",  rf.c_str()));
+         corrector_20_40  = new TrackResidualCorrector2D(Form("%s20-40.root",  rf.c_str()));
+         corrector_40_500 = new TrackResidualCorrector2D(Form("%s40-500.root", rf.c_str()));
+      }
    }
 
    // Optional fast-mixing metadata cache:
    // keep event-matching logic the same but avoid repeated eventSelection scans in the inner loop.
    vector<char> mixEventPass;
    vector<char> mixEventZPtBin;
+   vector<float> mixEventVZ;
    bool useFastMixingCache = (par.mix && par.useFastMixing && !par.useEPOSFile);
    if (useFastMixingCache) {
       unsigned long nMixEntry = MMix->GetEntries();
       mixEventPass.assign(nMixEntry, 0);
       mixEventZPtBin.assign(nMixEntry, -1);
+      mixEventVZ.assign(nMixEntry, 0);
       for (unsigned long m = 0; m < nMixEntry; m++) {
          MMix->GetEntry(m);
          if (!eventSelection(MMix, par)) continue;
          float mixZPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
          mixEventPass[m] = 1;
          mixEventZPtBin[m] = getZpTBin(mixZPt);
+         mixEventVZ[m] = MMix->VZ;
       }
    }
 
@@ -324,6 +536,17 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       if (!eventSelection(MZSignal, par)) continue;
       //if (MZSignal->trackPt->size() < 1) continue;
 
+      JackknifeEventContribution *jackknifeEvent = nullptr;
+      if (jackknifeEvents != nullptr) {
+         if (par.mix == false) {
+            jackknifeEvents->emplace_back(jackknifeBinCount);
+            jackknifeEvent = &jackknifeEvents->back();
+         }
+         else if (jackknifeIndex < jackknifeEvents->size()) {
+            jackknifeEvent = &((*jackknifeEvents)[jackknifeIndex]);
+         }
+      }
+
       float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
       float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
       if (zPhi < 0) zPhi += 2 * M_PI;
@@ -340,7 +563,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
       //==================================================//
       // calculate event weights
       //==================================================//
-      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY, zPhi) : 1;
+      float ZWeight = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPt, zY) : 1;
       if (par.ExtraZWeight >= 0) ZWeight *= MZSignal->ExtraZWeight[par.ExtraZWeight];
       else if (par.isData) ZWeight *= MZSignal->ZWeight;
 
@@ -356,6 +579,15 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
          float energyExtrapolationWeight = EnergyCorrector->GetCorrectionFactor(zPt, 1, 1);
          eventWeightSignal *= energyExtrapolationWeight;
       }
+
+      // direct 2D Z (yCM, phi) correction
+      if (ZCorrectionCorrector) {
+         double zY_CM = zY - par.yBoost;
+         eventWeightSignal *= ZCorrectionCorrector->GetCorrectionFactor(zY_CM, zPhi);
+      }
+
+      if (jackknifeEvent != nullptr && par.mix == false)
+         jackknifeEvent->SignalNZ = eventWeightSignal;
 
       if (hZPtEtaPhi != 0) hZPtEtaPhi->Fill(zPt, zY, zPhi, eventWeightSignal);
       if (hVZ != 0) hVZ->Fill(MZSignal->VZ, eventWeightSignal);
@@ -407,6 +639,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                 if (useFastMixingCache) {
                    if (mixEventPass[mix_i] == 0) continue;
                    if (mixEventZPtBin[mix_i] != zPtBin) continue;
+                   if (par.MaxMixDeltaVZ > 0 && fabs(mixEventVZ[mix_i] - MZSignal->VZ) > par.MaxMixDeltaVZ) continue;
                    if (i != mix_i) foundMix = true;
                    continue;
                }
@@ -423,8 +656,11 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                if (!eventSelection(MMix, par)) continue;
 
                // only mix with Z events of similar Z pT
-               float mix_zPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]); 
+               float mix_zPt = (par.isGenZ ? (*MMix->genZPt)[0] : (*MMix->zPt)[0]);
                if (!isSameZpTBin(zPt, mix_zPt)) continue;
+
+               // require similar vertex position
+               if (par.MaxMixDeltaVZ > 0 && fabs(MMix->VZ - MZSignal->VZ) > par.MaxMixDeltaVZ) continue;
 
                if (i != mix_i) foundMix = true;
             }
@@ -446,7 +682,7 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             float zYMix = (par.isGenZ ? (*MMix->genZY)[0] : (*MMix->zY)[0]);
             float zPhiMix = (par.isGenZ ? (*MMix->genZPhi)[0] : (*MMix->zPhi)[0]);
             if (zPhiMix < 0) zPhiMix += 2 * M_PI;
-            float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix, zPhiMix) : 1;
+            float ZWeightMix = (par.ZWeightFile != "") ? Zcorrector->GetCorrectionFactor(zPtMix, zYMix) : 1;
             if (par.ExtraZWeight >= 0) ZWeightMix *= MMix->ExtraZWeight[par.ExtraZWeight];
             else if (par.isData) ZWeightMix *= MMix->ZWeight;
             
@@ -465,10 +701,12 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
 
          }
 
-         nZ += (par.mix) ? eventWeightMix : eventWeightSignal;
-         
-         //==================================================//
-         // loop over tracks
+          nZ += (par.mix) ? eventWeightMix : eventWeightSignal;
+          if (jackknifeEvent != nullptr && par.mix)
+             jackknifeEvent->MixNZ += eventWeightMix;
+          
+          //==================================================//
+          // loop over tracks
          //==================================================//
          ZHadronMessenger *currentEvent = (par.mix ? MMix : MZSignal);
          pair<int, int> currentClosestMuonTracks = findClosestMuonTracks(currentEvent, par);
@@ -481,8 +719,9 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                                        : DeltaPhi((*MZSignal->trackPhi)[j], zPhi);
             float trackDphi2 = par.mix ? DeltaPhi(zPhi, (*MMix->trackPhi)[j])
                                        : DeltaPhi(zPhi, (*MZSignal->trackPhi)[j]);
-            float trackDeta  = par.mix ? fabs((*MMix->trackEta)[j] - zY)
-                                       : fabs((*MZSignal->trackEta)[j] - zY);
+            float trackDeta  = par.mix ? (par.fillSigned ? (*MMix->trackEta)[j] - zY : fabs((*MMix->trackEta)[j] - zY))
+                                       : (par.fillSigned ? (*MZSignal->trackEta)[j] - zY : fabs((*MZSignal->trackEta)[j] - zY));
+            if (par.fillSigned && par.flipDeltaEta) trackDeta = -trackDeta;
 
             float trackPhi  = par.mix ? (*MMix->trackPhi)[j] : (*MZSignal->trackPhi)[j];
             float trackEta  = par.mix ? (*MMix->trackEta)[j] : (*MZSignal->trackEta)[j];
@@ -539,15 +778,33 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
             //==================================================//
             // fill central values
             //==================================================//
-            h->Fill(trackDeta, trackDphi, weight);
-            h->Fill(-trackDeta, trackDphi, weight);
-            h->Fill(trackDeta, trackDphi2, weight);
-            h->Fill(-trackDeta, trackDphi2, weight);
+            if (par.fillSigned) {
+               // signed DeltaEta and DeltaPhi: 1 fill per track (no folding on either axis)
+               h->Fill(trackDeta, trackDphi, weight);
+               if (jackknifeEvent != nullptr) {
+                  auto &bins = par.mix ? jackknifeEvent->MixBins : jackknifeEvent->SignalBins;
+                  accumulateEventContribution(h, bins, trackDeta, trackDphi, weight);
+               }
+            } else {
+               h->Fill( trackDeta, trackDphi,  weight);
+               h->Fill(-trackDeta, trackDphi,  weight);
+               h->Fill( trackDeta, trackDphi2, weight);
+               h->Fill(-trackDeta, trackDphi2, weight);
+               if (jackknifeEvent != nullptr) {
+                  if (par.mix)
+                     accumulateReflectedEventContribution(h, jackknifeEvent->MixBins, trackDeta, trackDphi, trackDphi2, weight);
+                  else
+                     accumulateReflectedEventContribution(h, jackknifeEvent->SignalBins, trackDeta, trackDphi, trackDphi2, weight);
+               }
+            }
 
-         
+          
          } // end track loop
 
       } // end mix event loop
+
+      if (jackknifeEvents != nullptr)
+         jackknifeIndex = jackknifeIndex + 1;
 
    } // end event loop
 
@@ -569,6 +826,8 @@ public:
    ZHadronMessenger *MZHadron, *MMix, *MZHadronUE;
    string title;
    TH3D* hTrkResidualCorrectionPtEtaPhi;
+   TTree *tJackknife2D = nullptr;
+   vector<JackknifeEventContribution> jackknifeEvents;
 
    DataAnalyzer(const char* filename, const char* mixFilename, const char* outFilename, const char* filenameUE, const char* mytitle = "Data", bool useEPOSFile = false, const char* treeName = "Tree") :
       inf(new TFile(filename)),
@@ -576,6 +835,7 @@ public:
       mixFile(new TFile(mixFilename)),
       mixFileClone(new TFile(mixFilename)),
       MMix(new ZHadronMessenger(*mixFile, string(treeName))),
+      ntDiagnose(nullptr),
       title(mytitle),
       outf(new TFile(outFilename, "recreate")) {
       if (useEPOSFile) {
@@ -667,21 +927,47 @@ public:
       hVZ = new TH1D(Form("hVZ%s", title.c_str()), "", 40, -20, 20);
       hZmass = new TH1D(Form("hZmass%s", title.c_str()), "", 40, 60, 120);
       
-      h = new TH2D(Form("h%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
-      hSub0 = new TH2D(Form("hSub0%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
+      h = createResultHistogram(Form("h%s", title.c_str()), par);
+      hSub0 = createResultHistogram(Form("hSub0%s", title.c_str()), par);
       hNZ = new TH1D(Form("hNZ%s", title.c_str()), "", 1, 0, 1);
-      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, h, hSub0, hTrkPtEtaPhi, hZPtEtaPhi, hVZ, hZmass, hTrkResidualCorrectionPtEtaPhi, par)); // Dphi analysis
+      bool doJackknife = (par.useJackknife && par.isData);
+      jackknifeEvents.clear();
+      hNZ->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, h, hSub0, hTrkPtEtaPhi, hZPtEtaPhi, hVZ, hZmass, hTrkResidualCorrectionPtEtaPhi, par,
+         0, doJackknife ? &jackknifeEvents : nullptr)); // Dphi analysis
       
       //==================================================//
       // Second histogram with mix=true
       //==================================================//
       
       par.mix = true;
-      hMix = new TH2D(Form("hMix%s", title.c_str()), "", 20, -4, 4, 20, -M_PI / 2, 3 * M_PI / 2);
+      hMix = createResultHistogram(Form("hMix%s", title.c_str()), par);
       hNZMix = new TH1D(Form("hNZMix%s", title.c_str()), "", 1, 0, 1);
 
       if(par.nMix<1) return; // skip if nMix=0 (turned off)
-      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par, ntDiagnose)); // Dphi analysis with mixing
+      hNZMix->SetBinContent(1, getDphi(MZHadron, MMix, MZHadronUE, hMix, 0,0, 0, 0, 0, 0, par,
+         ntDiagnose, doJackknife ? &jackknifeEvents : nullptr)); // Dphi analysis with mixing
+
+      if (doJackknife && jackknifeEvents.size() > 0) {
+         outf->cd();
+         double signalNZ = 0;
+         double mixNZ = 0;
+         vector<float> signalBins;
+         vector<float> mixBins;
+
+         tJackknife2D = new TTree(Form("Jackknife2D%s", title.c_str()), "Per-event jackknife contributions");
+         tJackknife2D->Branch("SignalNZ", &signalNZ);
+         tJackknife2D->Branch("MixNZ", &mixNZ);
+         tJackknife2D->Branch("SignalBins", &signalBins);
+         tJackknife2D->Branch("MixBins", &mixBins);
+
+         for (const JackknifeEventContribution &event : jackknifeEvents) {
+            signalNZ = event.SignalNZ;
+            mixNZ = event.MixNZ;
+            signalBins = event.SignalBins;
+            mixBins = event.MixBins;
+            tJackknife2D->Fill();
+         }
+      }
    }
 
    void writeHistograms(TFile* outf) {
@@ -697,12 +983,23 @@ public:
       smartWrite(hVZ);
       smartWrite(hZmass);
       smartWrite(hTrkResidualCorrectionPtEtaPhi);
+      smartWrite(tJackknife2D);
    }
 
 private:
    void deleteHistograms() {
-      delete h, hSub0, hMix, hNZ, hNZMix, hTrkPtEtaPhi, hZPtEtaPhi, hVZ, hZmass, hTrkResidualCorrectionPtEtaPhi;
-   }
+      delete h;
+      delete hSub0;
+      delete hMix;
+      delete hNZ;
+      delete hNZMix;
+      delete hTrkPtEtaPhi;
+      delete hZPtEtaPhi;
+      delete hVZ;
+      delete hZmass;
+      delete hTrkResidualCorrectionPtEtaPhi;
+      delete tJackknife2D;
+    }
 };
 
 //============================================================//
@@ -741,10 +1038,15 @@ int main(int argc, char *argv[])
    par.useResidualWeight = CL.GetBool  ("UseResidualWeight", false); // Default is false
    par.residualWeightFile = CL.Get      ("ResidualWeightFile", "");       // Residual weight file
    par.EnergyExtraFile = CL.Get      ("EnergyExtraFile", "");
+   par.ZCorrectionFile = CL.Get      ("ZCorrectionFile", "");
    par.VZWeightFile     = CL.Get      ("VZWeightFile", "");           // VZ weight file
    par.useVZWeight       = CL.GetBool  ("UseVZWeight", false);
    par.useVZWindow       = CL.GetBool  ("UseVZWindow", true);
    par.useFastMixing   = CL.GetBool  ("UseFastMixing", false);
+   par.MaxMixDeltaVZ   = CL.GetDouble("MaxMixDeltaVZ", 1.0);
+   par.useJackknife    = CL.GetBool  ("UseJackknife", false);
+   par.ResultDEtaBins  = CL.GetInt   ("ResultDEtaBins", 20);
+   par.ResultDPhiBins  = CL.GetInt   ("ResultDPhiBins", 20);
    par.TrackSelectionMode = CL.Get      ("TrackSelectionMode", "Nominal");
    par.TrackTreeName   = "Tree";
    if (par.TrackSelectionMode == "Loose")   par.TrackTreeName = "TreeLoose";
@@ -759,7 +1061,17 @@ int main(int argc, char *argv[])
    par.ExtraZWeight  = CL.GetInt   ("ExtraZWeight",-1);      // Do Muon systematics, -1 means no extraweight.
    par.includeHole   = CL.GetBool  ("includeHole",true);     // Include hole particle or not
    par.isPPb         = CL.GetBool  ("IsPPb", false);         // Flag to indicate if p is going in the positive eta direction.
-   par.yBoost       = CL.GetDouble("yBoost", 0);         // Rapidity boost for pPb analysis
+   par.yBoost        = CL.GetDouble("yBoost", 0);         // Rapidity boost for pPb analysis
+   par.MinRun        = CL.GetInt   ("MinRun", 0);           // Minimum run number (inclusive)
+   par.MaxRun        = CL.GetInt   ("MaxRun", INT_MAX);     // Maximum run number (exclusive)
+   par.VZWindowSize  = CL.GetDouble("VZWindowSize", 15.0);  // |vz| window half-width in cm
+   par.fillSigned    = CL.GetBool  ("FillSigned", false);   // Fill signed DeltaEta instead of folded |DeltaEta|
+   par.flipDeltaEta  = CL.GetBool  ("FlipDeltaEta", false); // Negate trackDeta before filling (only active with FillSigned)
+   par.TrackEtaMin   = CL.GetDouble("TrackEtaMin",  -2.4);  // Signed lower bound on track eta acceptance
+   par.TrackEtaMax   = CL.GetDouble("TrackEtaMax",   2.4);  // Signed upper bound on track eta acceptance
+   par.ZYSignedMin   = CL.GetDouble("ZYSignedMin",  -200.0); // Signed lower bound on Z rapidity acceptance
+   par.ZYSignedMax   = CL.GetDouble("ZYSignedMax",   200.0); // Signed upper bound on Z rapidity acceptance
+   par.DEtaRange     = CL.GetDouble("DEtaRange",      4.0);  // Half-width of DeltaEta axis for 12x12 histograms
    par.mix = 0;
    par.isPP = IsPP;
    par.isData = IsData;

@@ -3,9 +3,15 @@
 set -e
 
 THISDIR=$(cd "$(dirname "$0")" && pwd)
-ANALYSISDIR=/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots
-
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
+source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
+ANALYSISDIR="${OFFICIAL_RESULT_DIR}"
+
+TAG_SUFFIX="${TAG_SUFFIX:-}"
+if [ -n "$TAG_SUFFIX" ]; then
+    OFFICIAL_TAG_PP="${OFFICIAL_TAG_PP}_${TAG_SUFFIX}"
+    OFFICIAL_TAG_PPB="${OFFICIAL_TAG_PPB}_${TAG_SUFFIX}"
+fi
 
 cd "$THISDIR"
 
@@ -15,8 +21,9 @@ TRACK_RANGES_CSV=${TRACK_RANGES:-0.5_500}
 DEFAULT_PP_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpp,ScaleFactor,EnergyExtrapolation
 DEFAULT_PP_PLOT_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpp,ScaleFactor,EnergyExtrapolation
 DEFAULT_PA_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpPb,ScaleFactor
-DEFAULT_COMBINED_PLOT_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpPb,ScaleFactor
-DEFAULT_DIFFERENCE_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PU,ScaleFactor,EnergyExtrapolation
+DEFAULT_COMBINED_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpPb,ScaleFactor,EventMixing
+DEFAULT_COMBINED_PLOT_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PUpPb,ScaleFactor,EventMixing
+DEFAULT_DIFFERENCE_FAMILIES=TrackSelection,TrackCorrection,MuonRejection,PU,ScaleFactor,EnergyExtrapolation,EventMixing
 USER_INCLUDE_FAMILIES=${INCLUDE_FAMILIES:-}
 USER_PLOT_FAMILIES=${PLOT_FAMILIES:-}
 USER_DIFFERENCE_FAMILIES=${DIFFERENCE_FAMILIES:-}
@@ -52,7 +59,7 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
     elif [ "$SYSTEM" = "pPbPbp" ]; then
        PREFIX="$SYSTEM"
        OFFICIAL_TAG="$OFFICIAL_TAG_PPB"
-       DEFAULT_FAMILIES="$DEFAULT_PA_FAMILIES"
+       DEFAULT_FAMILIES="$DEFAULT_COMBINED_FAMILIES"
        DEFAULT_PLOT_FAMILIES="$DEFAULT_COMBINED_PLOT_FAMILIES"
        DEFAULT_DIFF_FAMILIES="$DEFAULT_DIFFERENCE_FAMILIES"
        ENERGY_EXTRAPOLATION_FILES=""
@@ -128,6 +135,7 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
                   --NominalPBP "$NOMINAL_FILE_PBP" \
                   --Output "$OUTPUT_ROOT" \
                   --TrackTag "$TRACK" \
+                  --UseModified12x12 true \
                   --IncludeFamilies "$INCLUDE_FAMILIES" \
                   --IncludeDifferenceFamilies "$DIFFERENCE_FAMILIES" \
                   --TrackSelectionFilesPP "$TRACK_SELECTION_FILES_PP" \
@@ -145,12 +153,14 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
                   --ScaleFactorFilesPP "$SCALE_FACTOR_FILES_PP" \
                   --ScaleFactorFilesPPb "$SCALE_FACTOR_FILES_PPB" \
                   --ScaleFactorFilesPBP "$SCALE_FACTOR_FILES_PBP" \
-                  --EnergyExtrapolationFilesPP "$ENERGY_EXTRAPOLATION_FILES_PP"
+                  --EnergyExtrapolationFilesPP "$ENERGY_EXTRAPOLATION_FILES_PP" \
+                  --MEWeightFile "$OFFICIAL_ME_WEIGHT_FILE"
              else
                ./ExecuteCalculateSystematics \
                   --Nominal "$NOMINAL_FILE" \
                   --Output "$OUTPUT_ROOT" \
                   --TrackTag "$TRACK" \
+                  --UseModified12x12 true \
                   --IncludeFamilies "$INCLUDE_FAMILIES" \
                   --TrackSelectionFiles "$TRACK_SELECTION_FILES" \
                   --TrackCorrectionFiles "$TRACK_CORRECTION_FILES" \
@@ -172,6 +182,7 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
                     --Collision "$SYSTEM" \
                     --ZPTRange "$ZPT" \
                     --TrackPTRange "$TRACK" \
+                    --UseModified12x12 true \
                     --Families "$PLOT_FAMILIES" \
                     --DifferenceFamilies "$DIFFERENCE_FAMILIES"
             else
@@ -182,6 +193,7 @@ for SYSTEM in "${SYSTEMS_ARRAY[@]}"; do
                    --Collision "$SYSTEM" \
                    --ZPTRange "$ZPT" \
                    --TrackPTRange "$TRACK" \
+                   --UseModified12x12 true \
                    --Families "$PLOT_FAMILIES"
             fi
          fi

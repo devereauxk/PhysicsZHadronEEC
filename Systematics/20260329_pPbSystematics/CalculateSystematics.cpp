@@ -54,7 +54,8 @@ vector<pair<string, string>> ZipFiles(const vector<string> &first, const vector<
 }
 
 TH1D *BuildFamilyHistogramSingle(const TH1D *nominal, const vector<string> &files,
-   const string &observable, const string &trackTag, const string &histogramName)
+   const string &observable, const string &trackTag, const string &histogramName,
+   bool symmetrize = false)
 {
    TH1D *result = (TH1D *)nominal->Clone(histogramName.c_str());
    result->Reset("ICES");
@@ -68,7 +69,7 @@ TH1D *BuildFamilyHistogramSingle(const TH1D *nominal, const vector<string> &file
       {
          TFile file(fileName.c_str());
          TH1D *variation = LoadSingleResultHistogram(file, observable, trackTag,
-            histogramName + "_Variation");
+            histogramName + "_Variation", symmetrize);
          if(variation == nullptr)
             continue;
 
@@ -85,7 +86,8 @@ TH1D *BuildFamilyHistogramSingle(const TH1D *nominal, const vector<string> &file
 
 TH1D *BuildFamilyHistogramCombined(const TH1D *nominal,
    const vector<pair<string, string>> &files, const string &observable,
-   const string &trackTag, const string &histogramName)
+   const string &trackTag, const string &histogramName, bool useShifted10x10 = false,
+   bool useModified12x12 = false)
 {
    TH1D *result = (TH1D *)nominal->Clone(histogramName.c_str());
    result->Reset("ICES");
@@ -97,10 +99,10 @@ TH1D *BuildFamilyHistogramCombined(const TH1D *nominal,
       double value = 0;
       for(const auto &filePair : files)
       {
-         TFile ppbFile(filePair.first.c_str());
-         TFile pbpFile(filePair.second.c_str());
-         TH1D *variation = BuildCombinedResultHistogram(ppbFile, pbpFile, observable,
-            trackTag, histogramName + "_Variation");
+          TFile ppbFile(filePair.first.c_str());
+          TFile pbpFile(filePair.second.c_str());
+          TH1D *variation = BuildCombinedResultHistogram(ppbFile, pbpFile, observable,
+            trackTag, histogramName + "_Variation", useShifted10x10, useModified12x12);
          if(variation == nullptr)
             continue;
 
@@ -141,10 +143,17 @@ int main(int argc, char *argv[])
    CommandLine CL(argc, argv);
 
    string nominalFileName = CL.Get("Nominal", "");
-   string nominalPPbFileName = CL.Get("NominalPPb", "");
-   string nominalPBPFileName = CL.Get("NominalPBP", "");
-   string nominalPPFileName = CL.Get("NominalPP", "");
-    string outputFileName = CL.Get("Output", "systematics.root");
+    string nominalPPbFileName = CL.Get("NominalPPb", "");
+    string nominalPBPFileName = CL.Get("NominalPBP", "");
+    string nominalPPFileName = CL.Get("NominalPP", "");
+    bool useShifted10x10 = CL.GetBool("UseShifted10x10", false);
+    bool useModified12x12 = CL.GetBool("UseModified12x12", false);
+      string outputFileName = CL.Get("Output", "systematics.root");
+    if(useShifted10x10 == true && useModified12x12 == true)
+    {
+       cerr << "UseShifted10x10 and UseModified12x12 cannot both be true" << endl;
+       return 1;
+    }
     string trackTag = CL.Get("TrackTag", "2_500");
     vector<string> includeFamilies = ParseCSV(CL.Get("IncludeFamilies",
        "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
@@ -191,6 +200,8 @@ int main(int argc, char *argv[])
        ParseCSV(CL.Get("EnergyExtrapolationFilesPPb", "")),
        ParseCSV(CL.Get("EnergyExtrapolationFilesPBP", "")));
 
+   string meWeightFile = CL.Get("MEWeightFile", "");
+
    map<string, vector<string>> familyFilesPP;
    familyFilesPP["TrackSelection"] = ParseCSV(CL.Get("TrackSelectionFilesPP", ""));
    familyFilesPP["TrackCorrection"] = ParseCSV(CL.Get("TrackCorrectionFilesPP", ""));
@@ -201,8 +212,8 @@ int main(int argc, char *argv[])
    familyFilesPP["ScaleFactor"] = ParseCSV(CL.Get("ScaleFactorFilesPP", ""));
    familyFilesPP["EnergyExtrapolation"] = ParseCSV(CL.Get("EnergyExtrapolationFilesPP", ""));
 
-    vector<string> families = {"TrackSelection", "TrackCorrection", "MuonRejection", "PUpp", "PUpPb", "ScaleFactor", "EnergyExtrapolation"};
-   vector<string> differenceFamilies = {"TrackSelection", "TrackCorrection", "MuonRejection", "PU", "ScaleFactor", "EnergyExtrapolation"};
+    vector<string> families = {"TrackSelection", "TrackCorrection", "MuonRejection", "PUpp", "PUpPb", "ScaleFactor", "EnergyExtrapolation", "EventMixing"};
+   vector<string> differenceFamilies = {"TrackSelection", "TrackCorrection", "MuonRejection", "PU", "ScaleFactor", "EnergyExtrapolation", "EventMixing"};
    vector<string> observables = {"DeltaPhi", "DeltaEta"};
 
    TFile *nominalFile = (nominalFileName != "") ? TFile::Open(nominalFileName.c_str()) : nullptr;
@@ -216,10 +227,10 @@ int main(int argc, char *argv[])
       TH1D *nominal = nullptr;
       if(doCombined == true)
          nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable,
-            trackTag, "Nominal_" + observable);
+            trackTag, "Nominal_" + observable, useShifted10x10, useModified12x12);
       else
          nominal = LoadSingleResultHistogram(*nominalFile, observable, trackTag,
-            "Nominal_" + observable);
+            "Nominal_" + observable, useModified12x12);
 
       if(nominal == nullptr)
       {
@@ -232,7 +243,7 @@ int main(int argc, char *argv[])
       if(doDifference == true)
       {
          nominalPP = LoadSingleResultHistogram(*nominalPPFile, observable, trackTag,
-            "NominalPP_" + observable);
+            "NominalPP_" + observable, useModified12x12);
          if(nominalPP == nullptr)
          {
             cerr << "Missing pp nominal " << observable << " histogram for difference systematics" << endl;
@@ -248,12 +259,43 @@ int main(int argc, char *argv[])
       for(const string &family : families)
       {
          string histogramName = family + "_" + observable;
-         if(doCombined == true)
-            contributions[family] = BuildFamilyHistogramCombined(nominal,
-               familyFilePairs[family], observable, trackTag, histogramName);
+         if(family == "EventMixing")
+         {
+            TH1D *emResult = (TH1D *)nominal->Clone(histogramName.c_str());
+            emResult->Reset("ICES");
+            emResult->SetTitle(histogramName.c_str());
+            emResult->SetDirectory(nullptr);
+
+            if(doCombined == true && meWeightFile != "")
+            {
+               TFile meFile(meWeightFile.c_str());
+               TH2D *meWeight = (TH2D *)meFile.Get("hMEWeight");
+               if(meWeight != nullptr)
+               {
+                  meWeight->SetDirectory(nullptr);
+                  TH1D *variation = BuildCombinedResultHistogramWithMEWeight(
+                     *nominalPPbFile, *nominalPBPFile, observable, trackTag,
+                     histogramName + "_Variation", meWeight, useModified12x12);
+                  if(variation != nullptr)
+                  {
+                     for(int i = 1; i <= nominal->GetNbinsX(); i++)
+                     {
+                        double value = fabs(nominal->GetBinContent(i) - variation->GetBinContent(i));
+                        emResult->SetBinContent(i, value);
+                     }
+                     delete variation;
+                  }
+                  delete meWeight;
+               }
+            }
+            contributions[family] = emResult;
+         }
+         else if(doCombined == true)
+             contributions[family] = BuildFamilyHistogramCombined(nominal,
+               familyFilePairs[family], observable, trackTag, histogramName, useShifted10x10, useModified12x12);
          else
             contributions[family] = BuildFamilyHistogramSingle(nominal,
-               familyFiles[family], observable, trackTag, histogramName);
+               familyFiles[family], observable, trackTag, histogramName, useModified12x12);
       }
 
        map<string, TH1D *> differenceContributions;
@@ -264,7 +306,7 @@ int main(int argc, char *argv[])
              string histogramName = "Difference" + family + "_" + observable;
              const TH1D *combinedContribution = (family == "PU") ? contributions["PUpPb"] : contributions[family];
              TH1D *ppContribution = BuildFamilyHistogramSingle(nominalPP,
-                familyFilesPP[family], observable, trackTag, histogramName + "_PP");
+                familyFilesPP[family], observable, trackTag, histogramName + "_PP", useModified12x12);
              differenceContributions[family] = BuildDifferenceFamilyHistogram(nominalDifference,
                 combinedContribution, ppContribution, histogramName);
              delete ppContribution;

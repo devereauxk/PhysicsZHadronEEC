@@ -1,0 +1,233 @@
+//============================================================//
+// Define analysis parameters
+//============================================================//
+class Parameters {
+public:
+   Parameters( float MinZPT, float MaxZPT, float MinTrackPT, float MaxTrackPT, bool mix = false, float scaleFactor = 1.0, float nMix = 1)
+   : MinZPT(MinZPT), MaxZPT(MaxZPT), MinTrackPT(MinTrackPT), MaxTrackPT(MaxTrackPT), mix(mix), scaleFactor(scaleFactor), nMix(nMix) {}
+   string input;          // Input file name
+   string output;         // Output file name
+   string mixFile;        // Mix File name
+   string EPOSFile;      // EPOS File name
+   bool useEPOSFile;   // Flag to indicate if EPOS file is used
+   float MinZPT;          // Lower limit of Z pt
+   float MaxZPT;          // Upper limit of Z pt
+   float MinZY;           // Lower limit of Z rapidity
+   float MaxZY;           // Upper limit of Z rapidity
+   float MinTrackPT;      // Lower limit of track pt
+   float MaxTrackPT;      // Upper limit of track pt
+   float scaleFactor;     // Scale factor
+   float shift;           // shift in sumHF when doing mb matching
+   int nThread;           // Number of Threads
+   int nChunk;            // Process the Nth chunk
+   bool mix;              // Mix flag
+   int nMix;              // Number of mixed events
+   TH1D *hShift;
+   bool isSelfMixing;     // isSelfMixing flag
+   bool isGenZ;           // isGenZ flag
+   bool isMuTagged;       // Flag to enable/disable muon tagging requirement
+   float TrackMuDR;       // Track-muon rejection radius override
+   bool TrackMuClosest;   // Reject the two closest tracks to a muon
+   bool isPUReject;       // Flag to reject PU sample for systemaitcs.
+   bool isPP;             // Flag to check if this is a PP analysis
+   bool isData;           // Flag to check if this is a Data analysis
+   bool isJewel;             // Flag to check if this is a Jewel analysis
+   int ExtraZWeight;
+   bool includeHole;      // Flag to see if we include hole particles (negative trackweight particle)
+   bool useTrackWeight;      // Flag to see if we use track efficiency correction
+   float TrackExtraWeight;   // Extra multiplicative factor for per-track efficiency weights
+   bool useEventWeight;      // Flag to see if we use event efficiency correction
+   bool useZWeight;          // Flag to see if we use Z efficiency correction
+   bool useVZWeight;          // Flag to see if we use VZ efficiency correction
+   bool useVZWindow;          // Apply the analysis |vz| < 15 requirement
+   bool useFastMixing;        // Use precomputed mixing metadata to reduce candidate scanning
+   bool useJackknife;        // Persist per-event contributions and replace final statistical errors with jackknife
+   bool usePionTrackY;        // Use the skimmed pion-mass track rapidity instead of track eta in DeltaEta
+   int ResultDEtaBins;       // Result-stage DeltaEta bins: maintained 20x20 official, shifted 10x10, or modified 12x12
+   int ResultDPhiBins;       // Result-stage DeltaPhi bins: maintained 20x20 official, shifted 10x10, or modified 12x12
+   string ZWeightFile;      // Z weight file
+   bool useResidualWeight;   // Flag to see if we use residual correction
+   string residualWeightFile; // Residual weight file
+   string EnergyExtraFile; // Input file for energy extrapolation
+   string VZWeightFile;      // VZ weight file
+   string TrackSelectionMode; // Track selection systematic mode
+   string TrackTreeName;      // Input tree name
+   bool isPPb;            // Flag to check if this is a PPb analysis
+   float yBoost;          // Rapidity boost for pPb analysis
+   
+   void printParameters() const {
+      cout << "Input file: " << input << endl;
+      cout << "Output file: " << output << endl;
+      cout << "Mix File: " << mixFile << endl;
+      cout << "EPOS File: " << EPOSFile << endl;
+      cout << "Use EPOS File: " << (useEPOSFile ? "true" : "false") << endl;
+      cout << "MinZPT: " << MinZPT << " GeV/c" << endl;
+      cout << "MaxZPT: " << MaxZPT << " GeV/c" << endl;
+      cout << "MinZY: " << MinZY << "" << endl;
+      cout << "MaxZY: " << MaxZY << "" << endl;
+      cout << "MinTrackPT: " << MinTrackPT << " GeV/c" << endl;
+      cout << "MaxTrackPT: " << MaxTrackPT << " GeV/c" << endl;
+      cout << "isSelfMixing: " << (isSelfMixing ? "true" : "false") << endl;
+      cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
+      cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
+      cout << "isPP: " << (isPP ? "true" : "false") << endl;
+      cout << "isData: " << (isData ? "true" : "false") << endl;
+      cout << "isPPb: " << (isPPb ? "true" : "false") << endl;
+       cout << "UseEventWeight: " << (useEventWeight ? "true" : "false") << endl;
+       cout << "UseZWeight: " << (useZWeight ? "true" : "false") << endl;
+        cout << "UseVZWeight: " << (useVZWeight ? "true" : "false") << endl;
+        cout << "UseVZWindow: " << (useVZWindow ? "true" : "false") << endl;
+      cout << "UseFastMixing: " << (useFastMixing ? "true" : "false") << endl;
+      cout << "UseJackknife: " << (useJackknife ? "true" : "false") << endl;
+      cout << "UsePionTrackY: " << (usePionTrackY ? "true" : "false") << endl;
+      cout << "ResultDEtaBins: " << ResultDEtaBins << endl;
+      cout << "ResultDPhiBins: " << ResultDPhiBins << endl;
+      cout << "ZWeightFile: " << ZWeightFile << endl;
+      cout << "UseTrackWeight: " << (useTrackWeight ? "true" : "false") << endl;
+      cout << "TrackExtraWeight: " << TrackExtraWeight << endl;
+      cout << "UseResidualWeight: " << (useResidualWeight ? "true" : "false") << endl;
+      cout << "ResidualWeightFile: " << residualWeightFile << endl;
+      cout << "EnergyExtraFile: " << EnergyExtraFile << endl;
+      cout << "TrackSelectionMode: " << TrackSelectionMode << endl;
+      cout << "TrackTreeName: " << TrackTreeName << endl;
+      cout << "Scale factor: " << scaleFactor << endl;
+      cout << "SumHF shift: " << shift << endl;
+      cout << "Number of Threads: " << nThread << endl;
+      cout << "Process the Nth chunk: " << nChunk << endl;
+      cout << "Mix flag: " << (mix ? "true" : "false") << endl;
+      cout << "Number of mixed events: " << nMix << endl;
+      cout << "Muon Tagging Enabled: " << (isMuTagged ? "true" : "false") << endl;
+      cout << "TrackMuDR: " << TrackMuDR << endl;
+      cout << "TrackMuClosest: " << (TrackMuClosest ? "true" : "false") << endl;
+      cout << "PU rejection: " << (isPUReject ? "true" : "false") << endl;
+      cout << "yBoost: " << yBoost << endl;
+      cout << "VZWeightFile: " << VZWeightFile << endl;
+      if (mix) cout << "Event mixing!" << endl;
+   }
+};
+
+void saveParametersToHistograms(const Parameters& par, TFile* outf) {
+   outf->cd();  // Navigate to the output file directory
+   outf->mkdir("par"); // Create a directory named "par"
+   outf->cd("par"); // Change to the "par" directory
+
+   // Create and fill histograms for each parameter
+   TH1D* hMinZPT = new TH1D("parMinZPT", "parMinZPT", 1, 0, 1);
+   hMinZPT->SetBinContent(1, par.MinZPT);
+    
+   TH1D* hMaxZPT = new TH1D("parMaxZPT", "parMaxZPT", 1, 0, 1);
+   hMaxZPT->SetBinContent(1, par.MaxZPT);
+    
+   TH1D* hMinTrackPT = new TH1D("parMinTrackPT", "parMinTrackPT", 1, 0, 1);
+   hMinTrackPT->SetBinContent(1, par.MinTrackPT);
+    
+   TH1D* hMaxTrackPT = new TH1D("parMaxTrackPT", "parMaxTrackPT", 1, 0, 1);
+   hMaxTrackPT->SetBinContent(1, par.MaxTrackPT);
+    
+   TH1D* hMix = new TH1D("parMix", "parMix", 1, 0, 1);
+   hMix->SetBinContent(1, par.mix);
+    
+   TH1D* hScaleFactor = new TH1D("parScaleFactor", "parScaleFactor", 1, 0, 1);
+   hScaleFactor->SetBinContent(1, par.scaleFactor);
+    
+   TH1D* hShift = new TH1D("parShift", "parShift", 1, 0, 1);
+   hShift->SetBinContent(1, par.shift);
+    
+   TH1D* hNThread = new TH1D("parNThread", "parNThread", 1, 0, 1);
+   hNThread->SetBinContent(1, par.nThread);
+    
+   TH1D* hNChunk = new TH1D("parNChunk", "parNChunk", 1, 0, 1);
+   hNChunk->SetBinContent(1, par.nChunk);
+    
+   TH1D* hNMix = new TH1D("parNMix", "parNMix", 1, 0, 1);
+   hNMix->SetBinContent(1, par.nMix);
+    
+   TH1D* hIsSelfMixing = new TH1D("parIsSelfMixing", "parIsSelfMixing", 1, 0, 1);
+   hIsSelfMixing->SetBinContent(1, par.isSelfMixing);
+    
+   TH1D* hIsGenZ = new TH1D("parIsGenZ", "parIsGenZ", 1, 0, 1);
+   hIsGenZ->SetBinContent(1, par.isGenZ);
+    
+   TH1D* hIsMuTagged = new TH1D("parIsMuTagged", "parIsMuTagged", 1, 0, 1);
+   hIsMuTagged->SetBinContent(1, par.isMuTagged);
+
+   TH1D* hTrackMuDR = new TH1D("parTrackMuDR", "parTrackMuDR", 1, 0, 1);
+   hTrackMuDR->SetBinContent(1, par.TrackMuDR);
+
+   TH1D* hTrackMuClosest = new TH1D("parTrackMuClosest", "parTrackMuClosest", 1, 0, 1);
+   hTrackMuClosest->SetBinContent(1, par.TrackMuClosest);
+     
+   TH1D* hIsPUReject = new TH1D("parIsPUReject", "parIsPUReject", 1, 0, 1);
+   hIsPUReject->SetBinContent(1, par.isPUReject);
+    
+   TH1D* hIsPP = new TH1D("parIsPP", "parIsPP", 1, 0, 1);
+   hIsPP->SetBinContent(1, par.isPP);
+
+   TH1D* hUseJackknife = new TH1D("parUseJackknife", "parUseJackknife", 1, 0, 1);
+   hUseJackknife->SetBinContent(1, par.useJackknife);
+
+   TH1D* hUsePionTrackY = new TH1D("parUsePionTrackY", "parUsePionTrackY", 1, 0, 1);
+   hUsePionTrackY->SetBinContent(1, par.usePionTrackY);
+
+   TH1D* hResultDEtaBins = new TH1D("parResultDEtaBins", "parResultDEtaBins", 1, 0, 1);
+   hResultDEtaBins->SetBinContent(1, par.ResultDEtaBins);
+
+   TH1D* hResultDPhiBins = new TH1D("parResultDPhiBins", "parResultDPhiBins", 1, 0, 1);
+   hResultDPhiBins->SetBinContent(1, par.ResultDPhiBins);
+
+   TH1D* hMinZY = new TH1D("parMinZY", "parMinZY", 1, 0, 1);
+   hMinZY->SetBinContent(1, par.MinZY);
+    
+   TH1D* hMaxZY = new TH1D("parMaxZY", "parMaxZY", 1, 0, 1);
+   hMaxZY->SetBinContent(1, par.MaxZY);
+    
+   // Write histograms to the output file
+   hMinZPT->Write();
+   hMaxZPT->Write();
+   hMinTrackPT->Write();
+   hMaxTrackPT->Write();
+   hMix->Write();
+   hScaleFactor->Write();
+   hShift->Write();
+   hNThread->Write();
+   hNChunk->Write();
+   hNMix->Write();
+   hIsSelfMixing->Write();
+   hIsGenZ->Write();
+   hIsMuTagged->Write();
+   hTrackMuDR->Write();
+   hTrackMuClosest->Write();
+   hIsPUReject->Write();
+   hIsPP->Write();
+   hUseJackknife->Write();
+   hUsePionTrackY->Write();
+   hResultDEtaBins->Write();
+   hResultDPhiBins->Write();
+   hMinZY->Write();
+   hMaxZY->Write();
+
+   // Clean up
+   delete hMinZPT;
+   delete hMaxZPT;
+   delete hMinTrackPT;
+   delete hMaxTrackPT;
+   delete hMix;
+   delete hScaleFactor;
+   delete hShift;
+   delete hNThread;
+   delete hNChunk;
+   delete hNMix;
+   delete hIsSelfMixing;
+   delete hIsGenZ;
+   delete hIsMuTagged;
+   delete hTrackMuDR;
+   delete hTrackMuClosest;
+   delete hIsPUReject;
+   delete hIsPP;
+   delete hUseJackknife;
+   delete hUsePionTrackY;
+   delete hResultDEtaBins;
+   delete hResultDPhiBins;
+   delete hMinZY;
+   delete hMaxZY;
+}

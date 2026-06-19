@@ -43,10 +43,13 @@ inline std::string GetResultAxisLabel(const std::string &observable)
    return "d#LT#DeltaN_{ch}#GT/d" + GetObservableLabel(observable);
 }
 
-inline std::pair<double, double> GetObservableRange(const std::string &observable)
+inline std::pair<double, double> GetObservableRange(const std::string &observable,
+   bool useModified12x12 = false)
 {
    if(observable == "DeltaPhi")
       return {-1.5707, 4.7123};
+   if(useModified12x12)
+      return {-3.87, 3.87};
    return {-4.0, 4.0};
 }
 
@@ -56,9 +59,9 @@ inline std::string GetCollisionEnergy(const std::string &collision)
 }
 
 inline TH1D *LoadResultHistogram(TFile &file, const std::string &observable,
-   const std::string &trackRange, const std::string &name)
+   const std::string &trackRange, const std::string &name, bool symmetrize = false)
 {
-   return LoadSingleResultHistogram(file, observable, trackRange, name);
+   return LoadSingleResultHistogram(file, observable, trackRange, name, symmetrize);
 }
 
 inline TH1D *BuildDifferenceHistogram(TH1D *variation, TH1D *reference,
@@ -100,7 +103,25 @@ inline std::pair<double, double> GetRatioRange(const std::vector<TH1 *> &histogr
 
 inline std::pair<double, double> GetDifferenceRange(const std::vector<TH1 *> &histograms, int baseline = 0)
 {
-   return {-0.2, 0.2};
+   double maxExtent = 0;
+   for(size_t i = 0; i < histograms.size(); i++)
+   {
+      if((int)i == baseline || histograms[i] == nullptr)
+         continue;
+      TH1 *h = histograms[i];
+      TH1 *ref = histograms[baseline];
+      for(int bin = 1; bin <= h->GetNbinsX(); bin++)
+      {
+         double diff = std::fabs(h->GetBinContent(bin) - ref->GetBinContent(bin));
+         double err = std::sqrt(h->GetBinError(bin) * h->GetBinError(bin)
+            + ref->GetBinError(bin) * ref->GetBinError(bin));
+         maxExtent = std::max(maxExtent, diff + err);
+      }
+   }
+   if(maxExtent < 0.001)
+      return {-0.001, 0.001};
+   double margin = maxExtent * 1.5;
+   return {-margin, margin};
 }
 
 inline std::pair<double, double> GetComparisonYRange(const std::vector<TH1 *> &histograms,
@@ -147,10 +168,10 @@ inline void DrawKinematicLabels(TPad *pad, const std::string &title,
    TLatex latex;
    latex.SetNDC();
    latex.SetTextFont(42);
-   latex.SetTextSize(0.032);
-   latex.DrawLatex(0.18, 0.84, title.c_str());
-   latex.DrawLatex(0.18, 0.79, FormatPTRange(trackRange, "p_{T}^{ch}").c_str());
-   latex.DrawLatex(0.18, 0.74, FormatPTRange(zptRange, "p_{T}^{Z}").c_str());
+   latex.SetTextSize(0.038);
+   latex.DrawLatex(0.25, 0.84, title.c_str());
+   latex.DrawLatex(0.25, 0.78, FormatPTRange(trackRange, "p_{T}^{ch}").c_str());
+   latex.DrawLatex(0.25, 0.72, FormatPTRange(zptRange, "p_{T}^{Z}").c_str());
 }
 
 #endif

@@ -1,6 +1,7 @@
 #include <TFile.h>
 #include <TH1D.h>
 #include <TCanvas.h>
+#include <TPad.h>
 #include <TLegend.h>
 #include <TStyle.h>
 #include <iostream>
@@ -10,126 +11,68 @@ void plot_corrections() {
     gROOT->SetBatch(kTRUE);
     gStyle->SetTitleY(1.01);
     gStyle->SetTitleSize(0.9);
-    // Open the correction files
+
     TFile *fCorr1 = TFile::Open("output/correction_1.root");
     TFile *fCorr2 = TFile::Open("output/correction_2.root");
     TFile *fCorr3 = TFile::Open("output/correction_3.root");
 
-    // Check if files are opened successfully
     if (!fCorr1 || !fCorr2 || !fCorr3) {
         std::cerr << "Error opening files." << std::endl;
         return;
     }
 
-    // Retrieve the histograms
-    TH1D *hPtCorr1 = (TH1D*)fCorr1->Get("hPtCorrTotal");
-    hPtCorr1->SetName("hPtCorr1");
-    TH1D *hEtaCorr1 = (TH1D*)fCorr1->Get("hEtaCorrTotal");
-    hEtaCorr1->SetName("hEtaCorr1");
-    TH1D *hPhiCorr1 = (TH1D*)fCorr1->Get("hPhiCorrTotal");
-    hPhiCorr1->SetName("hPhiCorr1");
+    TH1D *hPtCorr1  = (TH1D*)fCorr1->Get("hPtCorrTotal");  hPtCorr1->SetName("hPtCorr1");
+    TH1D *hEtaCorr1 = (TH1D*)fCorr1->Get("hEtaCorrTotal"); hEtaCorr1->SetName("hEtaCorr1");
+    TH1D *hPtCorr2  = (TH1D*)fCorr2->Get("hPtCorrTotal");  hPtCorr2->SetName("hPtCorr2");
+    TH1D *hEtaCorr2 = (TH1D*)fCorr2->Get("hEtaCorrTotal"); hEtaCorr2->SetName("hEtaCorr2");
+    TH1D *hPtCorr3  = (TH1D*)fCorr3->Get("hPtCorrTotal");  hPtCorr3->SetName("hPtCorr3");
+    TH1D *hEtaCorr3 = (TH1D*)fCorr3->Get("hEtaCorrTotal"); hEtaCorr3->SetName("hEtaCorr3");
 
-    TH1D *hPtCorr2 = (TH1D*)fCorr2->Get("hPtCorrTotal");
-    hPtCorr2->SetName("hPtCorr2");
-    TH1D *hEtaCorr2 = (TH1D*)fCorr2->Get("hEtaCorrTotal");
-    hEtaCorr2->SetName("hEtaCorr2");
-    TH1D *hPhiCorr2 = (TH1D*)fCorr2->Get("hPhiCorrTotal");
-    hPhiCorr2->SetName("hPhiCorr2");
-
-    TH1D *hPtCorr3 = (TH1D*)fCorr3->Get("hPtCorrTotal");
-    hPtCorr3->SetName("hPtCorr3");
-    TH1D *hEtaCorr3 = (TH1D*)fCorr3->Get("hEtaCorrTotal");
-    hEtaCorr3->SetName("hEtaCorr3");
-    TH1D *hPhiCorr3 = (TH1D*)fCorr3->Get("hPhiCorrTotal");
-    hPhiCorr3->SetName("hPhiCorr3");
-
-    // Check if histograms are retrieved successfully
-    if (!hPtCorr1 || !hEtaCorr1 || !hPhiCorr1 || !hPtCorr2 || !hEtaCorr2 || !hPhiCorr2 || !hPtCorr3 || !hEtaCorr3 || !hPhiCorr3) {
+    if (!hPtCorr1 || !hEtaCorr1 || !hPtCorr2 || !hEtaCorr2 || !hPtCorr3 || !hEtaCorr3) {
         std::cerr << "Error retrieving histograms." << std::endl;
         return;
     }
 
-    // Set up a canvas with 2x2 pads
-    TCanvas *c = new TCanvas("c", "Corrections", 1200, 1200);
-    c->Divide(2, 2);
+    TCanvas *c = new TCanvas("c", "Corrections", 1800, 600);
 
-    // Plot hPtCorrTotal
-    c->cd(1)->SetLogx();
+    TPad *p1 = new TPad("p1", "", 0.00, 0.00, 0.40, 1.00); p1->Draw();
+    TPad *p2 = new TPad("p2", "", 0.40, 0.00, 0.80, 1.00); p2->Draw();
+    TPad *p3 = new TPad("p3", "", 0.80, 0.60, 1.00, 1.00); p3->Draw();
+
+    p1->cd(); p1->SetLogx();
     hPtCorr1->SetLineColor(kRed);
     hPtCorr1->SetTitle("Z p_{T} Dependent Correction");
-    hPtCorr1->GetYaxis()->SetRangeUser(0.8,1.2);
+    hPtCorr1->GetYaxis()->SetRangeUser(0.8, 1.2);
     hPtCorr1->GetXaxis()->CenterTitle();
-    hPtCorr1->SetTitleOffset(1.1,"X");
-    hPtCorr1->SetTitleSize(0.055,"X");
+    hPtCorr1->SetTitleOffset(1.1, "X");
+    hPtCorr1->SetTitleSize(0.055, "X");
     hPtCorr1->SetYTitle("Correction");
     hPtCorr1->GetYaxis()->CenterTitle();
     hPtCorr1->Draw("HIST");
+    hPtCorr2->SetLineColor(kBlue);    hPtCorr2->Draw("HIST SAME");
+    hPtCorr3->SetLineColor(kGreen+2); hPtCorr3->Draw("HIST SAME");
 
-    hPtCorr2->SetLineColor(kBlue);
-    hPtCorr2->Draw("HIST SAME");
-
-    hPtCorr3->SetLineColor(kGreen + 2);
-    hPtCorr3->Draw("HIST SAME");
-
-    // Plot hEtaCorrTotal
-    c->cd(2);
+    p2->cd();
     hEtaCorr1->SetLineColor(kRed);
     hEtaCorr1->SetTitle("Z #eta Dependent Correction");
-    hEtaCorr1->GetYaxis()->SetRangeUser(0.8,1.2);
+    hEtaCorr1->GetYaxis()->SetRangeUser(0.8, 1.2);
     hEtaCorr1->GetXaxis()->CenterTitle();
-    hEtaCorr1->SetTitleOffset(1.1,"X");
-    hEtaCorr1->SetTitleOffset(1.1,"X");
-    hEtaCorr1->SetTitleSize(0.055,"X");
+    hEtaCorr1->SetTitleOffset(1.1, "X");
+    hEtaCorr1->SetTitleSize(0.055, "X");
     hEtaCorr1->SetYTitle("Correction");
     hEtaCorr1->GetYaxis()->CenterTitle();
     hEtaCorr1->Draw("HIST");
+    hEtaCorr2->SetLineColor(kBlue);    hEtaCorr2->Draw("HIST SAME");
+    hEtaCorr3->SetLineColor(kGreen+2); hEtaCorr3->Draw("HIST SAME");
 
-    hEtaCorr2->SetLineColor(kBlue);
-    hEtaCorr2->Draw("HIST SAME");
-
-    hEtaCorr3->SetLineColor(kGreen + 2);
-    hEtaCorr3->Draw("HIST SAME");
-
-    // Plot hPhiCorrTotal
-    c->cd(3);
-    hPhiCorr1->SetLineColor(kRed);
-    hPhiCorr1->SetTitle("Z #phi Dependent Correction");
-    hPhiCorr1->GetYaxis()->SetRangeUser(0.8,1.2);
-    hPhiCorr1->GetXaxis()->CenterTitle();
-    hPhiCorr1->SetTitleOffset(1.1,"X");
-    hPhiCorr1->SetTitleOffset(1.1,"X");
-    hPhiCorr1->SetTitleSize(0.055,"X");
-    hPhiCorr1->SetYTitle("Correction");
-    hPhiCorr1->GetYaxis()->CenterTitle();
-    hPhiCorr1->Draw("HIST");
-
-    hPhiCorr2->SetLineColor(kBlue);
-    hPhiCorr2->Draw("HIST SAME");
-
-    hPhiCorr3->SetLineColor(kGreen + 2);
-    hPhiCorr3->Draw("HIST SAME");
-
-    // Add the legend in the fourth subcanvas
-    c->cd(4);
-    TLegend *legend = new TLegend(0.1, 0.7, 0.9, 0.9);
+    p3->cd();
+    TLegend *legend = new TLegend(0.05, 0.05, 0.95, 0.95);
     legend->AddEntry(hPtCorr1, "Iteration 1", "l");
     legend->AddEntry(hPtCorr2, "Iteration 2", "l");
     legend->AddEntry(hPtCorr3, "Iteration 3", "l");
     legend->Draw();
 
-    // Save the canvas as an image
     c->SaveAs("corrections.pdf");
-/*
-    // Clean up
-    fCorr1->Close();
-    fCorr2->Close();
-    fCorr3->Close();
-
-    delete fCorr1;
-    delete fCorr2;
-    delete fCorr3;
-    delete c;
-*/
 }
 
 int main() {

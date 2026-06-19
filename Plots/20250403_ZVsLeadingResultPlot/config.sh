@@ -1,4 +1,0 @@
-PT_RANGES=("7_11" "11_40" "7_40")
-HIBIN_RANGES=("0_30")
-ZPT_RANGES=("40_350")
-UseLeadingTrk=0

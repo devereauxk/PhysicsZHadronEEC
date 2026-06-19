@@ -44,6 +44,8 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -64,18 +66,18 @@ int main(int argc, char *argv[]) {
     }
 
     vector<string> dataCandidates = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT%s-nosub.root", collisionType.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("%s/%s_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), collisionType.c_str(), tag.c_str(), zPtRange.c_str())
     };
     if(collisionType != "pp")
-        dataCandidates.push_back(Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%s_nominal_%s_ZPT5_500-nosub.root", collisionType.c_str(), tag.c_str()));
+        dataCandidates.push_back(Form("%s/%s_nominal_%s_ZPT5_500-nosub.root", baseDir.c_str(), collisionType.c_str(), tag.c_str()));
     string dataFile = PickExistingFile(dataCandidates, Form("%s data", collisionType.c_str()));
 
     string mcGenFile = "";
     string mcRecoFile = "";
-    string mcClosureGenFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str());
-    string mcClosureRecoFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_Zclosure_ZPT%s-nosub.root", mctag.c_str(), zPtRange.c_str());
-    string mcTaggedGenFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
-    string mcTaggedRecoFile = Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s-nosub.root", mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
+    string mcClosureGenFile = Form("%s/%sMC_Gen_nominal_Zclosure_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), zPtRange.c_str());
+    string mcClosureRecoFile = Form("%s/%sMC_nominal_Zclosure_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), zPtRange.c_str());
+    string mcTaggedGenFile = Form("%s/%sMC_Gen_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
+    string mcTaggedRecoFile = Form("%s/%sMC_nominal_%s_ZPT%s-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str(), zPtRange.c_str());
 
     if(FileExists(mcTaggedGenFile) && FileExists(mcTaggedRecoFile)) {
         mcGenFile = mcTaggedGenFile;
@@ -88,14 +90,14 @@ int main(int argc, char *argv[]) {
     else {
         mcGenFile = PickExistingFile({
             mcTaggedGenFile,
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT0_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT5_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
+            Form("%s/%sMC_Gen_nominal_%s_ZPT0_500-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str()),
+            Form("%s/%sMC_Gen_nominal_%s_ZPT5_500-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str()),
             mcClosureGenFile
         }, Form("%s MC Gen", collisionType.c_str()));
         mcRecoFile = PickExistingFile({
             mcTaggedRecoFile,
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT0_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
-            Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT5_500-nosub.root", mctag.c_str(), mcTagName.c_str()),
+            Form("%s/%sMC_nominal_%s_ZPT0_500-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str()),
+            Form("%s/%sMC_nominal_%s_ZPT5_500-nosub.root", baseDir.c_str(), mctag.c_str(), mcTagName.c_str()),
             mcClosureRecoFile
         }, Form("%s MC Reco", collisionType.c_str()));
     }
@@ -170,10 +172,10 @@ int main(int argc, char *argv[]) {
         Form("MC Reco (x %.4f)", recoscale)
     };
 
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsYellow, cmsGray};
-    vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {0, 2, 1, 0, 1};
+    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6};
+    vector<int> markerStyles = {mCircleFill, mSquareFill, mDiamondFill};
+    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6};
+    vector<int> lineStyles = {-1, 2, 1};
 
     double max_peak = 0;
     for(TH1* hist : hZmass)
@@ -183,19 +185,18 @@ int main(int argc, char *argv[]) {
     // Z mass peak
     // ===========================================
     // make canvas
-    TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);
+    TCanvas* c1 = new TCanvas("c1", "c1", 700, 700);
 
-    TPad* pTrk1 = (TPad*) plotCMSSimple(
-        c1,
-        hZmass, "", labels,
+    TPad* pTrk1 = plotCMSRatio(
+        hZmass, "pad_zmass", labels,
         lineColors, lineStyles,
         markerColors, markerStyles,
-        "M_{mu mu} (GeV/c^{2})", 60, 120,
-        "Entries / (2 GeV/c^{2})", -1, -1,
-        false, false, false
+        "M_{#mu#mu} (GeV/c^{2})", 60, 120,
+        "Entries / (2 GeV/c^{2})", 0, max_peak * 1.60,
+        "MC / data", 0.5, 1.5,
+        0,
+        false, false, true, 0.50
     );
-
-    hZmass[0]->GetYaxis()->SetRangeUser(0, max_peak * 1.60);
 
     AddCMSHeader(
         pTrk1,

@@ -1,0 +1,793 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{graphicx}
+\setbeamersize{text margin left=0.15cm, text margin right=0.15cm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+
+\title{pPb/Pbp compatibility studies (12$\times$12)}
+\subtitle{Nominal $\cdot$ Half-splits $\cdot$ $|v_z|$ window $\cdot$ Signed $\cdot$ MC reco $\cdot$ $|\Delta v_z|$ $\cdot$ MC full stats $\cdot$ Raw $\cdot$ $N_{\rm mix}$ $\cdot$ ME corr $\cdot$ ME scale $\cdot$ nThread $\cdot$ Z corr $\cdot$ Sideband $\cdot$ Combined $\cdot$ Local vs official $\cdot$ SE corr $\cdot$ CM frame $\cdot$ pPb-oriented $\cdot$ Symmetrized $\cdot$ SE/ME double ratio}
+\date{}
+
+% ---- plot macros ----
+\newcommand{\pp}[1]{\begin{minipage}[t]{0.327\textwidth}\centering
+  {\tiny\detokenize{#1}\par}\vspace{0.15em}
+  \includegraphics[width=\linewidth]{#1}
+\end{minipage}}
+
+% Three panels across one row: SE / ME / Result
+\newcommand{\etarow}[3]{%
+  \vspace{-0.2em}\centering
+  \pp{#1}\hspace{0.003\textwidth}\pp{#2}\hspace{0.003\textwidth}\pp{#3}%
+}
+
+% ---- section-title frame ----
+\newcommand{\sectionframe}[2]{%
+  \begin{frame}[c]
+    \centering\Large #1\\\normalsize\vspace{0.6em}#2
+  \end{frame}
+}
+
+% ---- standard 3-panel content slide ----
+% #1 title  #2 label left  #3 label mid  #4 label right
+% #5 file1  #6 file2  #7 file3
+\newcommand{\threepanel}[7]{%
+  \begin{frame}[t]{#1}
+    \vspace{-0.3em}\centering
+    \begin{minipage}[t]{0.327\textwidth}\centering
+      {\tiny #2\par}\vspace{0.15em}
+      \includegraphics[width=\linewidth]{#5}
+    \end{minipage}\hspace{0.003\textwidth}%
+    \begin{minipage}[t]{0.327\textwidth}\centering
+      {\tiny #3\par}\vspace{0.15em}
+      \includegraphics[width=\linewidth]{#6}
+    \end{minipage}\hspace{0.003\textwidth}%
+    \begin{minipage}[t]{0.327\textwidth}\centering
+      {\tiny #4\par}\vspace{0.15em}
+      \includegraphics[width=\linewidth]{#7}
+    \end{minipage}
+  \end{frame}
+}
+
+% Shorthand for a study's two slides (eta row + phi row)
+% #1 title prefix  #2 plotdir prefix  (e.g. "../plots/12x12_vz10/vz10")
+\newcommand{\studyslides}[2]{%
+  \threepanel{#1 --- $\Delta y_{ch,Z}$}%
+    {same-event}{mixed-event}{result}%
+    {#2-SameEvent-DeltaEta.pdf}%
+    {#2-MixedEvent-DeltaEta.pdf}%
+    {#2-Result-DeltaEta.pdf}%
+  \threepanel{#1 --- $\Delta\phi_{ch,Z}$}%
+    {same-event}{mixed-event}{result}%
+    {#2-SameEvent-DeltaPhi.pdf}%
+    {#2-MixedEvent-DeltaPhi.pdf}%
+    {#2-Result-DeltaPhi.pdf}%
+}
+
+% ---- path roots ----
+\newcommand{\no}{../plots/12x12_nominal}
+\newcommand{\hs}{../plots/12x12_halfsplit}
+\newcommand{\vz}{../plots/12x12_vz10}
+\newcommand{\sg}{../plots/12x12_signed}
+\newcommand{\mc}{../plots/12x12_mc}
+\newcommand{\dv}{../plots/12x12_deltavz}
+\newcommand{\fs}{../plots/12x12_mc_fullstats}
+\newcommand{\rw}{../plots/12x12_raw}
+\newcommand{\nm}{../plots/12x12_nmix20}
+\newcommand{\bmc}{../plots/12x12_mecorr}
+\newcommand{\bsc}{../plots/12x12_secorr}
+\newcommand{\bms}{../plots/12x12_mescale}
+\newcommand{\bnt}{../plots/12x12_nthread}
+\newcommand{\bzc}{../plots/12x12_zcorr}
+\newcommand{\bsb}{../plots/12x12_sideband}
+\newcommand{\bsign}{../output_12x12_signed}
+\newcommand{\bsignppbvpp}{../output_12x12_signed_ppbvpp}
+\newcommand{\bsignpbpvpp}{../output_12x12_signed_pbpvpp}
+\newcommand{\bcomb}{../plots/12x12_combined_signed}
+% \bvzsa removed (Study 2b removed)
+\newcommand{\bno}{../output_12x12_nominal}
+\newcommand{\bloc}{../plots/12x12_local_vs_official}
+\newcommand{\bcma}{../plots/12x12_cmframe}
+\newcommand{\bcmb}{../plots/12x12_boostedframe}
+\newcommand{\bxck}{../plots/12x12_frames_xcheck}
+\newcommand{\bpvp}{../plots/12x12_pPb_vs_Pbp}
+\newcommand{\bboost}{../plots/12x12_ppmc_boost}
+\newcommand{\bsymcma}{../plots/12x12_sym_cma}
+\newcommand{\bdrcpbp}{../plots/12x12_drcorr_pbp}
+
+% ---- document ----
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ================================================================
+\begin{frame}[t]{Overview (1/2)}
+  \small
+  All studies use the full correction stack (event $+$ VZ $+$ Z $+$ track $+$ residual),
+  12$\times$12 result binning, $0<p_T^Z<500$\,GeV, $0.5<p_T^{trk}<15$\,GeV,
+  $n_{\rm mix}=10$, 8.16\,TeV pPb, $|\Delta v_z^{\rm mix}|<1.0$\,cm (unless study varies it).
+  Jackknife statistical uncertainties on corrected-data legs.\par
+  \vspace{0.4em}
+  Each slide shows three panels: \textbf{same-event} / \textbf{mixed-event} / \textbf{result (SE$-$ME)}.
+  Lower panels: ratio pPb/Pbp (SE, ME) or difference pPb$-$Pbp (result).\par
+  \vspace{0.5em}
+  \begin{tabular}{lll}
+    \hline
+    Study & Description & Slides \\
+    \hline
+    0 & Nominal pPb vs Pbp (baseline, full corrections) & \ref{sec:no_start}--\ref{sec:no_end} \\
+    1 & Run half-splits (4 independent comparisons) & \ref{sec:hs_start}--\ref{sec:hs_end} \\
+    2 & $|v_z|<10$\,cm with $|v_z|<15$\,cm overlay (4 lines) & \ref{sec:vz_start}--\ref{sec:vz_end} \\
+    3 & Signed $\Delta\eta$ and $\Delta\phi$ (no folding, full range) & \ref{sec:sg_start}--\ref{sec:sg_end} \\
+    4 & MC reco Z-count-matched to data & \ref{sec:mc_start}--\ref{sec:mc_end} \\
+    5 & $|\Delta v_z^{\rm mix}|$ sensitivity: 1.0\,cm nominal, 0.5\,cm and off (6 lines) & \ref{sec:dv_start}--\ref{sec:dv_end} \\
+    6 & MC reco full statistics pPb vs Pbp & \ref{sec:fs_start}--\ref{sec:fs_end} \\
+    7 & Raw uncorrected data pPb vs Pbp & \ref{sec:rw_start}--\ref{sec:rw_end} \\
+    \hline
+  \end{tabular}
+\end{frame}
+
+\begin{frame}[t]{Overview (2/2)}
+  \small\vspace{0.5em}
+  \begin{tabular}{lll}
+    \hline
+    Study & Description & Slides \\
+    \hline
+    8 & $N_{\rm mix}$ sensitivity: $N_{\rm mix}=10$ (solid), 20 (long-dash), 40 (dotted) & \ref{sec:nm_start}--\ref{sec:nm_end} \\
+    9 & ME correction: Pbp ME replaced bin-by-bin with pPb ME (forces flat ME ratio) & \ref{sec:me_start}--\ref{sec:me_end} \\
+    10 & Pbp ME scale $\pm 0.3\%$: 6 lines (3 pairs $\times$ 2 systems) & \ref{sec:ms_start}--\ref{sec:ms_end} \\
+    11 & $n_{\rm thread}=20$ vs $40$ vs $60$ (6 lines, all local) & \ref{sec:nt_start}--\ref{sec:nt_end} \\
+    12 & Z correction applied to Pbp; nominal Pbp dashed overlay (4 lines) & \ref{sec:zc_start}--\ref{sec:zc_end} \\
+    13 & Sideband: two $\varepsilon$ values ($0.2$, $0.5$), no $\Delta\eta$ cut; ratio (SE/ME) and diff (result) subpanels & \ref{sec:sb_start}--\ref{sec:sb_end} \\
+    14 & Combined pPb+Pbp signed, signed $\Delta\eta$/$\Delta\phi$; pp comparison + $p$-value & \ref{sec:cb_start}--\ref{sec:cb_end} \\
+    15 & Local ($\_$full) vs official ($\_$bin12x12$\_$20260603) (4 lines) & \ref{sec:lo_start}--\ref{sec:lo_end} \\
+    16 & Inverse SE scale factor: $\mathrm{sf}=\mathrm{SE}_{\rm Pbp}/\mathrm{SE}_{\rm pPb}$ applied to $\mathrm{ME}_{\rm Pbp}$; no closure expected & \ref{sec:sc_start}--\ref{sec:sc_end} \\
+    17 & Option A: CM-frame signed comparison (asymmetric $|\eta_{\rm cm}|<1.935$ acceptance) & \ref{sec:cma_start}--\ref{sec:cma_end} \\
+    18 & Option B: pPb-oriented frame (symmetric $|\eta_{\rm lab}|<1.935$, Pbp flipped) + cross-check & \ref{sec:cmb_start}--\ref{sec:cmb_end} \\
+    19 & pPb vs Pbp closure: matched CM acceptance ($|\eta_{\rm cm}|<1.935$), Pbp $\Delta y$ flipped & \ref{sec:pvp_start}--\ref{sec:pvp_end} \\
+    20 & pp MC Gen boost closure: nominal vs pPb-boosted vs Pbp-boosted (flipped) & \ref{sec:boost_start}--\ref{sec:boost_end} \\
+    21 & Symmetrized result in CM frame (Option A): $R_{\rm sym}(x)=\tfrac{1}{2}[R(x)+R(-x)]$, JK errors & \ref{sec:symcma_start}--\ref{sec:symcma_end} \\
+    \hline
+  \end{tabular}
+\end{frame}
+
+% ================================================================
+% Study 0: Nominal pPb vs Pbp
+% ================================================================
+\sectionframe{Study 0: Nominal pPb vs Pbp}{%
+  Fully corrected data with nominal settings.\\[0.3em]
+  $|v_z|<15$\,cm, |DeltaVZ|<1.0\,cm, $N_{\rm mix}=10$, full correction stack.\\[0.3em]
+  Baseline comparison before any splitting or variation.}
+
+\label{sec:no_start}
+
+\studyslides{Nominal: pPb vs Pbp}{\no/nominal}
+
+% ---- Study 0: chi-squared p-value slide ----
+\begin{frame}[t]{Study 0: $\chi^2$ compatibility --- pPb vs Pbp (nominal)}
+  \vspace{0.3em}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+      \resizebox{\linewidth}{!}{\input{\bno/pPbPbp_compatibility.tex}}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \small
+      Three error models:\\[0.3em]
+      \textbf{Sumw2} --- standard per-bin $\sqrt{\sum w^2}$ errors.\\[0.2em]
+      \textbf{Jackknife} --- leave-one-Z-event-out diagonal.\\[0.2em]
+      \textbf{FullCovariance} --- full $N\times N$ jackknife matrix,
+        effective rank from SVD.\\[0.4em]
+      Folded $|\Delta\eta|$ and $|\Delta\phi|$; nominal 12$\times$12 binning.\\[0.2em]
+      Heatmap window: $\Delta\phi\in[0,\pi]$, $\Delta\eta\in[0,4]$.\\[0.4em]
+      pPb: 11\,729 Z events; Pbp: 6\,392 Z events.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---- Study 0: correlation matrix slide ----
+\begin{frame}[t]{Study 0: Jackknife covariance --- pPb vs Pbp (nominal)}
+  \vspace{0.3em}\centering
+  \begin{minipage}[t]{0.48\textwidth}\centering
+    {\tiny $\Delta y_{ch,Z}$ correlation matrix\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bno/pPbPbp_DeltaEta_correlation_matrix.pdf}
+  \end{minipage}\hspace{0.02\textwidth}%
+  \begin{minipage}[t]{0.48\textwidth}\centering
+    {\tiny $\Delta\phi_{ch,Z}$ correlation matrix\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bno/pPbPbp_DeltaPhi_correlation_matrix.pdf}
+  \end{minipage}
+\end{frame}
+
+% ---- Study 0: KS-like test slide ----
+\begin{frame}[t]{Study 0: Covariance-aware KS-like test --- pPb vs Pbp (nominal)}
+  \vspace{0.3em}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \resizebox{\linewidth}{!}{\input{\bno/pPbPbp_covKS.tex}}
+    \end{column}
+    \begin{column}{0.43\textwidth}
+      \small
+      Covariance-aware cumulative shape statistic:\\[0.3em]
+      $T_{\rm max} = \max_k |Z_k|$,\quad $Z_k = S_k / \sqrt{V_{kk}}$\\[0.2em]
+      where $S_k = \sum_{i\leq k} \Delta_i$ (cumulative difference)\\
+      and $V_{kk}$ = cumulative variance from full $C^{\rm tot} = C^{pPb} + C^{Pbp}$.\\[0.4em]
+      $p$-value from 100\,000 toy MC replicas drawn from\\
+      $\Delta \sim \mathcal{N}(0, C^{\rm tot})$.\\[0.3em]
+      Full jackknife covariance matrices used.\\[0.2em]
+      Not a replacement for the $\chi^2$ test;\\
+      sensitive to shape offsets that persist across bins.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---- Study 0: standard KS test slide ----
+\begin{frame}[t]{Study 0: Standard KS test --- pPb vs Pbp (nominal)}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \resizebox{\linewidth}{!}{\input{\bno/pPbPbp_ks_bare.tex}}
+    \end{column}
+    \begin{column}{0.43\textwidth}
+      \footnotesize
+      \texttt{ROOT::Math::GoFTest}\\
+      \texttt{::KolmogorovSmirnov2SamplesTest}\\[0.3em]
+      Input: the 12 result-histogram bin values per sample\\
+      treated as two independent data sets.\\[0.2em]
+      $D_{\rm KS} = \max_x |F_{\rm pPb}(x) - F_{\rm Pbp}(x)|$\\[0.1em]
+      where $F$ is the empirical CDF over sorted bin values.\\
+      Negative bins handled natively — no shift needed.\\[0.2em]
+      $p$-value uses the asymptotic Kolmogorov distribution\\
+      with $n_{\rm eff} = n_1 n_2/(n_1{+}n_2) = 6$\\
+      (i.e.\ based on $N_{\rm bins}=12$ per sample,\\
+      not on the much larger $N_Z$).\\[0.2em]
+      Compare to the covariance-aware KS-like test\\
+      (previous slide) which sums bins in $\Delta\eta$ order\\
+      and uses the full jackknife covariance.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[c]\label{sec:no_end}\end{frame}
+
+% ================================================================
+% Study 1: Run half-splits
+% ================================================================
+\sectionframe{Study 1: Run half-splits}{%
+  Each comparison holds one system at full stats and splits the other at the run-number median.\\[0.3em]
+  pPb split at Run\,$286302$;\quad Pbp split at Run\,$285549$.\\[0.3em]
+  Lower panels: ratio to the full-stats curve.}
+
+\label{sec:hs_start}
+
+\studyslides{pPb first half ($R<286302$) vs Pbp full}{\hs/halfsplit_pPbFirst}
+\studyslides{pPb second half ($R\geq286302$) vs Pbp full}{\hs/halfsplit_pPbSecond}
+\studyslides{Pbp first half ($R<285549$) vs pPb full}{\hs/halfsplit_PbPFirst}
+\studyslides{Pbp second half ($R\geq285549$) vs pPb full}{\hs/halfsplit_PbPSecond}
+
+\begin{frame}[c]\label{sec:hs_end}\end{frame}% label anchor
+
+% ================================================================
+% Study 2: |vz| window
+% ================================================================
+\sectionframe{Study 2: $|v_z|$ window sensitivity}{%
+  Solid lines: $|v_z|<10$\,cm. Dashed lines: nominal $|v_z|<15$\,cm.\\[0.3em]
+  VZ reweighting applied in both cases; tests sensitivity to vertex-distribution tails.\\[0.3em]
+  Lower panels: two curves (one per $v_z$ window).}
+
+\label{sec:vz_start}
+
+\studyslides{$|v_z|$ window: pPb vs Pbp}{\vz/vz10}
+
+
+\begin{frame}[c]\label{sec:vz_end}\end{frame}
+
+% ================================================================
+% Study 3: Signed DeltaEta and DeltaPhi
+% ================================================================
+\sectionframe{Study 3: Signed $\Delta\eta$ and $\Delta\phi$ (no folding)}{%
+  Fills genuine $\eta_{trk}^{CM}-\eta_Z^{CM}$ and $\phi_{trk}-\phi_Z$ without symmetrisation.\\[0.3em]
+  $\Delta\phi$ shown on full signed range $[-\pi,\pi]$;\quad $\Delta\eta$ on $[-4,4]$.\\[0.3em]
+  Three curves: pPb (blue), Pbp (green), pp 8.16\,TeV (red). pPb and Pbp should show opposite $\Delta\eta$ asymmetry; pp is symmetric.}
+
+\label{sec:sg_start}
+
+\studyslides{Signed $\Delta\eta$, $\Delta\phi$: pPb vs Pbp}{\sg/signed}
+
+% ---- Study 3: p-value slides ----
+% pPb vs Pbp (signed)
+\begin{frame}[t]{Study 3: $\chi^2$ compatibility --- pPb vs Pbp (signed $\Delta\eta$/$\Delta\phi$)}
+  \vspace{0.3em}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+      \resizebox{\linewidth}{!}{\input{\bsign/pPbPbp_compatibility.tex}}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \small
+      Three error models:\\[0.3em]
+      \textbf{Sumw2} --- standard per-bin $\sqrt{\sum w^2}$ errors.\\[0.2em]
+      \textbf{Jackknife} --- leave-one-Z-event-out diagonal.\\[0.2em]
+      \textbf{FullCovariance} --- full $N\times N$ jackknife matrix,
+        effective rank from SVD.\\[0.4em]
+      Signed $\Delta\eta$ and $\Delta\phi$; no folding.\\[0.2em]
+      Heatmap window: $\Delta\phi\in[\pi/2,3\pi/2]$, $\Delta\eta\in[0,4]$.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{Study 3: Jackknife covariance --- pPb vs Pbp (signed)}
+  \vspace{0.3em}\centering
+  \begin{minipage}[t]{0.48\textwidth}\centering
+    {\tiny $\Delta y_{ch,Z}$ correlation matrix\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsign/pPbPbp_DeltaEta_correlation_matrix.pdf}
+  \end{minipage}\hspace{0.02\textwidth}%
+  \begin{minipage}[t]{0.48\textwidth}\centering
+    {\tiny $\Delta\phi_{ch,Z}$ correlation matrix\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsign/pPbPbp_DeltaPhi_correlation_matrix.pdf}
+  \end{minipage}
+\end{frame}
+
+% pPb vs pp (signed)
+\begin{frame}[t]{Study 3: $\chi^2$ compatibility --- pPb vs pp (signed)}
+  \vspace{0.3em}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+      \resizebox{\linewidth}{!}{\input{\bsignppbvpp/pPbPbp_compatibility.tex}}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \small
+      Three error models:\\[0.3em]
+      \textbf{Sumw2} --- standard per-bin $\sqrt{\sum w^2}$ errors.\\[0.2em]
+      \textbf{Jackknife} --- leave-one-Z-event-out diagonal.\\[0.2em]
+      \textbf{FullCovariance} --- full $N\times N$ jackknife matrix.\\[0.4em]
+      pPb vs pp 8.16\,TeV (signed); tests compatibility with symmetric reference.\\[0.2em]
+      Same projection window as pPb vs Pbp.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{Study 3: Jackknife covariance --- pPb vs pp (signed)}
+  \vspace{0.3em}\centering
+  \begin{minipage}[t]{0.48\textwidth}\centering
+    {\tiny $\Delta y_{ch,Z}$ correlation matrix\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsignppbvpp/pPbPbp_DeltaEta_correlation_matrix.pdf}
+  \end{minipage}\hspace{0.02\textwidth}%
+  \begin{minipage}[t]{0.48\textwidth}\centering
+    {\tiny $\Delta\phi_{ch,Z}$ correlation matrix\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsignppbvpp/pPbPbp_DeltaPhi_correlation_matrix.pdf}
+  \end{minipage}
+\end{frame}
+
+% Pbp vs pp (signed)
+\begin{frame}[t]{Study 3: $\chi^2$ compatibility --- Pbp vs pp (signed)}
+  \vspace{0.3em}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+      \resizebox{\linewidth}{!}{\input{\bsignpbpvpp/pPbPbp_compatibility.tex}}
+    \end{column}
+    \begin{column}{0.40\textwidth}
+      \small
+      Three error models:\\[0.3em]
+      \textbf{Sumw2} --- standard per-bin $\sqrt{\sum w^2}$ errors.\\[0.2em]
+      \textbf{Jackknife} --- leave-one-Z-event-out diagonal.\\[0.2em]
+      \textbf{FullCovariance} --- full $N\times N$ jackknife matrix.\\[0.4em]
+      Pbp vs pp 8.16\,TeV (signed).\\[0.2em]
+      Same projection window as pPb vs Pbp.
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{Study 3: Jackknife covariance --- Pbp vs pp (signed)}
+  \vspace{0.3em}\centering
+  \begin{minipage}[t]{0.48\textwidth}\centering
+    {\tiny $\Delta y_{ch,Z}$ correlation matrix\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsignpbpvpp/pPbPbp_DeltaEta_correlation_matrix.pdf}
+  \end{minipage}\hspace{0.02\textwidth}%
+  \begin{minipage}[t]{0.48\textwidth}\centering
+    {\tiny $\Delta\phi_{ch,Z}$ correlation matrix\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsignpbpvpp/pPbPbp_DeltaPhi_correlation_matrix.pdf}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[c]\label{sec:sg_end}\end{frame}
+
+% ================================================================
+% Study 4: MC reco Z-matched
+% ================================================================
+\sectionframe{Study 4: MC reco, Z-count-matched to data}{%
+  EPOS+DY MC reco fully corrected; sample fractions chosen to match data Z counts.\\[0.3em]
+  pPb fraction $\approx0.034$ (data $N_Z=10\,324$ / MC $N_Z=302\,326$);
+  Pbp fraction $\approx0.020$ (data $N_Z=5\,943$ / MC $N_Z=303\,036$).\\[0.3em]
+  Tests whether corrected MC reco shows the same pPb/Pbp compatibility as data.}
+
+\label{sec:mc_start}
+
+\studyslides{MC reco: pPb vs Pbp (Z-matched)}{\mc/mc_matched}
+
+\begin{frame}[c]\label{sec:mc_end}\end{frame}
+
+% ================================================================
+% Study 5: DeltaVZ mixing requirement sensitivity
+% ================================================================
+\sectionframe{Study 5: |DeltaVZ| mixing requirement sensitivity}{%
+  6 lines per panel: pPb (blue) and Pbp (green) for three |DeltaVZ| settings.\\[0.3em]
+  \textbf{Solid}: |DeltaVZ|<1.0\,cm (nominal);\quad
+  \textbf{Long-dash}: |DeltaVZ|<0.5\,cm (variation);\quad
+  \textbf{Dotted}: |DeltaVZ| off (variation).\\[0.3em]
+  Lower panels: three ratio/difference curves, one per |DeltaVZ| setting.}
+
+\label{sec:dv_start}
+
+\studyslides{|DeltaVZ| sensitivity: pPb vs Pbp}{\dv/deltavz}
+
+\begin{frame}[c]\label{sec:dv_end}\end{frame}
+
+% ================================================================
+% Study 6: MC reco full statistics
+% ================================================================
+\sectionframe{Study 6: MC reco full statistics}{%
+  pPb and Pbp MC reco fully corrected at full MC statistics (no Z-count matching).\\[0.3em]
+  Cross-check of Study 4 without the Z-count fraction constraint.\\[0.3em]
+  Normalization differences between systems expected from differing MC $N_Z$.}
+
+\label{sec:fs_start}
+
+\studyslides{MC reco full stats: pPb vs Pbp}{\fs/mc_fullstats}
+
+\begin{frame}[c]\label{sec:fs_end}\end{frame}
+
+% ================================================================
+% Study 7: Raw uncorrected data
+% ================================================================
+\sectionframe{Study 7: Raw uncorrected data}{%
+  All corrections turned off: event, VZ, Z, track, and residual weights all set to 1.\\[0.3em]
+  Jackknife statistical uncertainties kept; $|\Delta v_z^{\rm mix}|<1.0$\,cm retained.\\[0.3em]
+  Baseline check of raw-level pPb/Pbp agreement before corrections.}
+
+\label{sec:rw_start}
+
+\studyslides{Raw uncorrected data: pPb vs Pbp}{\rw/raw}
+
+\begin{frame}[c]\label{sec:rw_end}\end{frame}
+
+% ================================================================
+% Study 8: Nmix sensitivity
+% ================================================================
+\sectionframe{Study 8: $N_{\rm mix}$ sensitivity}{%
+  Three curves per system: $N_{\rm mix}=10$ (solid), $N_{\rm mix}=20$ (long-dash), $N_{\rm mix}=40$ (dotted).\\[0.3em]
+  Full correction stack; jackknife statistical uncertainties; $|\Delta v_z^{\rm mix}|<1.0$\,cm.\\[0.3em]
+  Lower panels: ratio/difference for each $N_{\rm mix}$ setting.}
+
+\label{sec:nm_start}
+
+\studyslides{$N_{\rm mix}$ sensitivity: pPb vs Pbp}{\nm/nmix20}
+
+\begin{frame}[c]\label{sec:nm_end}\end{frame}
+
+% ================================================================
+% Study 9: ME correction
+% ================================================================
+\sectionframe{Study 9: Bin-by-bin ME correction to Pbp}{%
+  Pbp ME replaced bin-by-bin with the pPb ME: $ME_{\rm Pbp}^{\rm corr}[i,j] = ME_{\rm pPb}[i,j]$.\\[0.3em]
+  This forces the ME ratio $ME_{\rm Pbp}^{\rm corr}/ME_{\rm pPb}$ to unity in every 2D bin,
+  and therefore flat in both $\Delta\eta$ and $\Delta\phi$ projections.\\[0.3em]
+  Corrected Pbp result $= SE_{\rm Pbp} - ME_{\rm pPb}$; residual disagreement with pPb reflects
+  only the SE mismatch $SE_{\rm Pbp} - SE_{\rm pPb}$.}
+
+\label{sec:me_start}
+
+\studyslides{ME-corrected Pbp vs pPb}{\bmc/mecorr}
+
+\begin{frame}[c]\label{sec:me_end}\end{frame}
+
+% ================================================================
+% Study 10: ME scale ±0.3%
+% ================================================================
+\sectionframe{Study 10: Pbp ME scale $\pm 0.3\%$}{%
+  Three pairs: nominal $|$ Pbp ME $\times 1.003$ $|$ Pbp ME $\times 0.997$.\\[0.3em]
+  pPb ME unchanged in all three pairs.
+  Tests sensitivity to a per-mille shift in the Pbp mixed-event normalization.\\[0.3em]
+  Six lines per panel (two systems $\times$ three ME scalings).}
+
+\label{sec:ms_start}
+
+\studyslides{ME scale sensitivity: pPb vs Pbp}{\bms/mescale}
+
+\begin{frame}[c]\label{sec:ms_end}\end{frame}
+
+% ================================================================
+% Study 11: nThread comparison
+% ================================================================
+\sectionframe{Study 11: $n_{\rm thread}$ comparison}{%
+  Six curves per panel: pPb and Pbp for $n_{\rm thread}=20$ (solid), $n_{\rm thread}=40$ (long-dash), and $n_{\rm thread}=60$ (dotted).\\[0.3em]
+  All three runs produced locally from the combining sandbox.\\[0.3em]
+  Tests whether the number of parallel analysis threads introduces any bias or race-condition artifact in the result.}
+
+\label{sec:nt_start}
+
+\studyslides{$n_{\rm thread}=20$ vs $40$ vs $60$: pPb vs Pbp}{\bnt/nthread}
+
+\begin{frame}[c]\label{sec:nt_end}\end{frame}
+
+% ================================================================
+% Study 12: Z correction applied to Pbp
+% ================================================================
+\sectionframe{Study 12: Z correction applied to Pbp}{%
+  Bin-by-bin $y_Z^{CM}$--$\phi_Z$ event weight derived from pPb/Pbp data ratio (VZ+Z+ZSF stack).\\[0.3em]
+  Solid: pPb (blue) vs Pbp Z-corrected (green). Dashed: pPb (blue) vs Pbp nominal uncorrected (green).\\[0.3em]
+  Tests whether the pPb/Pbp $\Delta\eta$ difference is explained by residual $Z$-distribution mismatch.}
+
+\label{sec:zc_start}
+
+\studyslides{pPb vs Pbp (Z corrected)}{\bzc/zcorr}
+
+\begin{frame}[c]\label{sec:zc_end}\end{frame}
+
+% ================================================================
+% Study 13: Sideband
+% ================================================================
+\sectionframe{Study 13: Sideband region, two $\varepsilon$ values about $\pi/2$}{%
+  Perpendicular-to-Z azimuthal band $\pi/2-\varepsilon<|\Delta\phi|<\pi/2+\varepsilon$, no $\Delta\eta$ cut.
+  Solid: $\varepsilon=0.2$; long-dashed: $\varepsilon=0.5$. Blue: pPb; green: Pbp.\\[0.3em]
+  SE and ME subpanels: ratio pPb/Pbp (fixed $[0.95,1.05]$). Result subpanel: difference pPb$-$Pbp (auto-scaled).\\[0.3em]
+  Legend omitted from Result $\Delta\eta$ panel. 2D heatmaps: full (unmasked) ME distributions.}
+
+\label{sec:sb_start}
+
+\studyslides{Sideband 1D projections: pPb vs Pbp}{\bsb/sideband}
+
+% ---- 2D heatmaps: ME distributions ----
+\begin{frame}[t]{Study 13: Sideband 2D mixed-event heatmaps}
+  \vspace{-0.1em}\centering
+  \begin{minipage}[t]{0.327\textwidth}\centering
+    {\tiny pPb mixed-event\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsb/sideband-2D-ME-pPb.pdf}
+  \end{minipage}\hspace{0.003\textwidth}%
+  \begin{minipage}[t]{0.327\textwidth}\centering
+    {\tiny Pbp mixed-event\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsb/sideband-2D-ME-Pbp.pdf}
+  \end{minipage}\hspace{0.003\textwidth}%
+  \begin{minipage}[t]{0.327\textwidth}\centering
+    {\tiny pPb/Pbp ME ratio\par}\vspace{0.15em}
+    \includegraphics[width=\linewidth]{\bsb/sideband-2D-ME-Ratio.pdf}
+  \end{minipage}
+\end{frame}
+
+\begin{frame}[c]\label{sec:sb_end}\end{frame}
+
+% ================================================================
+% Study 14: Combined pPb+Pbp (signed convention) vs pp
+\sectionframe{Study 14: Combined pPb+Pbp vs pp (signed convention)}{%
+  pPb and Pbp signed distributions combined via $S_{\rm comb} = (S_{\rm pPb} N_Z^{\rm pPb} + S_{\rm Pbp} N_Z^{\rm Pbp})/(N_Z^{\rm pPb}+N_Z^{\rm Pbp})$.\\
+  Full signed range: $\Delta y\in[-4,4]$, $\Delta\phi\in[-\pi/2,3\pi/2]$. Compared to pp (8.16\,TeV).\\
+  p-values ($\chi^2$ diagonal): $\Delta y$ $\chi^2/{\rm ndf}=51/12$ ($p\approx9\times10^{-7}$); $\Delta\phi$ $\chi^2/{\rm ndf}=93/12$ ($p\approx10^{-14}$).}
+
+\label{sec:cb_start}
+\studyslides{Study 14: Combined pPb+Pbp vs pp}{\bcomb/combined}
+
+\begin{frame}[t]{Study 14: Combined pPb+Pbp vs pp --- $p$-value (diagonal $\chi^2$)}
+  \vspace{0.5em}
+  \resizebox{0.75\linewidth}{!}{\input{\bcomb/combined-pvalue.tex}}
+\end{frame}
+
+\begin{frame}[c]\label{sec:cb_end}\end{frame}
+
+% ================================================================
+% Study 15: Local vs official
+% ================================================================
+\sectionframe{Study 15: Local vs official production}{%
+  Solid lines: locally-run sandbox result (\texttt{\_12x12\_full}).\\[0.3em]
+  Dashed lines: official central-analysis result (\texttt{\_bin12x12\_20260603}).\\[0.3em]
+  Tests consistency between the sandbox and official production pipelines at identical settings.}
+
+\label{sec:lo_start}
+
+\studyslides{Local vs official: pPb and Pbp}{\bloc/localvsofficial}
+
+\begin{frame}[c]\label{sec:lo_end}\end{frame}
+
+% ================================================================
+% Study 16: SE correction applied to Pbp
+% ================================================================
+\sectionframe{Study 16: Inverse SE scale factor applied to ME$_{\rm Pbp}$}{%
+  Inverse scale factor $\mathrm{sf}[i,j] = \mathrm{SE}_{\rm Pbp}[i,j]/\mathrm{SE}_{\rm pPb}[i,j]$ derived bin-by-bin from the 2D SE ratio.\\[0.3em]
+  Applied to ME: $\mathrm{ME}_{\rm Pbp}^{\rm corr}[i,j] = \mathrm{ME}_{\rm Pbp}[i,j]\times\mathrm{sf}[i,j]$.
+  Result: $\mathrm{SE}_{\rm Pbp} - \mathrm{ME}_{\rm Pbp}^{\rm corr}$ (original SE unchanged).\\[0.3em]
+  No closure expected in SE, ME, or result.}
+
+\label{sec:sc_start}
+
+\studyslides{pPb vs Pbp (SE corrected)}{\bsc/secorr}
+
+\begin{frame}[c]\label{sec:sc_end}\end{frame}
+
+% ================================================================
+% Study 17: Option A — CM-frame signed comparison
+% ================================================================
+\sectionframe{Study 17: CM-frame comparison (Option A)}{%
+  All systems in the common CM frame: $|\eta_{\rm cm}|<1.935$, $|y_Z^{\rm cm}|<1.935$.\\[0.3em]
+  pPb lab cut: $-1.470<\eta_{\rm lab}<2.400$;\quad
+  Pbp lab cut: $-2.400<\eta_{\rm lab}<1.470$;\quad
+  pp: $|\eta_{\rm lab}|<1.935$.\\[0.3em]
+  $\Delta y_{\rm ch,Z}$ is boost-invariant: lab-frame and CM-frame values are identical.\\[0.3em]
+  Both pPb and Pbp: \texttt{FillSigned=true}, \texttt{FlipDeltaEta=false}.
+  Combined HI signed, compared with signed pp.}
+
+\label{sec:cma_start}
+
+\studyslides{Study 17: CM frame signed combination vs pp}{\bcma/cma}
+
+\begin{frame}[t]{Study 17: CM-frame result --- $p$-value (diagonal $\chi^2$)}
+  \vspace{0.5em}
+  \resizebox{0.75\linewidth}{!}{\input{\bcma/cma-pvalue.tex}}
+\end{frame}
+
+\begin{frame}[c]\label{sec:cma_end}\end{frame}
+
+% ================================================================
+% Study 18: Option B — pPb-oriented frame + cross-check vs Option A
+% ================================================================
+\sectionframe{Study 18: pPb-oriented frame (Option B) + cross-check}{%
+  All systems in the pPb-oriented frame: $|\eta_{\rm lab}|<1.935$ for HI;
+  Pbp flipped (\texttt{FlipDeltaEta=true}).\\[0.3em]
+  pp shifted: $|(\eta_{\rm lab}+0.465)|<1.935$ $\Rightarrow$ $-2.400<\eta_{\rm lab}<1.470$.\\[0.3em]
+  Physical overlap region same as Option A.
+  Symmetrized Options A and B must agree (cross-check).}
+
+\label{sec:cmb_start}
+
+\studyslides{Study 18: pPb-oriented signed combination vs pp}{\bcmb/cmb}
+
+\begin{frame}[t]{Study 18: pPb-oriented result --- $p$-value (diagonal $\chi^2$)}
+  \vspace{0.5em}
+  \resizebox{0.75\linewidth}{!}{\input{\bcmb/cmb-pvalue.tex}}
+\end{frame}
+
+\begin{frame}[c]\label{sec:cmb_end}\end{frame}
+
+% ================================================================
+% Study 19: pPb vs Pbp closure under matched CM acceptance
+% ================================================================
+\sectionframe{Study 19: pPb vs Pbp closure --- matched $|\eta_{\rm cm}|<1.935$}{%
+  Same CMA nosub files as Option A (Study 17). Both pPb and Pbp use $|\eta_{\rm cm}|<1.935$.\\[0.3em]
+  Pbp signed $\Delta y$ is \textbf{flipped} ($\Delta y \to -\Delta y$) to align the proton-beam direction.\\[0.3em]
+  $\Delta\phi$ comparison uses the full $\Delta y$ range.\\[0.3em]
+  \textbf{Key test:} pPb vs flipped Pbp should be compatible.%
+}\label{sec:pvp_start}
+
+\begin{frame}[t]{pPb vs Pbp signed $\Delta y$: raw and flipped}
+  \vspace{-0.3em}\centering
+  \begin{columns}[c]
+    \column{0.49\textwidth}\centering
+    \includegraphics[width=\linewidth]{../plots/12x12_pPb_vs_Pbp/pPbvsPbp-DeltaEta-signed-raw.pdf}\\
+    {\small Unflipped (mirror image)}
+    \column{0.49\textwidth}\centering
+    \includegraphics[width=\linewidth]{../plots/12x12_pPb_vs_Pbp/pPbvsPbp-DeltaEta-signed-flipped.pdf}\\
+    {\small Pbp $\Delta y$ flipped (aligned)}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{pPb vs Pbp $\Delta\phi$: full $\Delta y$ range}
+  \vspace{-0.3em}\centering
+  \includegraphics[height=0.82\textheight]{../plots/12x12_pPb_vs_Pbp/pPbvsPbp-DeltaPhi-full.pdf}
+\end{frame}
+
+\begin{frame}[t]{pPb vs Pbp --- $p$-values (diagonal $\chi^2$)}
+  \vspace{0.5em}\centering
+  \resizebox{0.82\linewidth}{!}{\input{../plots/12x12_pPb_vs_Pbp/pPbvsPbp-pvalue.tex}}
+\end{frame}
+
+\begin{frame}[c]\label{sec:pvp_end}\end{frame}
+
+% ================================================================
+% Study 20: pp MC Gen boost-prescription closure
+% ================================================================
+\sectionframe{Study 20: pp MC Gen boost-prescription closure}{%
+  Three pp MC Gen variants using signed $\Delta y$/$\Delta\phi$ with $N_{\rm mix}=10$:\\[0.2em]
+  \textbf{Variant 0 (nominal):} $|\eta_{\rm lab}|<2.4$, standard pp acceptance.\\[0.2em]
+  \textbf{Variant 1 (pPb-boosted):} $-1.935 < \eta_{\rm lab} < 2.865$ (boost $+0.465$, then $|\eta_{\rm cm}|<2.4$).\\[0.2em]
+  \textbf{Variant 2 (Pbp-boosted):} $-2.865 < \eta_{\rm lab} < 1.935$ (boost $-0.465$, then $|\eta_{\rm cm}|<2.4$).\\[0.3em]
+  \textbf{Key closure:} pPb-boosted vs Pbp-boosted (Variant 2 $\Delta y$ flipped) must agree.%
+}\label{sec:boost_start}
+
+\begin{frame}[t]{pp MC Gen: three-variant overlays}
+  \vspace{-0.3em}\centering
+  \begin{columns}[c]
+    \column{0.49\textwidth}\centering
+    \includegraphics[width=\linewidth]{../plots/12x12_ppmc_boost/boost-DeltaEta-3curve.pdf}\\
+    {\small $\Delta y$ (Variant 2 flipped)}
+    \column{0.49\textwidth}\centering
+    \includegraphics[width=\linewidth]{../plots/12x12_ppmc_boost/boost-DeltaPhi-3curve.pdf}\\
+    {\small $\Delta\phi$ (full $\Delta y$ range)}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{pp MC Gen: pPb-boosted vs Pbp-boosted (key closure)}
+  \vspace{-0.3em}\centering
+  \begin{columns}[c]
+    \column{0.49\textwidth}\centering
+    \includegraphics[width=\linewidth]{../plots/12x12_ppmc_boost/boost-DeltaEta-ppb-vs-pbp-diff.pdf}\\
+    {\small $\Delta y$ difference (flipped Pbp-boosted)}
+    \column{0.49\textwidth}\centering
+    \includegraphics[width=\linewidth]{../plots/12x12_ppmc_boost/boost-DeltaPhi-ppb-vs-pbp-diff.pdf}\\
+    {\small $\Delta\phi$ difference}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[t]{pp MC Gen boost closure --- $p$-values}
+  \vspace{0.5em}\centering
+  \resizebox{0.88\linewidth}{!}{\input{../plots/12x12_ppmc_boost/boost-pvalue.tex}}
+\end{frame}
+
+\begin{frame}[c]\label{sec:boost_end}\end{frame}
+
+% ================================================================
+% Study 21: Symmetrized result — CM frame (CMA)
+% ================================================================
+\sectionframe{Study 21: Symmetrized result --- CM frame (Option A)}{%
+  Same CMA nosub and result files as Study 17.\\[0.3em]
+  $R_{\rm sym}(x) = \tfrac{1}{2}\bigl[R(+x)+R(-x)\bigr]$ applied to combined pPb+Pbp and pp.\\[0.3em]
+  Statistical errors from symmetrized jackknife replicas:
+  $d_{\rm sym}^{(k)}[i] = \tfrac{1}{2}\bigl(d^{(k)}[i]+d^{(k)}[n-1-i]\bigr)$.\\[0.3em]
+  Covariance: $C_{\rm sym}[i,j]=\tfrac{1}{4}(C[i,j]+C[i,\bar\jmath]+C[\bar\imath,j]+C[\bar\imath,\bar\jmath])$.\\[0.3em]
+  Full signed axis displayed; SVD rank$=6$ out of 12 bins (expected from symmetry).%
+}\label{sec:symcma_start}
+
+\begin{frame}[t]{Study 21: Boost and acceptance prescription for each curve}
+  \footnotesize\vspace{0.4em}
+  \begin{tabular}{l|c|l|c|c}
+    \hline
+    Curve & \texttt{yBoost} & $\eta$ selection in lab frame & Equiv.\ CM cut & Before/after boost? \\
+    \hline
+    pPb & $0$ & $-1.470 < \eta_{\rm lab} < 2.400$ & $|\eta_{\rm cm}|<1.935$ & Before (boost unused) \\
+    Pbp & $0$ & $-2.400 < \eta_{\rm lab} < 1.470$ & $|\eta_{\rm cm}|<1.935$ & Before (boost unused) \\
+    pp  & $0$ & $-1.935 < \eta_{\rm lab} < 1.935$ & $|\eta_{\rm cm}|<1.935$ & Before (boost unused) \\
+    \hline
+  \end{tabular}
+  \vspace{0.5em}\par\small
+  \textbf{Frame relations:} $\eta_{\rm cm}^{\rm pPb}=\eta_{\rm lab}-0.465$;\quad $\eta_{\rm cm}^{\rm Pbp}=-(\eta_{\rm lab}+0.465)$;\quad $\eta_{\rm cm}^{\rm pp}=\eta_{\rm lab}$.\\[0.4em]
+  \textbf{Note:} \texttt{yBoost}$=0$ for all curves; no kinematic boost is applied to Z or tracks.
+  Acceptance $|\eta_{\rm cm}|<1.935$ is encoded as asymmetric lab-frame windows.
+  $\Delta y = \eta_{\rm lab}^{\rm trk}-y_{\rm lab}^Z$ is boost-invariant (equals the CM-frame value).
+\end{frame}
+
+\begin{frame}[t]{Study 21: symmetrized result --- $\Delta y_{ch,Z}$ (CM frame)}
+  \centering
+  \includegraphics[height=0.82\textheight]{\bsymcma/cma_sym-Result-DeltaEta.pdf}
+\end{frame}
+
+\begin{frame}[t]{Study 21: symmetrized result --- $\Delta\phi_{ch,Z}$ (CM frame)}
+  \centering
+  \includegraphics[height=0.82\textheight]{\bsymcma/cma_sym-Result-DeltaPhi.pdf}
+\end{frame}
+
+\begin{frame}[t]{Study 21: symmetrized result --- $p$-value table (CM frame)}
+  \vspace{0.5em}
+  \resizebox{0.85\linewidth}{!}{\input{\bsymcma/cma_sym-pvalue.tex}}
+\end{frame}
+
+\begin{frame}[c]\label{sec:symcma_end}\end{frame}
+
+% ================================================================
+% Study 23: Double-ratio ME correction applied to Pbp
+% ================================================================
+\sectionframe{Study 23: Double-ratio ME correction to Pbp ME}{%
+  Scale factor $\mathrm{sf}[i,j] = \dfrac{\mathrm{SE}_{\rm Pbp}[i,j]/\mathrm{SE}_{\rm pPb}[i,j]}{\mathrm{ME}_{\rm Pbp}[i,j]/\mathrm{ME}_{\rm pPb}[i,j]}$ derived bin-by-bin from the SE and ME double ratio.\\[0.3em]
+  Applied to Pbp ME: $\mathrm{ME}_{\rm Pbp}^{\rm corr}[i,j] = \mathrm{ME}_{\rm Pbp}[i,j]\times\mathrm{sf}[i,j]$.
+  Corrected Pbp result $= \mathrm{SE}_{\rm Pbp} - \mathrm{ME}_{\rm Pbp}^{\rm corr}$; pPb unchanged.\\[0.3em]
+  By construction: $\mathrm{ME}_{\rm pPb}[i,j]/\mathrm{ME}_{\rm Pbp}^{\rm corr}[i,j] = \mathrm{SE}_{\rm pPb}[i,j]/\mathrm{SE}_{\rm Pbp}[i,j]$ (ME ratio forced to match SE ratio).\\[0.3em]
+  Three curves: pPb (nominal), Pbp (DR corrected), Pbp (nominal).
+  Residual result difference reflects purely the SE-level discrepancy.}
+
+\label{sec:drcpbp_start}
+
+\studyslides{pPb vs Pbp (double-ratio ME corr) + Pbp (nominal)}{\bdrcpbp/drcorr_pbp}
+
+\begin{frame}[c]\label{sec:drcpbp_end}\end{frame}
+
+\end{document}

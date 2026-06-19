@@ -2,7 +2,6 @@
 #include <TTree.h>
 #include <TH1D.h>
 #include <TH2D.h>
-#include <TH3D.h>
 #include <TCut.h>
 #include <TLegend.h>
 #include <TNtuple.h>
@@ -107,7 +106,7 @@ float getMultiplicity(ZHadronMessenger *b, const Parameters& par) {
 //============================================================//
 // Z hadron dphi calculation
 //============================================================//
-double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *hEventWeight, const Parameters& par) {
+double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH2D *h, TH1D *hEventWeight, const Parameters& par) {
    if (par.isAddUE) {
       if (MZUE->GetEntries()<MZSignal->GetEntries()) {
          cout <<"Error! Smaller number of UE events than Z events"<<endl;
@@ -127,7 +126,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
    unsigned long mix_i = iStart;
    unsigned long mixstart_i = mix_i;
    int deltaI = (iEnd-iStart)/100+1;
-   TrackResidualCorrector corrector(par.residualFile.c_str());              
+   ZCorrector corrector(par.residualFile.c_str());
 
    // open VZ correction if needed
    VZCorrector *vzCorrector = nullptr;
@@ -148,10 +147,8 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
       if (!eventSelection(MZSignal, par)) continue;
 
       float zY = (par.isGenZ ? (*MZSignal->genZY)[0] : (*MZSignal->zY)[0]);
-      float zPhi = (par.isGenZ ? (*MZSignal->genZPhi)[0] : (*MZSignal->zPhi)[0]);
-      if (zPhi < 0) zPhi += 2 * M_PI;
       float zPt = (par.isGenZ ? (*MZSignal->genZPt)[0] : (*MZSignal->zPt)[0]);
-      float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY, zPhi);
+      float residualCorrection = ((par.residualFile=="")||par.isGen==1)? 1 : corrector.GetCorrectionFactor(zPt, zY);
 
       // fill histograms
       float this_eventWeight = MZSignal->EventWeight;
@@ -159,7 +156,7 @@ double get3D(ZHadronMessenger *MZSignal, ZHadronMessenger *MZUE, TH3D *h, TH1D *
          this_eventWeight *= vzCorrector->GetCorrectionFactor(MZSignal->VZ);
       this_eventWeight *= residualCorrection;
 
-      h->Fill(zPt, zY, zPhi, this_eventWeight);
+      h->Fill(zPt, zY, this_eventWeight);
       hEventWeight->Fill(this_eventWeight);
 
       nZ += this_eventWeight; //1;
@@ -193,33 +190,18 @@ public:
   void analyze(Parameters& par) {
     // First histogram with mix=false
     par.mix = false;
-    const int nbinsX = 50;
-    const double xMin = 0.5;
-    const double xMax = 100;
-    std::vector<double> binEdgesX(nbinsX + 1);
-    
-    for (int i = 0; i <= nbinsX; ++i) binEdgesX[i] = xMin * std::pow(xMax / xMin, double(i) / nbinsX);
-    binEdgesX[nbinsX]=350;
+    std::vector<double> ptBins;
+    ptBins.push_back(0.0);
+    ptBins.push_back(0.5);
+    // Two bins from 0.5 to ~1.22 GeV (geometric midpoint at ~0.78)
+    ptBins.push_back(0.5 * std::pow(8.0, 1.5 / 7.0));
+    ptBins.push_back(0.5 * std::pow(8.0, 3.0 / 7.0));
+    for (int i = 4; i <= 7;  i++) ptBins.push_back(0.5 * std::pow(8.0,  (double)i / 7.0));
+    for (int i = 1; i <= 15; i++) ptBins.push_back(4.0 * std::pow(25.0, (double)i / 15.0));
+    ptBins.push_back(500.0);
 
-    const int nbinsY = 25;
-    const double yMin = -2.4;
-    const double yMax = 2.4;
-    std::vector<double> binEdgesY(nbinsY + 1);
-
-    for (int i = 0; i <= nbinsY; ++i) binEdgesY[i] = yMin + (yMax - yMin) * i / nbinsY;
-
-    const int nbinsZ = 50;
-    const double zMin = 0;
-    const double zMax = 2 * M_PI;
-    std::vector<double> binEdgesZ(nbinsZ + 1);
-
-    for (int i = 0; i <= nbinsZ; ++i) binEdgesZ[i] = zMin + (zMax - zMin) * i / nbinsZ;
-
-    h = new TH3D("h3D", "Histogram Title; p_{T} (GeV/c); #eta; #phi",
-                     nbinsX, &binEdgesX[0],
-                     nbinsY, &binEdgesY[0],
-                     nbinsZ, &binEdgesZ[0]);
-    //    h = new TH3D("h3D", "Histogram Title; p_{T} (GeV/c); #eta; #phi", 50,0,10,50,-2.4,2.4,50, 0,2*M_PI);
+    h = new TH2D("h2D", "Histogram Title; p_{T} (GeV/c); #eta",
+                 (int)(ptBins.size()-1), ptBins.data(), 25, -2.4, 2.4);
 
     hEventWeight = new TH1D("hEventWeight", "", 500, 0, 3);
     hEventWeight->Sumw2();
@@ -236,7 +218,7 @@ public:
   }
 
   TFile *inf, *infUE, *residualFile, *residualFileClone, *outf;
-  TH3D *h=0;
+  TH2D *h=0;
   TH1D *hNZ=0;
   TH1D *hEventWeight=0;
   ZHadronMessenger *MZHadron, *MZHadronUE;

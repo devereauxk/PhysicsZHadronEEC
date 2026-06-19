@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
    string collision = CL.Get("Collision", "pPb");
    string zptRange = CL.Get("ZPTRange", "40_350");
    string trackRange = CL.Get("TrackPTRange", "2_500");
+   bool useModified12x12 = CL.GetBool("UseModified12x12", false);
 
    bool useCombinedInputs = (nominalPPbFileName != "" && nominalPBPFileName != "");
    if(variationLabels.empty() && (rejectionFileName != "" || rejectionPPbFileName != "" || rejectionPBPFileName != ""))
@@ -134,9 +135,9 @@ int main(int argc, char *argv[])
    {
       TH1D *nominal = nullptr;
       if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
-         nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, observable + "_Nominal");
+         nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, observable + "_Nominal", false, useModified12x12);
       else if(nominalFile != nullptr)
-         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal");
+         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal", useModified12x12);
 
       vector<TH1D *> variationHistograms;
       for(size_t i = 0; i < variationLabels.size(); i++)
@@ -144,10 +145,10 @@ int main(int argc, char *argv[])
          TH1D *variation = nullptr;
          if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
             variation = BuildCombinedResultHistogram(*variationPPbFiles[i], *variationPBPFiles[i], observable,
-               trackRange, observable + "_MuonTrackVariation" + to_string(i));
+               trackRange, observable + "_MuonTrackVariation" + to_string(i), false, useModified12x12);
          else
             variation = LoadResultHistogram(*variationFiles[i], observable, trackRange,
-               observable + "_MuonTrackVariation" + to_string(i));
+               observable + "_MuonTrackVariation" + to_string(i), useModified12x12);
          variationHistograms.push_back(variation);
       }
 
@@ -172,7 +173,7 @@ int main(int argc, char *argv[])
          histograms.push_back(variationHistograms[i]);
          labels.push_back(variationLabels[i]);
       }
-      pair<double, double> xRange = GetObservableRange(observable);
+      pair<double, double> xRange = GetObservableRange(observable, useModified12x12);
       pair<double, double> yRange = GetComparisonYRange(histograms, observable);
       if(observable == "DeltaEta" && yRange.first >= yRange.second)
       {
@@ -209,7 +210,8 @@ int main(int argc, char *argv[])
          markers.push_back(markerPalette[i % markerPalette.size()]);
          fillStyles.push_back(0);
       }
-      double legendX = (histograms.size() > 4) ? 0.45 : 0.62;
+      double legendX = (observable == "DeltaPhi") ? 0.25 : ((histograms.size() > 4) ? 0.45 : 0.62);
+      double legendY = (observable == "DeltaPhi") ? 0.55 : 0.70;
 
       TCanvas canvas(("CanvasMuonTrack" + observable).c_str(), "", 600, 600);
       TPad *pad = (TPad *)plotCMSDiff(
@@ -221,7 +223,8 @@ int main(int argc, char *argv[])
          "variation - nominal", differenceRange.first, differenceRange.second,
          0,
          false, false, true,
-         legendX
+         legendX,
+         legendY
       );
 
       AddCMSHeader(pad, "Internal", false);

@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
    string collision = CL.Get("Collision", "pp");
    string zptRange = CL.Get("ZPTRange", "5_500");
    string trackRange = CL.Get("TrackPTRange", "0.5_500");
+   bool useModified12x12 = CL.GetBool("UseModified12x12", false);
 
    TFile *nominalFile = (nominalFileName != "") ? TFile::Open(nominalFileName.c_str()) : nullptr;
    TFile *downFile = (downFileName != "") ? TFile::Open(downFileName.c_str()) : nullptr;
@@ -67,17 +68,17 @@ int main(int argc, char *argv[])
       TH1D *down = nullptr;
       TH1D *up = nullptr;
       if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
-         nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, observable + "_Nominal");
+         nominal = BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, observable + "_Nominal", false, useModified12x12);
       else if(nominalFile != nullptr)
-         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal");
+         nominal = LoadResultHistogram(*nominalFile, observable, trackRange, observable + "_Nominal", useModified12x12);
       if(downPPbFile != nullptr && downPBPFile != nullptr)
-         down = BuildCombinedResultHistogram(*downPPbFile, *downPBPFile, observable, trackRange, observable + "_TrackCorrection0p976");
+         down = BuildCombinedResultHistogram(*downPPbFile, *downPBPFile, observable, trackRange, observable + "_TrackCorrection0p976", false, useModified12x12);
       else if(downFile != nullptr)
-         down = LoadResultHistogram(*downFile, observable, trackRange, observable + "_TrackCorrection0p976");
+         down = LoadResultHistogram(*downFile, observable, trackRange, observable + "_TrackCorrection0p976", useModified12x12);
       if(upPPbFile != nullptr && upPBPFile != nullptr)
-         up = BuildCombinedResultHistogram(*upPPbFile, *upPBPFile, observable, trackRange, observable + "_TrackCorrection1p024");
+         up = BuildCombinedResultHistogram(*upPPbFile, *upPBPFile, observable, trackRange, observable + "_TrackCorrection1p024", false, useModified12x12);
       else if(upFile != nullptr)
-         up = LoadResultHistogram(*upFile, observable, trackRange, observable + "_TrackCorrection1p024");
+         up = LoadResultHistogram(*upFile, observable, trackRange, observable + "_TrackCorrection1p024", useModified12x12);
 
       if(nominal == nullptr || down == nullptr || up == nullptr)
       {
@@ -89,7 +90,7 @@ int main(int argc, char *argv[])
       }
 
       vector<TH1 *> histograms = {nominal, down, up};
-      pair<double, double> xRange = GetObservableRange(observable);
+      pair<double, double> xRange = GetObservableRange(observable, useModified12x12);
       pair<double, double> yRange = GetComparisonYRange(histograms, observable);
       pair<double, double> differenceRange = GetDifferenceRange(histograms);
 
@@ -104,7 +105,8 @@ int main(int argc, char *argv[])
           "variation - nominal", differenceRange.first, differenceRange.second,
           0,
           false, false, true,
-         0.58
+         (observable == "DeltaPhi") ? 0.25f : 0.58f,
+         (observable == "DeltaPhi") ? 0.55f : 0.70f
       );
 
       AddCMSHeader(pad, "Internal", false);

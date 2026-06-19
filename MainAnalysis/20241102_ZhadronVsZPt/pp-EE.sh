@@ -29,14 +29,15 @@ activate_config() {
 
 run_pp_energy_extrapolation() {
     local TAG="$1"
+    local EXTRA=${EXTRA_ARGS:-}
 
-    ./system-analysis.sh "pp_nominal${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight false         --UseTrackWeight true --UseResidualWeight false         --yBoost 0 --nMix ${nMix}         --VZWeightFile "${VZWeightFile_PP}"
+    ./system-analysis.sh "pp_nominal${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight false         --UseTrackWeight true --UseResidualWeight false         --yBoost 0 --nMix ${nMix}         --VZWeightFile "${VZWeightFile_PP}"         ${EXTRA}
 
-    ./system-analysis.sh "pp_ZResidual${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight false         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"
+    ./system-analysis.sh "pp_ZResidual${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight false         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         ${EXTRA}
 
-    ./system-analysis.sh "pp_EEtrkResidual${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"
+    ./system-analysis.sh "pp_EEtrkResidual${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         ${EXTRA}
 
-    ./system-analysis.sh "pp_EExtrapolation${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"
+    ./system-analysis.sh "pp_EExtrapolation${TAG}"         --IsPP true --IsGenZ false --IsData true --UseVZWeight true         --Input "${PP_DATAINPUT}"         --MixFile "${PP_DATAINPUT}"         --UseEventWeight false --UseZWeight true         --UseTrackWeight true --UseResidualWeight true         --yBoost 0 --nMix ${nMix}         --ZWeightFile "${ZWeightFile_PP}"         --ResidualWeightFile "${RWeightFile_PP}"         --EnergyExtraFile "${EEWeightFile_PP}"         --VZWeightFile "${VZWeightFile_PP}"         ${EXTRA}
 }
 
 if [ "${SKIP_CLEAN:-0}" != "1" ]; then

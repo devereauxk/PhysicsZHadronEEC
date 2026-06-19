@@ -2,6 +2,8 @@
 #include <TH1D.h>
 #include <TH2D.h>
 #include <TF1.h>
+#include <TGraph.h>
+#include <TGraphErrors.h>
 #include <iostream>
 #include "MITHIG_CMSStyle.h"
 
@@ -62,6 +64,16 @@ void setErrors(TH1* hRatio, TH1* num, TH1* denom){
                               (content1 * content1 * error2 * error2) / (content2 * content2 * content2 * content2));
         }
         hRatio->SetBinError(bin, ratioError);
+    }
+}
+
+void setDifferenceErrors(TH1 *hDiff, TH1 *first, TH1 *second)
+{
+    for (int bin = 1; bin <= hDiff->GetNbinsX(); bin++) {
+        double error1 = first->GetBinError(bin);
+        double error2 = second->GetBinError(bin);
+        double diffError = sqrt(error1 * error1 + error2 * error2);
+        hDiff->SetBinError(bin, diffError);
     }
 }
 
@@ -616,7 +628,8 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
     const char* rTitle, double rmin, double rmax,
     int baseline = 0, bool logx = false, bool logy = false,
     bool errorBars = true,
-    float xLegend = 0.55) {
+    float xLegend = 0.55,
+    float yLegend = 0.70) {
 
     // linestyle options
     // -1: no line, only markers [homemade]
@@ -627,21 +640,23 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
     // Get the canvas pad to pass to other functions
     // Leave a 50% larger border around the figure within the canvas
     double border = 0.06; // 7.5% border on all sides (50% larger than default 5%)
-    TPad *pad1 = new TPad(title, title, border, 0.25 + border, 1.0 - border, 1.0 - border);
+    TPad *pad1 = new TPad(title, title, border, 0.30 + border, 1.0 - border, 1.0 - border);
+    pad1->SetLeftMargin(0.18);
     pad1->SetBottomMargin(0);
     logy ? pad1->SetLogy() : pad1->SetLogy(0);
     logx ? pad1->SetLogx() : pad1->SetLogx(0);
     pad1->Draw();
-    TPad *pad2 = new TPad(title, title, border, border, 1.0 - border, 0.25 + border);
-    pad2->SetTopMargin(0);
-    pad2->SetBottomMargin(0.2);
+    TPad *pad2 = new TPad(title, title, border, border, 1.0 - border, 0.30 + border);
+    pad2->SetLeftMargin(0.18);
+    pad2->SetTopMargin(0.03);
+    pad2->SetBottomMargin(0.25);
     logx ? pad2->SetLogx() : pad2->SetLogx(0);
     pad2->Draw();
-    
+
     // >>> Apply the CMS TDR style <<<
     SetTDRStyle();
 
-    TLegend* leg = new TLegend(xLegend, 0.7, xLegend+0.23, 0.85);
+    TLegend* leg = new TLegend(xLegend, yLegend, xLegend+0.23, yLegend+0.15);
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextFont(42);
@@ -686,8 +701,8 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
         hist->GetXaxis()->SetTitle(xTitle);
         hist->GetXaxis()->SetRangeUser(xmin, xmax);
         hist->GetYaxis()->SetTitle(yTitle);
-        hist->GetYaxis()->SetTitleSize(0.05);
-        hist->GetYaxis()->SetTitleOffset(0.7);
+        hist->GetYaxis()->SetTitleSize(0.055);
+        hist->GetYaxis()->SetTitleOffset(1.05);
 
         // Auto-scale y axis if ymin < ymax, otherwise use global min/max
         if (ymin < ymax) {
@@ -708,7 +723,7 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
         if (linestyles[i] == 0) hist->Draw("SAME");
         else if (linestyles[i] == -1) hist->Draw("P SAME");
         else hist->Draw("HIST SAME");
-        
+
         if (linestyles[i] == 0) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "pl");
         else if (linestyles[i] == -1) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "p");
         else leg->AddEntry(hist, Form("%s", labels[i].c_str()), "l");
@@ -717,15 +732,17 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
         if (i != baseline) {
             TH1* hRatio = (TH1*)hist->Clone(Form("ratio_%s_%d", title, i));
             hRatio->Add(hists[baseline], -1);
+            setDifferenceErrors(hRatio, hist, hists[baseline]);
             hRatio->GetXaxis()->SetTitle(xTitle);
-            hRatio->GetXaxis()->SetTitleSize(0.1);
+            hRatio->GetXaxis()->SetTitleSize(0.12);
             hRatio->GetXaxis()->SetLabelSize(0.08);
-            hRatio->GetXaxis()->SetTitleOffset(1);
+            hRatio->GetXaxis()->SetTitleOffset(0.95);
             hRatio->GetYaxis()->SetTitle(rTitle);
             hRatio->GetYaxis()->SetRangeUser(rmin, rmax);
-            hRatio->GetYaxis()->SetTitleSize(0.08);
-            hRatio->GetYaxis()->SetLabelSize(0.06);
-            hRatio->GetYaxis()->SetTitleOffset(0.5);
+            hRatio->GetYaxis()->SetTitleSize(0.065);
+            hRatio->GetYaxis()->SetLabelSize(0.055);
+            hRatio->GetYaxis()->SetTitleOffset(0.85);
+            hRatio->GetYaxis()->SetNdivisions(505);
             hRatio->SetLineColor(linecolors[i]);
             hRatio->SetLineStyle(linestyles[i]);
             hRatio->SetMarkerColor(markercolors[i]);
@@ -733,13 +750,10 @@ TPad* plotCMSDiff(vector<TH1*> hists, const char* title, vector<string> labels,
             hRatio->SetLineWidth(2);
             hRatio->Draw("HIST SAME");
 
-            // Draw error bars on the ratio plot if requested
-            if (errorBars) {
-                //setErrors(hRatio, hist, hists.at(baseline));
+            if (errorBars)
                 hRatio->Draw("E SAME");
-            } else {
+            else
                 hRatio->Draw("HIST SAME");
-            }
 
             double xlow = hRatio->GetXaxis()->GetBinLowEdge(hRatio->GetXaxis()->GetFirst());
             double xhigh = hRatio->GetXaxis()->GetBinUpEdge(hRatio->GetXaxis()->GetLast());
@@ -822,7 +836,8 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
         int binmax = hist->GetXaxis()->FindBin(x2);
         for (int i = binmin; i <= binmax; ++i) {
             double value = hist->GetBinContent(i);
-            double stat = errorBars ? hist->GetBinError(i) : 0;
+            bool drawStat = errorBars && (linestyles[ih] == 0 || linestyles[ih] == -1);
+            double stat = drawStat ? hist->GetBinError(i) : 0;
             double systError = (syst != nullptr) ? fabs(syst->GetBinContent(i)) : 0;
             global_min = min(global_min, value - max(stat, systError));
             global_max = max(global_max, value + max(stat, systError));
@@ -844,9 +859,11 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
         TH1 *syst = (i < bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
         TH1 *diff = (TH1 *)hist->Clone(Form("range_%s_%d", title, i));
         diff->Add(hists[baseline], -1);
+        setDifferenceErrors(diff, hist, hists[baseline]);
         for (int bin = 1; bin <= diff->GetNbinsX(); bin++) {
             double value = diff->GetBinContent(bin);
-            double stat = errorBars ? diff->GetBinError(bin) : 0;
+            bool drawStat = errorBars && (linestyles[i] == 0 || linestyles[i] == -1);
+            double stat = drawStat ? diff->GetBinError(bin) : 0;
             double systError = (syst != nullptr) ? fabs(syst->GetBinContent(bin)) : 0;
             updateDiffRange(value, max(stat, systError), diff_min, diff_max);
             hasDifference = true;
@@ -910,7 +927,7 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
             else hist->Draw("HIST SAME");
         }
 
-        if (errorBars == true)
+        if (errorBars == true && (linestyles[i] == 0 || linestyles[i] == -1))
             hist->Draw("E1 SAME");
 
         if (linestyles[i] == 0) leg->AddEntry(hist, Form("%s", labels[i].c_str()), "pl");
@@ -921,6 +938,7 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
         if (i != baseline) {
             TH1* hDiff = (TH1*)hist->Clone(Form("diff_%s_%d", title, i));
             hDiff->Add(hists[baseline], -1);
+            setDifferenceErrors(hDiff, hist, hists[baseline]);
             TH1 *bottomSyst = (i < bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
             hDiff->GetXaxis()->SetTitle(xTitle);
             hDiff->GetXaxis()->SetTitleSize(0.1);
@@ -940,7 +958,8 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
             hDiff->SetMarkerStyle(markerstyles[i]);
             hDiff->SetLineWidth(2);
 
-            TString diffDrawOption = errorBars ? "E1" : "P";
+            bool drawStat = errorBars && (linestyles[i] == 0 || linestyles[i] == -1);
+            TString diffDrawOption = drawStat ? "E1" : ((linestyles[i] > 0) ? "HIST" : "P");
             if (firstDifference == false)
                 diffDrawOption += " SAME";
             hDiff->Draw(diffDrawOption);
@@ -952,8 +971,10 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
                     band->Draw("2 SAME");
             }
 
-            if (errorBars == true)
+            if (drawStat == true)
                 hDiff->Draw("E1 SAME");
+            else if (linestyles[i] > 0)
+                hDiff->Draw("HIST SAME");
             else
                 hDiff->Draw("P SAME");
 
@@ -967,6 +988,313 @@ TPad* PlotCMSDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, vector<
         }
     }
     pad1->cd();
+    leg->Draw("SAME");
+    AddCMSHeader(pad1, "Preliminary", false);
+
+    return pad1;
+}
+
+// Helper: build TGraphErrors from a TH1 for bins whose center is inside (inRegion=true)
+// or outside (inRegion=false) the range [rMin, rMax].
+static TGraphErrors* HistToRegionGraph(TH1* h, double rMin, double rMax, bool inRegion, const char* name)
+{
+    vector<double> vx, vy, vex, vey;
+    for (int i = 1; i <= h->GetNbinsX(); ++i) {
+        double center = h->GetXaxis()->GetBinCenter(i);
+        bool inside = (center >= rMin && center <= rMax);
+        if (inside == inRegion) {
+            vx.push_back(center);
+            vy.push_back(h->GetBinContent(i));
+            vex.push_back(0.0);
+            vey.push_back(h->GetBinError(i));
+        }
+    }
+    if (vx.empty()) return nullptr;
+    TGraphErrors* g = new TGraphErrors(vx.size(), vx.data(), vy.data(), vex.data(), vey.data());
+    g->SetName(name);
+    return g;
+}
+
+// ROOT: filled→open is +4 for standard marker styles 20-23 (circle, square, triangle, diamond).
+static int OpenMarkerStyle(int style)
+{
+    if (style >= 20 && style <= 23) return style + 4;
+    return 24; // fallback: open circle
+}
+
+// Variant of PlotCMSDiffResult that draws data points with filled markers only in
+// [signalXMin, signalXMax] and open markers (+4 in ROOT convention) outside that range.
+// Line-style entries (Powheg MC) are drawn as HIST with no change.
+TPad* PlotCMSDiffResultRegion(
+    vector<TH1*> hists, vector<TH1*> topSystematics, vector<TH1*> bottomSystematics,
+    const char* title, vector<string> labels, vector<Int_t> linecolors, vector<Int_t> linestyles,
+    vector<Int_t> markercolors, vector<Int_t> markerstyles, const char* xTitle, double xmin, double xmax,
+    const char* yTitle, double ymin, double ymax, const char* rTitle, double rmin, double rmax,
+    double signalXMin, double signalXMax,
+    int baseline = 0, bool logx = false, bool logy = false, bool errorBars = true, float xLegend = 0.55,
+    float textScale = 1.0, float yLegend = -1, float yHeadroom = 1.0)
+{
+    SetTDRStyle();
+
+    double border = 0.06;
+    float leftMargin = 0.15 * textScale;
+    TPad *pad1 = new TPad(title, title, 0, 0.25 + border, 1.0 - border, 1.0 - border);
+    pad1->SetTickx(1);
+    pad1->SetTicky(1);
+    pad1->SetLeftMargin(leftMargin);
+    pad1->SetBottomMargin(0);
+    logy ? pad1->SetLogy() : pad1->SetLogy(0);
+    logx ? pad1->SetLogx() : pad1->SetLogx(0);
+    pad1->Draw();
+    TPad *pad2 = new TPad(title, title, 0, 0, 1.0 - border, 0.25 + border);
+    pad2->SetTickx(1);
+    pad2->SetTicky(1);
+    pad2->SetLeftMargin(leftMargin);
+    pad2->SetTopMargin(0);
+    pad2->SetBottomMargin(0.25 * textScale);
+    logx ? pad2->SetLogx() : pad2->SetLogx(0);
+    pad2->Draw();
+
+    float yLeg = (yLegend >= 0) ? yLegend : 0.70f;
+    TLegend* leg = new TLegend(xLegend, yLeg, xLegend + 0.23, yLeg + 0.15);
+    leg->SetBorderSize(0);
+    leg->SetFillStyle(0);
+    leg->SetTextFont(42);
+    leg->SetTextSize(0.035 * textScale);
+
+    // Auto Y-range
+    double global_min = 1e30, global_max = -1e30;
+    for (size_t ih = 0; ih < hists.size(); ++ih) {
+        TH1* hist = hists[ih];
+        TH1* syst = (ih < topSystematics.size()) ? topSystematics[ih] : nullptr;
+        double x1 = (xmin < xmax) ? xmin : hist->GetXaxis()->GetXmin();
+        double x2 = (xmin < xmax) ? xmax : hist->GetXaxis()->GetXmax();
+        int binmin = hist->GetXaxis()->FindBin(x1);
+        int binmax = hist->GetXaxis()->FindBin(x2);
+        for (int i = binmin; i <= binmax; ++i) {
+            double value = hist->GetBinContent(i);
+            bool drawStat = errorBars && (linestyles[ih] == 0 || linestyles[ih] == -1);
+            double stat = drawStat ? hist->GetBinError(i) : 0;
+            double systError = (syst != nullptr) ? fabs(syst->GetBinContent(i)) : 0;
+            global_min = min(global_min, value - max(stat, systError));
+            global_max = max(global_max, value + max(stat, systError));
+        }
+    }
+    double margin;
+    if (logy) {
+        margin = exp((log(global_max) - log((global_min > 0) ? global_min : 1)) * 1.2);
+    } else {
+        margin = yHeadroom * 0.2 * (global_max - global_min);
+    }
+
+    // Auto difference Y-range
+    double diff_min = 1e30, diff_max = -1e30;
+    bool hasDifference = false;
+    for (int i = 0; i < (int)hists.size(); i++) {
+        if (i == baseline) continue;
+        TH1 *hist = hists[i];
+        TH1 *syst = (i < (int)bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
+        TH1 *diff = (TH1*)hist->Clone(Form("rangeReg_%s_%d", title, i));
+        diff->Add(hists[baseline], -1);
+        setDifferenceErrors(diff, hist, hists[baseline]);
+        for (int bin = 1; bin <= diff->GetNbinsX(); bin++) {
+            double value = diff->GetBinContent(bin);
+            bool drawStat = errorBars && (linestyles[i] == 0 || linestyles[i] == -1);
+            double stat = drawStat ? diff->GetBinError(bin) : 0;
+            double systError = (syst != nullptr) ? fabs(syst->GetBinContent(bin)) : 0;
+            updateDiffRange(value, max(stat, systError), diff_min, diff_max);
+            hasDifference = true;
+        }
+        delete diff;
+    }
+    if (!hasDifference) { diff_min = -1; diff_max = 1; }
+    double diff_absmax = max(fabs(diff_min), fabs(diff_max));
+    double diff_margin = 0.15 * diff_absmax;
+    if (diff_margin <= 0) diff_margin = 0.15;
+    diff_min = -(diff_absmax + diff_margin);
+    diff_max =  (diff_absmax + diff_margin);
+
+    bool firstDifference = true;
+    for (int i = 0; i < (int)hists.size(); i++) {
+        pad1->cd();
+
+        TH1* hist = hists[i];
+        TH1* topSyst = (i < (int)topSystematics.size()) ? topSystematics[i] : nullptr;
+        bool isMarker = (linestyles[i] == 0 || linestyles[i] == -1);
+
+        if (linestyles[i] == -1) hist->SetLineColorAlpha(0, 0);
+        else hist->SetLineColor(linecolors[i]);
+        if (linestyles[i] == 0) hist->SetLineStyle(1);
+        else if (linestyles[i] > 0) hist->SetLineStyle(linestyles[i]);
+        hist->SetMarkerColor(markercolors[i]);
+        hist->SetMarkerStyle(markerstyles[i]);
+        hist->SetStats(0);
+        if (linestyles[i] == 0) hist->SetLineWidth(3);
+        else if (linestyles[i] > 0) hist->SetLineWidth(2);
+
+        hist->GetXaxis()->SetTitle(xTitle);
+        hist->GetXaxis()->SetRangeUser(xmin, xmax);
+        hist->GetYaxis()->SetTitle(yTitle);
+        hist->GetYaxis()->SetTitleSize(0.05 * textScale);
+        hist->GetYaxis()->SetLabelSize(0.045 * textScale);
+        hist->GetYaxis()->SetTitleOffset(1.2);
+
+        if (ymin < ymax) {
+            if (logy && ymin <= 0) hist->GetYaxis()->SetRangeUser(1, ymax);
+            else hist->GetYaxis()->SetRangeUser(ymin, ymax);
+        } else {
+            if (logy && global_min - margin <= 0) hist->GetYaxis()->SetRangeUser(1, global_max + margin);
+            else hist->GetYaxis()->SetRangeUser(global_min - margin, global_max + margin);
+        }
+
+        if (isMarker) {
+            // Draw invisible clone to establish axis frame and Y range
+            TH1* hFrame = (TH1*)hist->Clone(Form("reg_frame_%s_%d", title, i));
+            hFrame->SetMarkerColorAlpha(0, 0);
+            hFrame->SetLineColorAlpha(0, 0);
+            hFrame->SetFillColorAlpha(0, 0);
+            hFrame->Draw("SAME");
+
+            // Systematic band (full range, drawn before data points)
+            if (topSyst != nullptr) {
+                TGraphAsymmErrors *band = BuildSystematicBand(hist, topSyst,
+                    Form("reg_top_band_%s_%d", title, i), linecolors[i]);
+                if (band != nullptr) band->Draw("2 SAME");
+            }
+
+            // Signal region: filled marker
+            TGraphErrors* gSig = HistToRegionGraph(hist, signalXMin, signalXMax, true,
+                Form("reg_gsig_%s_%d", title, i));
+            if (gSig != nullptr) {
+                gSig->SetMarkerColor(markercolors[i]);
+                gSig->SetMarkerStyle(markerstyles[i]);
+                gSig->SetMarkerSize(textScale);
+                gSig->SetLineColor(markercolors[i]);
+                gSig->Draw(errorBars ? "PE SAME" : "P SAME");
+            }
+
+            // Outside region: open marker (+4 in ROOT convention)
+            TGraphErrors* gOut = HistToRegionGraph(hist, signalXMin, signalXMax, false,
+                Form("reg_gout_%s_%d", title, i));
+            if (gOut != nullptr) {
+                gOut->SetMarkerColor(markercolors[i]);
+                gOut->SetMarkerStyle(OpenMarkerStyle(markerstyles[i]));
+                gOut->SetMarkerSize(textScale);
+                gOut->SetLineColor(markercolors[i]);
+                gOut->Draw(errorBars ? "PE SAME" : "P SAME");
+            }
+
+            // Legend entry: proxy TGraph with filled marker
+            TGraph* legProxy = new TGraph(1);
+            legProxy->SetMarkerColor(markercolors[i]);
+            legProxy->SetMarkerStyle(markerstyles[i]);
+            legProxy->SetMarkerSize(textScale);
+            legProxy->SetLineColor(markercolors[i]);
+            leg->AddEntry(legProxy, labels[i].c_str(), "p");
+        } else {
+            hist->Draw("HIST SAME");
+            leg->AddEntry(hist, labels[i].c_str(), "l");
+        }
+
+        // Lower pad
+        pad2->cd();
+        if (i != baseline) {
+            TH1* hDiff = (TH1*)hist->Clone(Form("reg_diff_%s_%d", title, i));
+            hDiff->Add(hists[baseline], -1);
+            setDifferenceErrors(hDiff, hist, hists[baseline]);
+            TH1* bottomSyst = (i < (int)bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
+
+            hDiff->GetXaxis()->SetTitle(xTitle);
+            hDiff->GetXaxis()->SetTitleSize(0.1 * textScale);
+            hDiff->GetXaxis()->SetLabelSize(0.08 * textScale);
+            hDiff->GetXaxis()->SetTitleOffset(1.0);
+            hDiff->GetYaxis()->SetTitle(rTitle);
+            hDiff->GetYaxis()->CenterTitle(true);
+            if (rmin < rmax)
+                hDiff->GetYaxis()->SetRangeUser(rmin, rmax);
+            else
+                hDiff->GetYaxis()->SetRangeUser(diff_min - diff_margin, diff_max + diff_margin);
+            hDiff->GetYaxis()->SetTitleSize(0.08 * textScale);
+            hDiff->GetYaxis()->SetLabelSize(0.06 * textScale);
+            hDiff->GetYaxis()->SetTitleOffset(0.6);
+            hDiff->SetLineColor(linecolors[i]);
+            hDiff->SetLineStyle(linestyles[i] == 0 ? 1 : linestyles[i]);
+            hDiff->SetMarkerColor(markercolors[i]);
+            hDiff->SetMarkerStyle(markerstyles[i]);
+            hDiff->SetLineWidth(2);
+
+            bool drawStat = errorBars && (linestyles[i] == 0 || linestyles[i] == -1);
+
+            if (isMarker) {
+                // Invisible frame to establish axis (no SAME on first draw in pad2)
+                TH1* hDiffFrame = (TH1*)hDiff->Clone(Form("reg_diff_frame_%s_%d", title, i));
+                hDiffFrame->SetMarkerColorAlpha(0, 0);
+                hDiffFrame->SetLineColorAlpha(0, 0);
+                hDiffFrame->SetFillColorAlpha(0, 0);
+                hDiffFrame->Draw(firstDifference ? "" : "SAME");
+
+                if (bottomSyst != nullptr) {
+                    TGraphAsymmErrors *band = BuildSystematicBand(hDiff, bottomSyst,
+                        Form("reg_bottom_band_%s_%d", title, i), linecolors[i]);
+                    if (band != nullptr) band->Draw("2 SAME");
+                }
+
+                TGraphErrors* gSigD = HistToRegionGraph(hDiff, signalXMin, signalXMax, true,
+                    Form("reg_diff_gsig_%s_%d", title, i));
+                if (gSigD != nullptr) {
+                    gSigD->SetMarkerColor(markercolors[i]);
+                    gSigD->SetMarkerStyle(markerstyles[i]);
+                    gSigD->SetMarkerSize(textScale);
+                    gSigD->SetLineColor(markercolors[i]);
+                    gSigD->Draw(drawStat ? "PE SAME" : "P SAME");
+                }
+
+                TGraphErrors* gOutD = HistToRegionGraph(hDiff, signalXMin, signalXMax, false,
+                    Form("reg_diff_gout_%s_%d", title, i));
+                if (gOutD != nullptr) {
+                    gOutD->SetMarkerColor(markercolors[i]);
+                    gOutD->SetMarkerStyle(OpenMarkerStyle(markerstyles[i]));
+                    gOutD->SetMarkerSize(textScale);
+                    gOutD->SetLineColor(markercolors[i]);
+                    gOutD->Draw(drawStat ? "PE SAME" : "P SAME");
+                }
+            } else {
+                TString diffDrawOption = drawStat ? "E1" : ((linestyles[i] > 0) ? "HIST" : "P");
+                if (!firstDifference) diffDrawOption += " SAME";
+                hDiff->Draw(diffDrawOption);
+
+                if (bottomSyst != nullptr) {
+                    TGraphAsymmErrors *band = BuildSystematicBand(hDiff, bottomSyst,
+                        Form("reg_bottom_band_%s_%d", title, i), linecolors[i]);
+                    if (band != nullptr) band->Draw("2 SAME");
+                    if (drawStat) hDiff->Draw("E1 SAME");
+                    else if (linestyles[i] > 0) hDiff->Draw("HIST SAME");
+                    else hDiff->Draw("P SAME");
+                }
+
+                if (drawStat) hDiff->Draw("E1 SAME");
+                else if (linestyles[i] > 0) hDiff->Draw("HIST SAME");
+                else hDiff->Draw("P SAME");
+            }
+
+            double xlow = hDiff->GetXaxis()->GetBinLowEdge(hDiff->GetXaxis()->GetFirst());
+            double xhigh = hDiff->GetXaxis()->GetBinUpEdge(hDiff->GetXaxis()->GetLast());
+            TLine *line = new TLine(xlow, 0, xhigh, 0);
+            line->SetLineColor(kGray + 2);
+            line->SetLineStyle(2);
+            line->Draw("SAME");
+            firstDifference = false;
+        }
+    }
+    pad1->cd();
+    {
+        double x1 = hists[0]->GetXaxis()->GetBinLowEdge(hists[0]->GetXaxis()->GetFirst());
+        double x2 = hists[0]->GetXaxis()->GetBinUpEdge(hists[0]->GetXaxis()->GetLast());
+        TLine *zeroLine = new TLine(x1, 0, x2, 0);
+        zeroLine->SetLineColor(kGray + 1);
+        zeroLine->SetLineStyle(2);
+        zeroLine->Draw("SAME");
+    }
     leg->Draw("SAME");
     AddCMSHeader(pad1, "Preliminary", false);
 
@@ -1039,6 +1367,7 @@ TPad* PlotCMSPaperDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, ve
         TH1 *syst = (i < (int)bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
         TH1 *diff = (TH1 *)hist->Clone(Form("range_%s_%d", title, i));
         diff->Add(hists[baseline], -1);
+        setDifferenceErrors(diff, hist, hists[baseline]);
         for (int bin = 1; bin <= diff->GetNbinsX(); bin++) {
             double value = diff->GetBinContent(bin);
             double stat = errorBars ? diff->GetBinError(bin) : 0;
@@ -1049,8 +1378,11 @@ TPad* PlotCMSPaperDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, ve
         delete diff;
     }
     if (!hasDifference) { diff_min = -1; diff_max = 1; }
-    double diff_margin = 0.15 * (diff_max - diff_min);
-    if (diff_margin <= 0) diff_margin = max(fabs(diff_max), 1.0) * 0.15;
+    double diff_absmax = max(fabs(diff_min), fabs(diff_max));
+    double diff_margin = 0.15 * diff_absmax;
+    if (diff_margin <= 0) diff_margin = 0.15;
+    diff_min = -(diff_absmax + diff_margin);
+    diff_max =  (diff_absmax + diff_margin);
 
     bool firstDifference = true;
     for (int i = 0; i < (int)hists.size(); i++) {
@@ -1108,6 +1440,7 @@ TPad* PlotCMSPaperDiffResult(vector<TH1*> hists, vector<TH1*> topSystematics, ve
         if (i != baseline) {
             TH1* hDiff = (TH1*)hist->Clone(Form("diff_%s_%d", title, i));
             hDiff->Add(hists[baseline], -1);
+            setDifferenceErrors(hDiff, hist, hists[baseline]);
             TH1 *bottomSyst = (i < (int)bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
 
             if (showXaxis) {

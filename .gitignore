@@ -1,7 +1,10 @@
 *.root
+*.hepmc
 *.png
 *.pdf
 *.log
+*.dat
 Execute*
 CommonCode/binary
 CommonCode/library
+.claude

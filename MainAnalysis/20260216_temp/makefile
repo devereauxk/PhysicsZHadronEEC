@@ -1,4 +1,4 @@
-default: ExecuteCorrelationAnalysis ExecuteDeltaRMuTrkPlot ExecuteDeltaRZGenRecoPlot
+default: ExecuteCorrelationAnalysis ExecuteDeltaRMuTrkPlot ExecuteDeltaRZGenRecoPlot ExecuteVtxAssocStudy
 
 ExecuteCorrelationAnalysis: CorrelationAnalysis.cpp
 	g++ CorrelationAnalysis.cpp -O3 -I. -I$(ProjectBase)/CommonCode/include -I./include \
@@ -20,6 +20,10 @@ ExecuteMuonTrackRectangleScan: scan_muon_track_rectangle.cpp
 		-o ExecuteMuonTrackRectangleScan `root-config --cflags --glibs` \
 		$(ProjectBase)/CommonCode/library/Messenger.o
 
+
+ExecuteVtxAssocStudy: vtx_assoc_study.cpp
+	g++ vtx_assoc_study.cpp -O3 -I. -I$(ProjectBase)/CommonCode/include -I./include \
+		-o ExecuteVtxAssocStudy `root-config --cflags --glibs`
 
 TestRun: ExecuteCorrelationAnalysis
 	./ExecuteCorrelationAnalysis --Input XXX1.root,XXX2.root --Output output.root

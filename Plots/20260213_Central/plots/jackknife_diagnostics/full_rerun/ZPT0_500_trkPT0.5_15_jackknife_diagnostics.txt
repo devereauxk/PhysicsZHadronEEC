@@ -1,0 +1,19 @@
+jackknife diagnostics for full rerun comparison, ZPT0_500 trkPT0.5_15
+
+nominal pp tag: EEV5_ZV9_trkV27_nmix10_rerunNominal
+nominal pPb/PbP tag: ZV9_trkV27_nmix10_rerunNominal
+jackknife pp tag: EEV5_ZV9_trkV27_nmix10_rerunJackknife
+jackknife pPb/PbP tag: ZV9_trkV27_nmix10_rerunJackknife
+
+[pp]
+DeltaEta: max |central_jk - central_nominal| = 0; max |central_jk - central_sumw2_samefile| = 0; sigma_JK/sigma_Sumw2 median = 1.16093, range = [1.11637, 1.25161]
+DeltaPhi: max |central_jk - central_nominal| = 0; max |central_jk - central_sumw2_samefile| = 0; sigma_JK/sigma_Sumw2 median = 1.2342, range = [1.12402, 1.24522]
+
+[pPb]
+DeltaEta: max |central_jk - central_nominal| = 0; max |central_jk - central_sumw2_samefile| = 0; sigma_JK/sigma_Sumw2 median = 1.29694, range = [1.21902, 1.40072]
+DeltaPhi: max |central_jk - central_nominal| = 0; max |central_jk - central_sumw2_samefile| = 0; sigma_JK/sigma_Sumw2 median = 1.45932, range = [1.38724, 1.48796]
+
+[PbP]
+DeltaEta: max |central_jk - central_nominal| = 0; max |central_jk - central_sumw2_samefile| = 0; sigma_JK/sigma_Sumw2 median = 1.28838, range = [1.20979, 1.39923]
+DeltaPhi: max |central_jk - central_nominal| = 0; max |central_jk - central_sumw2_samefile| = 0; sigma_JK/sigma_Sumw2 median = 1.45309, range = [1.38955, 1.48035]
+

@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Number of chunks to process in parallel.
-# Use NTHREAD to override (default lowered for better stability on segfault-prone samples).
-nThread=${NTHREAD:-20}
+# Z correction only fills a 2D Z histogram — no track loop, no mixing.
+# Low thread count avoids I/O contention on the MC files.
+nThread=${NTHREAD:-4}
 
 # Array to hold the names of the output files
 declare -a outputFileNames

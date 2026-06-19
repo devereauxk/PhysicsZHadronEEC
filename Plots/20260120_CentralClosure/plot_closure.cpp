@@ -31,6 +31,10 @@ int main(int argc, char *argv[]) {
     string zPtRange = CL.Get("zPtRange", "40_500");
     string trkPtRange = CL.Get("trkPtRange", "0.5_500");
     string tag = CL.Get("tag", "V16_nmix5");
+    string baseDir = CL.Get("BaseDir",
+        "/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots");
+    double diffEtaMax = CL.GetDouble("diffEtaMax", 0.05);
+    double diffPhiMax = CL.GetDouble("diffPhiMax", 0.1);
 
     cout<<"Collision Type: "<<collisionType<<endl;
     cout<<"Z Pt Range: "<<zPtRange<<endl;
@@ -40,10 +44,10 @@ int main(int argc, char *argv[]) {
 
     // files to load
     vector<string> input_ZPT_files = {
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_Gen_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_nominal_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_ZResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str()),
-        Form("/home/kdeverea/PhysicsZHadronEEC/MainAnalysis/20241102_ZhadronVsZPt/plots/%sMC_trkResidual_%s_ZPT%s", mctag.c_str(), tag.c_str(), zPtRange.c_str())
+        Form("%s/%sMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/%sMC_nominal_%s_ZPT%s", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/%sMC_ZResidual_%s_ZPT%s", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str()),
+        Form("%s/%sMC_trkResidual_%s_ZPT%s", baseDir.c_str(), mctag.c_str(), tag.c_str(), zPtRange.c_str())
     };
     vector<string> labels = {
         "MC DY-GEN",
@@ -92,8 +96,8 @@ int main(int argc, char *argv[]) {
 
         // mixed
         TH2D* this_hMixData2D = (TH2D*)fin->Get(Form("hMixData_%s", trkPtRange.c_str()));
-        TH1D* this_hDeltaPhi_mix = this_hMixData2D->ProjectionY(Form("hMixPhi_%d", i), 0, 10);
-        TH1D* this_hDeltaEta_mix = this_hMixData2D->ProjectionX(Form("hMixEta_%d", i), 6, 10);
+        TH1D* this_hDeltaPhi_mix = this_hMixData2D->ProjectionY(Form("hMixPhi_%d", i), 7, 12);
+        TH1D* this_hDeltaEta_mix = this_hMixData2D->ProjectionX(Form("hMixEta_%d", i), 4, 6);
 
         divideByWidth(this_hDeltaPhi_mix);
         divideByWidth(this_hDeltaEta_mix);
@@ -143,10 +147,10 @@ int main(int argc, char *argv[]) {
     }
 
 
-    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, cmsYellow, cmsGray};
-    vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
-    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, cmsTealL1, cmsRed, cmsRed};
-    vector<int> lineStyles = {0, 2, 1, 0, 1};
+    vector<int> markerColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kViolet+1, cmsYellow, cmsGray};
+    vector<int> markerStyles = {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill};
+    vector<int> lineColors = {cmsBlue, cmsRed, kSpring-6, kOrange+7, kViolet+1, cmsTealL1, cmsRed, cmsRed};
+    vector<int> lineStyles = {0, 2, 1, 0, 1, 1};
 
     // make canvas
     TCanvas* c1 = new TCanvas("c1", "c1", 600, 600);
@@ -155,7 +159,7 @@ int main(int argc, char *argv[]) {
         hDeltaEta_all, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta y_{ch,Z}", -3.87, 3.87,
         "Signal d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
@@ -207,7 +211,7 @@ int main(int argc, char *argv[]) {
         hDeltaEta_mix, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta y_{ch,Z}", -3.87, 3.87,
         "Mixed d#DeltaN_{ch}/d#Delta y_{ch,Z}", -1, -1,
         "Ratio to GEN", 0.92, 1.08,
         0,
@@ -252,12 +256,12 @@ int main(int argc, char *argv[]) {
         hDeltaEta, "", labels,
         lineColors, lineStyles, 
         markerColors, markerStyles,
-        "#Delta y_{ch,Z}", -4, 4,
+        "#Delta y_{ch,Z}", -3.87, 3.87,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
-        "RECO - GEN", -0.05, 0.05,
+        "RECO - GEN", -diffEtaMax, diffEtaMax,
         0,
         false, false, true,
-        0.2
+        0.38, 0.70
     );
 
     AddCMSHeader(
@@ -276,7 +280,7 @@ int main(int argc, char *argv[]) {
         markerColors, markerStyles,
         "#Delta#phi_{ch,Z}", -1.5707, 4.7123,
         "Result d#LT#DeltaN_{ch}#GT/d#Delta#phi_{ch,Z}", -1, -1,
-        "RECO - GEN", -0.1, 0.1,
+        "RECO - GEN", -diffPhiMax, diffPhiMax,
         0,
         false, false, true,
         0.2

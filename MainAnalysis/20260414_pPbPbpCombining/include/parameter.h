@@ -1,3 +1,5 @@
+#include <TParameter.h>
+
 //============================================================//
 // Define analysis parameters
 //============================================================//
@@ -16,6 +18,8 @@ public:
    float MaxZY;           // Upper limit of Z rapidity
    float MinTrackPT;      // Lower limit of track pt
    float MaxTrackPT;      // Upper limit of track pt
+   long long MinRun;      // Inclusive lower run-number bound
+   long long MaxRun;      // Exclusive upper run-number bound
    float scaleFactor;     // Scale factor
    float shift;           // shift in sumHF when doing mb matching
    int nThread;           // Number of Threads
@@ -64,6 +68,8 @@ public:
       cout << "MaxZY: " << MaxZY << "" << endl;
       cout << "MinTrackPT: " << MinTrackPT << " GeV/c" << endl;
       cout << "MaxTrackPT: " << MaxTrackPT << " GeV/c" << endl;
+      cout << "MinRun: " << MinRun << endl;
+      cout << "MaxRun: " << MaxRun << endl;
       cout << "isSelfMixing: " << (isSelfMixing ? "true" : "false") << endl;
       cout << "isGenZ: " << (isGenZ ? "true" : "false") << endl;
       cout << "isJewel: " << (isJewel ? "true" : "false") << endl;
@@ -116,6 +122,9 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
     
    TH1D* hMaxTrackPT = new TH1D("parMaxTrackPT", "parMaxTrackPT", 1, 0, 1);
    hMaxTrackPT->SetBinContent(1, par.MaxTrackPT);
+
+   TParameter<Long64_t>* hMinRun = new TParameter<Long64_t>("parMinRun", par.MinRun);
+   TParameter<Long64_t>* hMaxRun = new TParameter<Long64_t>("parMaxRun", par.MaxRun);
     
    TH1D* hMix = new TH1D("parMix", "parMix", 1, 0, 1);
    hMix->SetBinContent(1, par.mix);
@@ -167,6 +176,8 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
    hMaxZPT->Write();
    hMinTrackPT->Write();
    hMaxTrackPT->Write();
+   hMinRun->Write();
+   hMaxRun->Write();
    hMix->Write();
    hScaleFactor->Write();
    hShift->Write();
@@ -188,6 +199,8 @@ void saveParametersToHistograms(const Parameters& par, TFile* outf) {
    delete hMaxZPT;
    delete hMinTrackPT;
    delete hMaxTrackPT;
+   delete hMinRun;
+   delete hMaxRun;
    delete hMix;
    delete hScaleFactor;
    delete hShift;

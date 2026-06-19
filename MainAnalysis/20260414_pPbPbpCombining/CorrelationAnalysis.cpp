@@ -9,6 +9,9 @@
 #include <TFile.h>
 
 #include <iostream>
+#include <cmath>
+#include <limits>
+#include <memory>
 #include <utility>
 
 using namespace std;
@@ -27,6 +30,55 @@ bool checkError(const Parameters& par) {
    }
    return false;
 }
+
+class ZYDirectCorrector
+{
+public:
+   ZYDirectCorrector(const string &filename)
+   {
+      File = new TFile(filename.c_str());
+      Weight = (TH2D *)File->Get("hWeightToApply");
+   }
+
+   ~ZYDirectCorrector()
+   {
+      if(File != nullptr)
+      {
+         File->Close();
+         delete File;
+      }
+   }
+
+   double GetCorrectionFactor(double yCM, double phi) const
+   {
+      if(Weight == nullptr)
+         return 1;
+
+      while(phi < 0)          phi += 2 * M_PI;
+      while(phi >= 2 * M_PI)  phi -= 2 * M_PI;
+
+      const TAxis *yAxis = Weight->GetXaxis();
+      const TAxis *phiAxis = Weight->GetYaxis();
+
+      int yBin = yAxis->FindBin(yCM);
+      int phiBin = phiAxis->FindBin(phi);
+
+      if(yCM <= yAxis->GetXmin()) yBin = 1;
+      if(yCM >= yAxis->GetXmax()) yBin = yAxis->GetNbins();
+      if(phi <= phiAxis->GetXmin()) phiBin = 1;
+      if(phi >= phiAxis->GetXmax()) phiBin = phiAxis->GetNbins();
+
+      double correction = Weight->GetBinContent(yBin, phiBin);
+      if(!std::isfinite(correction) || correction <= 0)
+         correction = 1;
+
+      return correction;
+   }
+
+private:
+   TFile *File = nullptr;
+   TH2D *Weight = nullptr;
+};
 
 pair<int, int> findClosestMuonTracks(ZHadronMessenger *b, const Parameters &par)
 {
@@ -83,6 +135,8 @@ bool trackSelection(ZHadronMessenger *b, const Parameters &par, int j,
 }
 
 bool eventSelection(ZHadronMessenger *b, const Parameters& par) {
+   if (b->Run < par.MinRun) return 0;
+   if (b->Run >= par.MaxRun) return 0;
    if (par.isPUReject && par.isData && b->NVertex != 1) return 0;
    if (par.useVZWindow && fabs(b->VZ) >= 15) return 0;
    if ((par.isGenZ ? b->genZMass->size() : b->zMass->size()) == 0) return 0;
@@ -106,6 +160,8 @@ int main(int argc, char *argv[])
    float MaxTrackPT  = CL.GetDouble("MaxTrackPT", 15);
    bool  IsData      = CL.GetBool  ("IsData", true);
    bool  IsPP        = CL.GetBool  ("IsPP", false);
+   string MinRunString = CL.Get("MinRun", "");
+   string MaxRunString = CL.Get("MaxRun", "");
 
    Parameters par(MinZPT, MaxZPT, MinTrackPT, MaxTrackPT);
    par.input         = CL.Get      ("Input",   "");
@@ -140,6 +196,8 @@ int main(int argc, char *argv[])
    par.shift         = 0;
    par.MinZY         = CL.GetDouble("MinZY", 0);
    par.MaxZY         = CL.GetDouble("MaxZY", 200);
+   par.MinRun        = (MinRunString == "") ? numeric_limits<long long>::min() : stoll(MinRunString);
+   par.MaxRun        = (MaxRunString == "") ? numeric_limits<long long>::max() : stoll(MaxRunString);
    par.useZScaleFactor = CL.GetBool("UseZScaleFactor", false);
    par.includeHole   = true;
    par.isPPb         = CL.GetBool  ("IsPPb", false);
@@ -182,27 +240,36 @@ int main(int argc, char *argv[])
    TH1D *hTrkEta = new TH1D("hTrkEtaData", ";Track #eta_{CM};dN/d#eta/N_{Z}", nEtaBins, etaMin, etaMax);
    TH1D *hZPt    = new TH1D("hZPtData",    ";Z p_{T} [GeV];dN/dp_{T}/N_{Z}", nZPtBins, zptBins);
    TH1D *hZY     = new TH1D("hZYData",     ";Z y_{CM};dN/dy/N_{Z}", nZYBins, zyMin, zyMax);
+   TH1D *hZPhi   = new TH1D("hZPhiData",   ";Z #phi;dN/d#phi/N_{Z}", 12, 0, 2 * M_PI);
    TH1D *hNZ     = new TH1D("hNZData",     "", 1, 0, 1);
 
    hTrkPt->Sumw2();
    hTrkEta->Sumw2();
    hZPt->Sumw2();
    hZY->Sumw2();
+   hZPhi->Sumw2();
 
    // Z-track correlation histograms
-   const int nDEtaBins = 12;
-   double dEtaMin = 0, dEtaMax = 4.8;
-   const int nDPhiBins = 12;
-   double dPhiMin = 0, dPhiMax = M_PI;
+    const int nDEtaBins = 12;
+    double dEtaMin = 0, dEtaMax = 4.8;
+    const int nDPhiBins = 12;
+    double dPhiMin = 0, dPhiMax = M_PI;
+    const int nDEtaDPhiBins = 120;
 
-   TH1D *hDEta  = new TH1D("hDEtaData",  ";|#Delta#eta|;1/N_{Z} dN/d|#Delta#eta|", nDEtaBins, dEtaMin, dEtaMax);
-   TH1D *hDPhi  = new TH1D("hDPhiData",  ";|#Delta#phi|;1/N_{Z} dN/d|#Delta#phi|", nDPhiBins, dPhiMin, dPhiMax);
-   TH2D *hDEtaDPhi = new TH2D("hDEtaDPhiData", ";|#Delta#eta|;|#Delta#phi|",
-      nDEtaBins, dEtaMin, dEtaMax, nDPhiBins, dPhiMin, dPhiMax);
+    TH1D *hDEta  = new TH1D("hDEtaData",  ";|#Delta#eta|;1/N_{Z} dN/d|#Delta#eta|", nDEtaBins, dEtaMin, dEtaMax);
+    TH1D *hDPhi  = new TH1D("hDPhiData",  ";|#Delta#phi|;1/N_{Z} dN/d|#Delta#phi|", nDPhiBins, dPhiMin, dPhiMax);
+    TH2D *hDEtaDPhi = new TH2D("hDEtaDPhiData", ";|#Delta#eta|;|#Delta#phi|",
+       nDEtaDPhiBins, dEtaMin, dEtaMax, nDEtaDPhiBins, dPhiMin, dPhiMax);
+   TH2D *hZEtaPhi = new TH2D("hZEtaPhiData", ";Z #eta;Z #phi",
+      24, -2.4, 2.4, 12, 0, 2 * M_PI);
+   TH2D *hZYPhi = new TH2D("hZYPhiData", ";Z y_{CM};Z #phi",
+      nZYBins, zyMin, zyMax, 12, 0, 2 * M_PI);
 
    hDEta->Sumw2();
    hDPhi->Sumw2();
    hDEtaDPhi->Sumw2();
+   hZEtaPhi->Sumw2();
+   hZYPhi->Sumw2();
 
    // Event multiplicity (track count per event)
    TH1D *hMult = new TH1D("hMultData", ";N_{trk};Events", 20, 0, 150);
@@ -215,7 +282,7 @@ int main(int argc, char *argv[])
    double z3dLogMin = log(0.5), z3dLogMax = log(100.0);
    for (int i = 0; i <= nZ3dPtBins; i++)
        z3dPtBins[i] = exp(z3dLogMin + (z3dLogMax - z3dLogMin) * i / nZ3dPtBins);
-   const int nZ3dYBins = 12;
+   const int nZ3dYBins = 24;
    double z3dYBins[nZ3dYBins + 1];
    for (int i = 0; i <= nZ3dYBins; i++)
        z3dYBins[i] = -3.5 + (2.5 - (-3.5)) * i / nZ3dYBins;
@@ -236,17 +303,17 @@ int main(int argc, char *argv[])
    if (par.useVZWeight)
       vzCorrector = new VZCorrector(par.VZWeightFile.c_str());
 
-   TrackResidualCorrector *ZCorrectionCorrector = nullptr;
+   unique_ptr<ZYDirectCorrector> ZCorrectionCorrector;
    if (par.ZCorrectionFile != "")
-      ZCorrectionCorrector = new TrackResidualCorrector(par.ZCorrectionFile.c_str());
+      ZCorrectionCorrector = make_unique<ZYDirectCorrector>(par.ZCorrectionFile);
 
-   TrackResidualCorrector *corrector_0_10 = nullptr, *corrector_10_20 = nullptr,
-                          *corrector_20_40 = nullptr, *corrector_40_500 = nullptr;
+   TrackResidualCorrector2D *corrector_0_10 = nullptr, *corrector_10_20 = nullptr,
+                            *corrector_20_40 = nullptr, *corrector_40_500 = nullptr;
    if (par.useResidualWeight && par.residualWeightFile != "") {
-      corrector_0_10   = new TrackResidualCorrector(Form("%s0-10.root",   par.residualWeightFile.c_str()));
-      corrector_10_20  = new TrackResidualCorrector(Form("%s10-20.root",  par.residualWeightFile.c_str()));
-      corrector_20_40  = new TrackResidualCorrector(Form("%s20-40.root",  par.residualWeightFile.c_str()));
-      corrector_40_500 = new TrackResidualCorrector(Form("%s40-500.root", par.residualWeightFile.c_str()));
+      corrector_0_10   = new TrackResidualCorrector2D(Form("%s0-10.root",   par.residualWeightFile.c_str()));
+      corrector_10_20  = new TrackResidualCorrector2D(Form("%s10-20.root",  par.residualWeightFile.c_str()));
+      corrector_20_40  = new TrackResidualCorrector2D(Form("%s20-40.root",  par.residualWeightFile.c_str()));
+      corrector_40_500 = new TrackResidualCorrector2D(Form("%s40-500.root", par.residualWeightFile.c_str()));
    }
 
    unsigned long nEntry = M->GetEntries() * par.scaleFactor;
@@ -287,17 +354,20 @@ int main(int argc, char *argv[])
       if (par.useEventWeight) eventWeight *= M->EventWeight;
       if (par.useVZWeight) eventWeight *= vzCorrector->GetCorrectionFactor(M->VZ);
       if (par.useZWeight) eventWeight *= ZWeight;
-      if (ZCorrectionCorrector != nullptr)
-         eventWeight *= ZCorrectionCorrector->GetCorrectionFactor(zPt, zY_CM, zPhi);
+       if (ZCorrectionCorrector != nullptr)
+          eventWeight *= ZCorrectionCorrector->GetCorrectionFactor(zY_CM, zPhi);
 
       nZ += eventWeight;
 
       hZPt->Fill(zPt, eventWeight);
       hZY->Fill(zY_CM, eventWeight);
+      hZPhi->Fill(zPhi, eventWeight);
+      hZEtaPhi->Fill(zEta, zPhi, eventWeight);
+      hZYPhi->Fill(zY_CM, zPhi, eventWeight);
       hZ3D->Fill(zPt, zY_CM, zPhi, eventWeight);
 
       // Select track residual corrector by Z pT bin
-      TrackResidualCorrector *corrector = nullptr;
+      TrackResidualCorrector2D *corrector = nullptr;
       if (par.useResidualWeight && par.residualWeightFile != "") {
          if (zPt < 10) corrector = corrector_0_10;
          else if (zPt < 20) corrector = corrector_10_20;
@@ -352,11 +422,14 @@ int main(int argc, char *argv[])
    hTrkEta->Write();
    hZPt->Write();
    hZY->Write();
+   hZPhi->Write();
    hNZ->Write();
    hDEta->Write();
    hDPhi->Write();
    hDEtaDPhi->Write();
    hMult->Write();
+   hZEtaPhi->Write();
+   hZYPhi->Write();
    hZ3D->Write();
    outf->Close();
    cout << "done! " << par.output << endl;

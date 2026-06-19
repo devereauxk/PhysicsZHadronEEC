@@ -1,0 +1,173 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{graphicx}
+\setbeamersize{text margin left=0.15cm, text margin right=0.15cm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+
+\newcommand{\plotdir}{../plots/extremal_runs}
+\title{pPb/Pbp extremal-run discrepancy sandbox}
+\date{}
+
+\newcommand{\plotpanel}[2]{%
+  \begin{minipage}[t]{0.327\textwidth}
+    \centering
+    {\tiny #1\par}
+    \vspace{0.2em}
+    \includegraphics[width=\linewidth]{\plotdir/#2}
+  \end{minipage}%
+}
+
+\newcommand{\plotslideA}[2]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{#2_raw.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{#2_VZ.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{#2_VZ_Z.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideB}[2]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{#2_VZ_Z_ZSF.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{#2_VZ_Z_ZSF_trk.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{#2_VZ_Z_ZSF_trk_res.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideAPU}[2]{%
+  \begin{frame}[t]{#1 + PUReject (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{#2_raw_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{#2_VZ_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{#2_VZ_Z_PUReject.pdf}
+  \end{frame}
+}
+
+\newcommand{\plotslideBPU}[2]{%
+  \begin{frame}[t]{#1 + PUReject (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{#2_VZ_Z_ZSF_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{#2_VZ_Z_ZSF_trk_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{#2_VZ_Z_ZSF_trk_res_PUReject.pdf}
+  \end{frame}
+}
+
+\newcommand{\mapslideA}[1]{%
+  \begin{frame}[t]{#1 (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{DEtaDPhi_maps_raw.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{DEtaDPhi_maps_VZ.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{DEtaDPhi_maps_VZ_Z.pdf}
+  \end{frame}
+}
+
+\newcommand{\mapslideB}[1]{%
+  \begin{frame}[t]{#1 (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{DEtaDPhi_maps_VZ_Z_ZSF.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{DEtaDPhi_maps_VZ_Z_ZSF_trk.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{DEtaDPhi_maps_VZ_Z_ZSF_trk_res.pdf}
+  \end{frame}
+}
+
+\newcommand{\mapslideAPU}[1]{%
+  \begin{frame}[t]{#1 + PUReject (1/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{raw}{DEtaDPhi_maps_raw_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ}{DEtaDPhi_maps_VZ_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z}{DEtaDPhi_maps_VZ_Z_PUReject.pdf}
+  \end{frame}
+}
+
+\newcommand{\mapslideBPU}[1]{%
+  \begin{frame}[t]{#1 + PUReject (2/2)}
+    \centering
+    \vspace{-0.4em}
+    \plotpanel{+VZ+Z+ZSF}{DEtaDPhi_maps_VZ_Z_ZSF_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk}{DEtaDPhi_maps_VZ_Z_ZSF_trk_PUReject.pdf}%
+    \hspace{0.003\textwidth}%
+    \plotpanel{+VZ+Z+ZSF+trk+res}{DEtaDPhi_maps_VZ_Z_ZSF_trk_res_PUReject.pdf}
+  \end{frame}
+}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}[t]{metadata}
+  \small
+  Inclusive sandbox selection: \texttt{ZPT 0\_500}, \texttt{trkPT 0.5\_15}\par
+  \vspace{0.3em}
+  Four singled-run inputs from \texttt{run\_average\_abs\_deta\_no\_zcorr.tsv}:\par
+  \begin{itemize}
+    \item pPb max average $|\Delta\eta|$: Run 286327, average 3.19027810
+    \item pPb min average $|\Delta\eta|$: Run 286441, average 2.36833000
+    \item Pbp max average $|\Delta\eta|$: Run 285718, average 2.93664362
+    \item Pbp min average $|\Delta\eta|$: Run 285537, average 2.67432203
+  \end{itemize}
+  \vspace{0.2em}
+  Maintained correction ladder: raw $\to$ +VZ $\to$ +VZ+Z $\to$ +VZ+Z+ZSF $\to$ +VZ+Z+ZSF+trk $\to$ +VZ+Z+ZSF+trk+res\par
+  \vspace{0.2em}
+  Lower panels are ratios to the pPb max-average run.\par
+\end{frame}
+
+\plotslideA{trkPt}{trkPt}
+\plotslideB{trkPt}{trkPt}
+\plotslideAPU{trkPt}{trkPt}
+\plotslideBPU{trkPt}{trkPt}
+\plotslideA{trkEta}{trkEta}
+\plotslideB{trkEta}{trkEta}
+\plotslideAPU{trkEta}{trkEta}
+\plotslideBPU{trkEta}{trkEta}
+\plotslideA{ZPt}{ZPt}
+\plotslideB{ZPt}{ZPt}
+\plotslideAPU{ZPt}{ZPt}
+\plotslideBPU{ZPt}{ZPt}
+\plotslideA{Zy}{Zy}
+\plotslideB{Zy}{Zy}
+\plotslideAPU{Zy}{Zy}
+\plotslideBPU{Zy}{Zy}
+\plotslideA{Multiplicity}{Mult}
+\plotslideB{Multiplicity}{Mult}
+\plotslideAPU{Multiplicity}{Mult}
+\plotslideBPU{Multiplicity}{Mult}
+\plotslideA{$|\Delta\eta|$}{DEta}
+\plotslideB{$|\Delta\eta|$}{DEta}
+\plotslideAPU{$|\Delta\eta|$}{DEta}
+\plotslideBPU{$|\Delta\eta|$}{DEta}
+\plotslideA{$|\Delta\phi|$}{DPhi}
+\plotslideB{$|\Delta\phi|$}{DPhi}
+\plotslideAPU{$|\Delta\phi|$}{DPhi}
+\plotslideBPU{$|\Delta\phi|$}{DPhi}
+\mapslideA{Four-run normalized $(|\Delta\eta|, |\Delta\phi|)$ maps}
+\mapslideB{Four-run normalized $(|\Delta\eta|, |\Delta\phi|)$ maps}
+\mapslideAPU{Four-run normalized $(|\Delta\eta|, |\Delta\phi|)$ maps}
+\mapslideBPU{Four-run normalized $(|\Delta\eta|, |\Delta\phi|)$ maps}
+
+\end{document}

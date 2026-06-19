@@ -1,0 +1,109 @@
+#include <TFile.h>
+#include <TH1D.h>
+#include <TH2D.h>
+#include <TF1.h>
+#include <iostream>
+
+#include "../../../CommonCode/include/KylesPlotting.h"
+
+#include <vector>
+#include <string>
+
+void plot_closure(const char* output = "plots/isPP") {
+
+    vector<string> input_ZPT_files = {
+        "output/DY-GEN.root",
+        "output/DY-RECO-noResidual.root",
+        "output/DY-RECO.root"
+    };
+    vector<string> labels = {
+        "MC DY-GEN",
+        "MC DY-RECO",
+        "MC DY-RECO (corrected)"
+    };
+
+    vector<TH1*> hTrkPt;
+    vector<TH1*> hTrkEta;
+    vector<TH1*> hTrkPhi;
+
+    int i = 0;
+    for (const auto& input_ZPT : input_ZPT_files) {
+        TFile* fin = TFile::Open(input_ZPT.c_str(), "READ");
+        if (!fin || fin->IsZombie()) {
+            std::cerr << "Error: Unable to open file " << input_ZPT << std::endl;
+            continue;
+        }
+
+        TH3D* this_hTrkPtEtaPhi = (TH3D*)fin->Get("hTrkPtEtaPhiData");
+        TH1D* this_hTrkPt = this_hTrkPtEtaPhi->ProjectionX(Form("trkPt_%s", labels[i].c_str()));
+        TH1D* this_hTrkEta = this_hTrkPtEtaPhi->ProjectionY(Form("trkEta_%s", labels[i].c_str()));
+        TH1D* this_hTrkPhi = this_hTrkPtEtaPhi->ProjectionZ(Form("trkPhi_%s", labels[i].c_str()));
+
+        TH1D* hNZ = (TH1D*)fin->Get("hNZData");
+
+        this_hTrkPt->Scale(1.0 / hNZ->GetBinContent(1));
+        this_hTrkEta->Scale(1.0 / hNZ->GetBinContent(1));
+        this_hTrkPhi->Scale(1.0 / hNZ->GetBinContent(1));
+
+        divideByWidth(this_hTrkPt);
+        divideByWidth(this_hTrkEta);
+        divideByWidth(this_hTrkPhi);
+
+        hTrkPt.push_back(this_hTrkPt);
+        hTrkEta.push_back(this_hTrkEta);
+        hTrkPhi.push_back(this_hTrkPhi);
+
+        i++;
+    }
+
+    TCanvas* cTrk1 = new TCanvas("cTrk", "cTrk", 600, 600);
+    double trkPtMin = hTrkPt[0]->GetXaxis()->GetBinLowEdge(1);
+    double trkPtMax = hTrkPt[0]->GetXaxis()->GetBinUpEdge(hTrkPt[0]->GetNbinsX());
+
+    TPad* pTrk1 = (TPad*) plotCMSRatio(
+        hTrkPt, "", labels,
+        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
+        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        "p_{T}^{ch}", trkPtMin, trkPtMax,
+        "(1/N_{Z}) dN_{ch}/dp_{T}^{ch}", -1, -1,
+        "Ratio to GEN", 0.9, 1.1,
+        0,
+        true, false, false
+    );
+
+    AddCMSHeader(pTrk1, "Internal", false);
+    AddUPCHeader(pTrk1, "5 TeV", "pp MC");
+
+    cTrk1->Update();
+    cTrk1->SaveAs(Form("%s-pt.pdf", output));
+
+    TCanvas* cTrk2 = new TCanvas("cTrk2", "cTrk2", 600, 600);
+    TPad* pTrk2 = (TPad*) plotCMSRatio(
+        hTrkEta, "", labels,
+        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
+        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        "y_{ch}", -4, 4,
+        "(1/N_{Z}) dN_{ch}/d y_{ch}", -1, -1,
+        "Ratio to GEN", 0.8, 1.2,
+        0,
+        false, false, false
+    );
+
+    cTrk2->Update();
+    cTrk2->SaveAs(Form("%s-eta.pdf", output));
+
+    TCanvas* cTrk3 = new TCanvas("cTrk3", "cTrk3", 600, 600);
+    TPad* pTrk3 = (TPad*) plotCMSRatio(
+        hTrkPhi, "", labels,
+        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsYellow, cmsGray}, {0, 2, 1, 1, 1},
+        {cmsBlue, cmsRed, cmsYellow, kOrange+7, kSpring+7, cmsTealL1, cmsRed, cmsRed}, {mCircleFill, mCircleFill, mCircleFill, mCircleFill, mCircleFill},
+        "#phi_{ch}", 0, 2*M_PI,
+        "(1/N_{Z}) dN_{ch}/d #phi_{ch}", -1, -1,
+        "Ratio to GEN", 0.8, 1.2,
+        0,
+        false, false, false
+    );
+
+    cTrk3->Update();
+    cTrk3->SaveAs(Form("%s-phi.pdf", output));
+}

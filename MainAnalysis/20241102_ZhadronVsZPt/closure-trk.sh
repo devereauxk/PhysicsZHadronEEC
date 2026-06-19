@@ -11,7 +11,7 @@ source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 
 if [ -z "${CONFIG_FILE:-}" ]; then
 cat > config.sh <<CFG
-ZPT_RANGES=("0_10" "10_20" "20_40" "40_500")
+ZPT_RANGES=("0_30" "30_500")
 PT_RANGES=("0.5_15")
 CFG
 else

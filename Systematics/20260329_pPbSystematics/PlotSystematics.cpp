@@ -89,6 +89,8 @@ string GetLegendLabel(const string &family, bool differenceMode = false)
        return "PU";
     if(family == "EnergyExtrapolation")
        return "Energy extrapolation";
+    if(family == "EventMixing")
+       return "EventMixing";
     return family;
 }
 
@@ -108,19 +110,21 @@ void DrawLabels(const string &collision, const string &zptRange, const string &t
    latex.SetNDC();
    latex.SetTextFont(42);
    latex.SetTextSize(0.032);
-   latex.DrawLatex(0.16, 0.84, (collisionLabel + " " + title).c_str());
-   latex.DrawLatex(0.16, 0.79, FormatPTRange(trackRange, "p_{T}^{ch}").c_str());
-   latex.DrawLatex(0.16, 0.74, FormatPTRange(zptRange, "p_{T}^{Z}").c_str());
+   latex.DrawLatex(0.18, 0.84, (collisionLabel + " " + title).c_str());
+   latex.DrawLatex(0.18, 0.79, FormatPTRange(trackRange, "p_{T}^{ch}").c_str());
+   latex.DrawLatex(0.18, 0.74, FormatPTRange(zptRange, "p_{T}^{Z}").c_str());
 }
 
 TH1D *LoadNominalHistogram(TFile *nominalFile, TFile *nominalPPbFile, TFile *nominalPBPFile,
-   const string &observable, const string &trackRange, const string &name)
+   const string &observable, const string &trackRange, const string &name,
+   bool useShifted10x10 = false, bool useModified12x12 = false)
 {
-   if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
-      return BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, name);
-   if(nominalFile != nullptr)
-      return LoadSingleResultHistogram(*nominalFile, observable, trackRange, name);
-   return nullptr;
+    if(nominalPPbFile != nullptr && nominalPBPFile != nullptr)
+      return BuildCombinedResultHistogram(*nominalPPbFile, *nominalPBPFile, observable, trackRange, name,
+         useShifted10x10, useModified12x12);
+    if(nominalFile != nullptr)
+       return LoadSingleResultHistogram(*nominalFile, observable, trackRange, name, useModified12x12);
+    return nullptr;
 }
 
 TH1D *BuildRelativeHistogram(const TH1D *histogram, const TH1D *nominal, const string &name)
@@ -150,6 +154,7 @@ map<string, int> GetColors()
      colors["PUpPb"] = kAzure + 2;
     colors["ScaleFactor"] = kRed + 1;
     colors["EnergyExtrapolation"] = kViolet + 1;
+    colors["EventMixing"] = kCyan + 2;
     colors["Total"] = kBlack;
     return colors;
 }
@@ -220,6 +225,12 @@ void DrawUncertaintyOverlay(TFile &systematicsFile, TH1D *nominal, const string 
    world->GetYaxis()->SetTitle(doRelative == true ? "Relative uncertainty" : "Absolute uncertainty");
 
    TCanvas canvas(("Canvas_" + canvasTag).c_str(), "", 900, 700);
+   canvas.SetLeftMargin(0.14);
+   canvas.SetBottomMargin(0.14);
+   world->GetYaxis()->SetTitleSize(0.045);
+   world->GetYaxis()->SetTitleOffset(1.3);
+   world->GetXaxis()->SetTitleSize(0.06);
+   world->GetXaxis()->SetTitleOffset(1.05);
    world->Draw("axis");
 
    TLegend legend(0.60, 0.58, 0.85, 0.84);
@@ -253,10 +264,11 @@ void DrawUncertaintyOverlay(TFile &systematicsFile, TH1D *nominal, const string 
 }
 
 void DrawCentralValue(TFile &nominalFile, TFile &systematicsFile, const string &observable,
-   const string &collision, const string &zptRange, const string &trackRange, const string &outputName)
+   const string &collision, const string &zptRange, const string &trackRange, const string &outputName,
+   bool symmetrize = false)
 {
-   string histogramName = observable + "_Result" + trackRange;
-   TH1D *nominal = CloneHistogram(nominalFile, histogramName, 0.5);
+   TH1D *nominal = LoadSingleResultHistogram(nominalFile, observable, trackRange,
+      "CentralValue_" + observable, symmetrize);
    TH1D *total = CloneHistogram(systematicsFile, "Total_" + observable);
    if(nominal == nullptr || total == nullptr)
    {
@@ -327,10 +339,17 @@ int main(int argc, char *argv[])
     string nominalPPbFileName = CL.Get("NominalPPb", "");
     string nominalPBPFileName = CL.Get("NominalPBP", "");
    string outputBase = CL.Get("OutputBase", "plots/systematics");
-   string collision = CL.Get("Collision", "pPb");
-   string zptRange = CL.Get("ZPTRange", "40_350");
-   string trackRange = CL.Get("TrackPTRange", "2_500");
-    vector<string> families = ParseCSV(CL.Get("Families", "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
+    string collision = CL.Get("Collision", "pPb");
+    string zptRange = CL.Get("ZPTRange", "40_350");
+    string trackRange = CL.Get("TrackPTRange", "2_500");
+    bool useShifted10x10 = CL.GetBool("UseShifted10x10", false);
+    bool useModified12x12 = CL.GetBool("UseModified12x12", false);
+    if(useShifted10x10 == true && useModified12x12 == true)
+    {
+       cerr << "UseShifted10x10 and UseModified12x12 cannot both be true" << endl;
+       return 1;
+    }
+     vector<string> families = ParseCSV(CL.Get("Families", "TrackSelection,TrackCorrection,MuonRejection,PUpp,PUpPb,ScaleFactor,EnergyExtrapolation"));
      vector<string> differenceFamilies = NormalizeDifferenceFamilies(ParseCSV(CL.Get("DifferenceFamilies", "TrackSelection,TrackCorrection,MuonRejection,PU,ScaleFactor,EnergyExtrapolation")));
 
    TFile systematicsFile(inputFileName.c_str());
@@ -338,10 +357,10 @@ int main(int argc, char *argv[])
    TFile *nominalPPbFile = (nominalPPbFileName != "") ? TFile::Open(nominalPPbFileName.c_str()) : nullptr;
    TFile *nominalPBPFile = (nominalPBPFileName != "") ? TFile::Open(nominalPBPFileName.c_str()) : nullptr;
 
-   TH1D *nominalDeltaPhi = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
-      "DeltaPhi", trackRange, "NominalDeltaPhi");
-   TH1D *nominalDeltaEta = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
-      "DeltaEta", trackRange, "NominalDeltaEta");
+     TH1D *nominalDeltaPhi = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
+       "DeltaPhi", trackRange, "NominalDeltaPhi", useShifted10x10, useModified12x12);
+     TH1D *nominalDeltaEta = LoadNominalHistogram(nominalFile, nominalPPbFile, nominalPBPFile,
+       "DeltaEta", trackRange, "NominalDeltaEta", useShifted10x10, useModified12x12);
     if(nominalDeltaPhi != nullptr)
     {
        DrawUncertaintyOverlay(systematicsFile, nominalDeltaPhi, "DeltaPhi", families, collision, zptRange, trackRange, outputBase + "-DeltaPhi-absolute.pdf", false);
@@ -361,8 +380,8 @@ int main(int argc, char *argv[])
 
    if(nominalFile != nullptr)
    {
-      DrawCentralValue(*nominalFile, systematicsFile, "DeltaPhi", collision, zptRange, trackRange, outputBase + "-DeltaPhi-central.pdf");
-      DrawCentralValue(*nominalFile, systematicsFile, "DeltaEta", collision, zptRange, trackRange, outputBase + "-DeltaEta-central.pdf");
+      DrawCentralValue(*nominalFile, systematicsFile, "DeltaPhi", collision, zptRange, trackRange, outputBase + "-DeltaPhi-central.pdf", useModified12x12);
+      DrawCentralValue(*nominalFile, systematicsFile, "DeltaEta", collision, zptRange, trackRange, outputBase + "-DeltaEta-central.pdf", useModified12x12);
    }
    else if(nominalDeltaPhi != nullptr && nominalDeltaEta != nullptr)
    {
