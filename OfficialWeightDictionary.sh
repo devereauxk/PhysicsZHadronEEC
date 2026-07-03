@@ -4,7 +4,7 @@
 # Scripts should source this file instead of hardcoding weight/input paths.
 # Environment overrides are still supported through the resolved variables below.
 # Previous frozen weights saved in OfficialWeightDictionary_ANV5.sh (ZV9, trkV28).
-# Z and R weights blanked pending fresh ZV10/trkV29 derivation; will be filled in today.
+# Z weights (ZV10) and 2D R weights (trkV29) fully populated 20260601.
 
 OFFICIAL_VZ_WEIGHT_FILE_PP="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260407_ZPT0_500_VzReweightFits_pp.root"
 OFFICIAL_VZ_WEIGHT_FILE_PPB="/home/kdeverea/PhysicsZHadronEEC/Plots/20251001_pPbVZReweighting/summary/20260407_ZPT0_500_VzReweightFits_pPb.root"
