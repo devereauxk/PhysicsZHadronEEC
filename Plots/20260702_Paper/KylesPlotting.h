@@ -1025,6 +1025,7 @@ static int OpenMarkerStyle(int style)
 // Variant of PlotCMSDiffResult that draws data points with filled markers only in
 // [signalXMin, signalXMax] and open markers (+4 in ROOT convention) outside that range.
 // Line-style entries (Powheg MC) are drawn as HIST with no change.
+// panelMode: 0=standalone (default), 1=left, 2=center, 3=right
 TPad* PlotCMSDiffResultRegion(
     vector<TH1*> hists, vector<TH1*> topSystematics, vector<TH1*> bottomSystematics,
     const char* title, vector<string> labels, vector<Int_t> linecolors, vector<Int_t> linestyles,
@@ -1032,13 +1033,18 @@ TPad* PlotCMSDiffResultRegion(
     const char* yTitle, double ymin, double ymax, const char* rTitle, double rmin, double rmax,
     double signalXMin, double signalXMax,
     int baseline = 0, bool logx = false, bool logy = false, bool errorBars = true, float xLegend = 0.55,
-    float textScale = 1.0, float yLegend = -1, float yHeadroom = 1.0)
+    float textScale = 1.0, float yLegend = -1, float yHeadroom = 1.0,
+    int panelMode = 0, double borderOverride = -1)
 {
     SetTDRStyle();
 
+    bool isLeftOrStandalone = (panelMode <= 1);
     double border = 0.06;
-    float leftMargin = 0.15 * textScale;
-    TPad *pad1 = new TPad(title, title, 0, 0.25 + border, 1.0 - border, 1.0 - border);
+    double borderR = (borderOverride >= 0) ? borderOverride : border;
+    float leftMargin = isLeftOrStandalone ? 0.15 * textScale : 0.04;
+    double splitGap = (borderOverride >= 0) ? 0.0075 : 0;
+    double borderT = (borderOverride >= 0) ? 0.02 : border;
+    TPad *pad1 = new TPad(title, title, 0, 0.25 + border + splitGap, 1.0 - borderR, 1.0 - borderT);
     pad1->SetTickx(1);
     pad1->SetTicky(1);
     pad1->SetLeftMargin(leftMargin);
@@ -1046,7 +1052,7 @@ TPad* PlotCMSDiffResultRegion(
     logy ? pad1->SetLogy() : pad1->SetLogy(0);
     logx ? pad1->SetLogx() : pad1->SetLogx(0);
     pad1->Draw();
-    TPad *pad2 = new TPad(title, title, 0, 0, 1.0 - border, 0.25 + border);
+    TPad *pad2 = new TPad(title, title, 0, 0, 1.0 - borderR, 0.25 + border - splitGap);
     pad2->SetTickx(1);
     pad2->SetTicky(1);
     pad2->SetLeftMargin(leftMargin);
@@ -1082,10 +1088,18 @@ TPad* PlotCMSDiffResultRegion(
         }
     }
     double margin;
+    double marginTop, marginBot;
     if (logy) {
         margin = exp((log(global_max) - log((global_min > 0) ? global_min : 1)) * 1.2);
+        marginTop = margin; marginBot = margin;
     } else {
         margin = yHeadroom * 0.2 * (global_max - global_min);
+        if (borderOverride >= 0) {
+            marginTop = margin * 1.5;
+            marginBot = margin * 0.65;
+        } else {
+            marginTop = margin; marginBot = margin;
+        }
     }
 
     // Auto difference Y-range
@@ -1136,17 +1150,17 @@ TPad* PlotCMSDiffResultRegion(
 
         hist->GetXaxis()->SetTitle(xTitle);
         hist->GetXaxis()->SetRangeUser(xmin, xmax);
-        hist->GetYaxis()->SetTitle(yTitle);
-        hist->GetYaxis()->SetTitleSize(0.05 * textScale);
-        hist->GetYaxis()->SetLabelSize(0.045 * textScale);
+        hist->GetYaxis()->SetTitle(isLeftOrStandalone ? yTitle : "");
+        hist->GetYaxis()->SetTitleSize(isLeftOrStandalone ? (borderOverride >= 0 ? 0.055 : 0.05) * textScale : 0);
+        hist->GetYaxis()->SetLabelSize((borderOverride >= 0 ? 0.040 : 0.045) * textScale);
         hist->GetYaxis()->SetTitleOffset(1.2);
 
         if (ymin < ymax) {
             if (logy && ymin <= 0) hist->GetYaxis()->SetRangeUser(1, ymax);
             else hist->GetYaxis()->SetRangeUser(ymin, ymax);
         } else {
-            if (logy && global_min - margin <= 0) hist->GetYaxis()->SetRangeUser(1, global_max + margin);
-            else hist->GetYaxis()->SetRangeUser(global_min - margin, global_max + margin);
+            if (logy && global_min - marginBot <= 0) hist->GetYaxis()->SetRangeUser(1, global_max + marginTop);
+            else hist->GetYaxis()->SetRangeUser(global_min - marginBot, global_max + marginTop);
         }
 
         if (isMarker) {
@@ -1219,18 +1233,18 @@ TPad* PlotCMSDiffResultRegion(
             TH1* bottomSyst = (i < (int)bottomSystematics.size()) ? bottomSystematics[i] : nullptr;
 
             hDiff->GetXaxis()->SetTitle(xTitle);
-            hDiff->GetXaxis()->SetTitleSize(0.1 * textScale);
+            hDiff->GetXaxis()->SetTitleSize((borderOverride >= 0 ? 0.11 : 0.1) * textScale);
             hDiff->GetXaxis()->SetLabelSize(0.08 * textScale);
             hDiff->GetXaxis()->SetTitleOffset(1.0);
-            hDiff->GetYaxis()->SetTitle(rTitle);
+            hDiff->GetYaxis()->SetTitle(isLeftOrStandalone ? rTitle : "");
             hDiff->GetYaxis()->CenterTitle(true);
             if (rmin < rmax)
                 hDiff->GetYaxis()->SetRangeUser(rmin, rmax);
             else
                 hDiff->GetYaxis()->SetRangeUser(diff_min - diff_margin, diff_max + diff_margin);
-            hDiff->GetYaxis()->SetTitleSize(0.08 * textScale);
-            hDiff->GetYaxis()->SetLabelSize(0.06 * textScale);
-            hDiff->GetYaxis()->SetTitleOffset(0.6);
+            hDiff->GetYaxis()->SetTitleSize(isLeftOrStandalone ? 0.11 * textScale : 0);
+            hDiff->GetYaxis()->SetLabelSize((borderOverride >= 0 ? 0.088 : 0.06) * textScale);
+            hDiff->GetYaxis()->SetTitleOffset(borderOverride >= 0 ? 0.65 : 0.6);
             hDiff->SetLineColor(linecolors[i]);
             hDiff->SetLineStyle(linestyles[i] == 0 ? 1 : (linestyles[i] >= 10 ? linestyles[i] - 10 : linestyles[i]));
             hDiff->SetMarkerColor(markercolors[i]);
@@ -1329,8 +1343,11 @@ TPad* PlotCMSDiffResultRegion(
         zeroLine->SetLineStyle(1);
         zeroLine->Draw("SAME");
     }
-    leg->Draw("SAME");
-    AddCMSHeader(pad1, "Preliminary", false);
+    if (isLeftOrStandalone) {
+        leg->Draw("SAME");
+        if (borderOverride < 0)
+            AddCMSHeader(pad1, "Preliminary", false);
+    }
 
     return pad1;
 }

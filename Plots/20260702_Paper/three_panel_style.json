@@ -1,0 +1,62 @@
+{
+    "canvas": {
+        "width": 1200,
+        "height": 600
+    },
+    "columns": {
+        "contentWidth": 1.0,
+        "leftMargin_left": 0.34,
+        "leftMargin_center": 0.22,
+        "leftMargin_right": 0.22,
+        "rightMargin_left": 0.0,
+        "rightMargin_center": 0.015,
+        "rightMargin_right": 0.10,
+        "gapFraction": 0.02
+    },
+    "rows": {
+        "splitY": 0.35,
+        "gapY": 0.025,
+        "topMargin": 0.20,
+        "bottomMargin": 0.48
+    },
+    "fonts": {
+        "pixLabel": 42,
+        "pixTitle": 50,
+        "pixLegend": 28,
+        "pixKinematic": 28,
+        "pixTrkLabel": 34,
+        "lumiSize": 34,
+        "cmsHeaderSize": 56
+    },
+    "markers": {
+        "size": 2.0
+    },
+    "axes": {
+        "yTitleOffset_top": 1.6,
+        "yTitleOffset_bot": 1.6,
+        "xTitleOffset": 0.8,
+        "yNdivisions_top": 510,
+        "yNdivisions_bot": 505,
+        "topYMarginFrac": 0.30,
+        "botYMarginFrac": 0.20,
+        "frameLineWidth": 1,
+        "tickLength": 0.03
+    },
+    "labels": {
+        "trkLabel_xNDC": 0.02,
+        "trkLabel_yNDC": 0.75,
+        "trkLabel_align": 31,
+        "kinLabel_xOffsetFromLeft": 0.03,
+        "kinLabel_y1": 0.75,
+        "kinLabel_y2": 0.67
+    },
+    "legend": {
+        "x1": 0.36,
+        "y1": 0.05,
+        "x2": 0.78,
+        "y2": 0.26
+    },
+    "lumi": {
+        "yOffsetAboveTop": 0.025
+    }
+}

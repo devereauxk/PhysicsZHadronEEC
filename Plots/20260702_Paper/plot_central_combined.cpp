@@ -337,6 +337,7 @@ int main(int argc, char *argv[]) {
     string mcTag = CL.Get("pPbMCTag", tag);
     string systematicsTag = CL.Get("pPbSystematicsTag", tag);
     string tag_pp = CL.Get("pptag", "V16_nmix5");
+    string ppMCTag = CL.Get("ppMCTag", tag_pp);
     string systematicsTagPP = CL.Get("ppSystematicsTag", tag_pp);
     bool doCombine = CL.GetBool("doCombine", false);
     bool includeMC = CL.GetBool("includeMC", true);
@@ -349,6 +350,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     string collisionType = CL.Get("collisionType", "pPb");
+    int panelMode = CL.GetInt("panelMode", 0);
     string outputBase = CL.Get("outputBase", "plots/central_combined");
     string systematicsDir = CL.Get("systematicsDir",
         "/home/kdeverea/PhysicsZHadronEEC/Systematics/20260329_pPbSystematics/output");
@@ -370,7 +372,7 @@ int main(int argc, char *argv[]) {
     };
     string input_ZPT_files_ppMC = "";
     if (includeMC) {
-        input_ZPT_files_ppMC = Form("%s/%s_%s_ZPT%s", baseDir.c_str(), ppMCPrefix.c_str(), tag_pp.c_str(), zPtRange.c_str());
+        input_ZPT_files_ppMC = Form("%s/%s_%s_ZPT%s", baseDir.c_str(), ppMCPrefix.c_str(), ppMCTag.c_str(), zPtRange.c_str());
         input_ZPT_files.push_back(Form("%s/pPbMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mcTag.c_str(), zPtRange.c_str()));
         input_ZPT_files_pbp.push_back(Form("%s/PbPMC_Gen_nominal_%s_ZPT%s", baseDir.c_str(), mcTag.c_str(), zPtRange.c_str()));
     }
@@ -718,6 +720,8 @@ int main(int argc, char *argv[]) {
 
     float resultTextScale = 1.3;
 
+    bool isLeftPanel = (panelMode <= 1);
+
     TCanvas* cResult1 = new TCanvas("cResult1", "cResult1", 600, 600);
     TPad* pResult1 = (TPad*) PlotCMSDiffResultRegion(
         hDeltaEta_combined, topSystematicsEta, differenceSystematicsEta, "", labels,
@@ -729,10 +733,11 @@ int main(int argc, char *argv[]) {
         0, 4,
         0,
         false, false, true,
-        0.23, resultTextScale, 1.5, 3.0
+        0.23, resultTextScale, 1.5, 3.0,
+        panelMode
     );
 
-    {
+    if (isLeftPanel) {
         pResult1->cd();
         TLatex lumiLatex;
         lumiLatex.SetNDC();
@@ -746,7 +751,7 @@ int main(int argc, char *argv[]) {
     }
 
     pResult1->cd();
-    {
+    if (isLeftPanel) {
         TLegend* legReflEta = new TLegend(0.62, 0.07, 0.92, 0.19);
         legReflEta->SetBorderSize(0);
         legReflEta->SetFillStyle(0);
@@ -767,29 +772,33 @@ int main(int argc, char *argv[]) {
         legReflEta->Draw("SAME");
     }
 
-    TLatex latex;
-    latex.SetNDC();
-    latex.SetTextFont(42);
-    latex.SetTextAlign(11);
-    latex.SetTextSize(0.035 * resultTextScale);
-    float labelY1 = 0.82;
-    latex.DrawLatex(0.25, labelY1, Form("|y_{CM}| < 1.935, %s", deltaEtaProjectionLabel.c_str()));
-    labelY1 -= 0.06;
-    if (zPtRange == "0_500") {
-        latex.DrawLatex(0.25, labelY1, "inclusive p_{T}^{Z}");
-    } else {
-        string zPtLabel = (zRange.first == "0") ?
-            Form("p_{T}^{Z} < %s GeV", zRange.second.c_str()) :
-            Form("p_{T}^{Z} > %s GeV", zRange.first.c_str());
-        latex.DrawLatex(0.25, labelY1, zPtLabel.c_str());
+    if (isLeftPanel) {
+        TLatex latex;
+        latex.SetNDC();
+        latex.SetTextFont(42);
+        latex.SetTextAlign(11);
+        latex.SetTextSize(0.035 * resultTextScale);
+        float labelY1 = 0.82;
+        latex.DrawLatex(0.25, labelY1, Form("|y_{CM}| < 1.935, %s", deltaEtaProjectionLabel.c_str()));
+        labelY1 -= 0.06;
+        if (zPtRange == "0_500") {
+            latex.DrawLatex(0.25, labelY1, "inclusive p_{T}^{Z}");
+        } else {
+            string zPtLabel = (zRange.first == "0") ?
+                Form("p_{T}^{Z} < %s GeV", zRange.second.c_str()) :
+                Form("p_{T}^{Z} > %s GeV", zRange.first.c_str());
+            latex.DrawLatex(0.25, labelY1, zPtLabel.c_str());
+        }
     }
-    TLatex latexR;
-    latexR.SetNDC();
-    latexR.SetTextFont(42);
-    latexR.SetTextAlign(31);
-    latexR.SetTextSize(0.035 * resultTextScale);
-    float rMargin1 = pResult1->GetRightMargin();
-    latexR.DrawLatex(1 - rMargin1 - 0.04, 0.82, Form("%s < p_{T}^{ch} < %s GeV", trkRange.first.c_str(), trkRange.second.c_str()));
+    {
+        TLatex latexR;
+        latexR.SetNDC();
+        latexR.SetTextFont(42);
+        latexR.SetTextAlign(31);
+        latexR.SetTextSize(0.035 * resultTextScale);
+        float rMargin1 = pResult1->GetRightMargin();
+        latexR.DrawLatex(1 - rMargin1 - 0.04, 0.82, Form("%s < p_{T}^{ch} < %s GeV", trkRange.first.c_str(), trkRange.second.c_str()));
+    }
 
     cResult1->Update();
     cResult1->SaveAs(Form("%s-DeltaEta-result.pdf", output.c_str()));
@@ -808,10 +817,11 @@ int main(int argc, char *argv[]) {
         0, M_PI,
         0,
         false, false, true,
-        0.23, resultTextScale, 0.40
+        0.23, resultTextScale, 0.40, 1.0,
+        panelMode
     );
 
-    {
+    if (isLeftPanel) {
         pResult2->cd();
         TLatex lumiLatex2;
         lumiLatex2.SetNDC();
@@ -826,29 +836,33 @@ int main(int argc, char *argv[]) {
 
     pResult2->cd();
 
-    TLatex latex2;
-    latex2.SetNDC();
-    latex2.SetTextFont(42);
-    latex2.SetTextAlign(11);
-    latex2.SetTextSize(0.035 * resultTextScale);
-    float labelY2 = 0.82;
-    latex2.DrawLatex(0.25, labelY2, "|y_{CM}| < 1.935");
-    labelY2 -= 0.06;
-    if (zPtRange == "0_500") {
-        latex2.DrawLatex(0.25, labelY2, "inclusive p_{T}^{Z}");
-    } else {
-        string zPtLabel2 = (zRange.first == "0") ?
-            Form("p_{T}^{Z} < %s GeV", zRange.second.c_str()) :
-            Form("p_{T}^{Z} > %s GeV", zRange.first.c_str());
-        latex2.DrawLatex(0.25, labelY2, zPtLabel2.c_str());
+    if (isLeftPanel) {
+        TLatex latex2;
+        latex2.SetNDC();
+        latex2.SetTextFont(42);
+        latex2.SetTextAlign(11);
+        latex2.SetTextSize(0.035 * resultTextScale);
+        float labelY2 = 0.82;
+        latex2.DrawLatex(0.25, labelY2, "|y_{CM}| < 1.935");
+        labelY2 -= 0.06;
+        if (zPtRange == "0_500") {
+            latex2.DrawLatex(0.25, labelY2, "inclusive p_{T}^{Z}");
+        } else {
+            string zPtLabel2 = (zRange.first == "0") ?
+                Form("p_{T}^{Z} < %s GeV", zRange.second.c_str()) :
+                Form("p_{T}^{Z} > %s GeV", zRange.first.c_str());
+            latex2.DrawLatex(0.25, labelY2, zPtLabel2.c_str());
+        }
     }
-    TLatex latexR2;
-    latexR2.SetNDC();
-    latexR2.SetTextFont(42);
-    latexR2.SetTextAlign(31);
-    latexR2.SetTextSize(0.035 * resultTextScale);
-    float rMargin2 = pResult2->GetRightMargin();
-    latexR2.DrawLatex(1 - rMargin2 - 0.04, 0.82, Form("%s < p_{T}^{ch} < %s GeV", trkRange.first.c_str(), trkRange.second.c_str()));
+    {
+        TLatex latexR2;
+        latexR2.SetNDC();
+        latexR2.SetTextFont(42);
+        latexR2.SetTextAlign(31);
+        latexR2.SetTextSize(0.035 * resultTextScale);
+        float rMargin2 = pResult2->GetRightMargin();
+        latexR2.DrawLatex(1 - rMargin2 - 0.04, 0.82, Form("%s < p_{T}^{ch} < %s GeV", trkRange.first.c_str(), trkRange.second.c_str()));
+    }
 
     cResult2->Update();
     cResult2->SaveAs(Form("%s-DeltaPhi-result.pdf", output.c_str()));

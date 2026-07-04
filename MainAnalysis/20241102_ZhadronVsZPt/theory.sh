@@ -4,12 +4,14 @@
 # pPb/Pbp: Powheg+EPOS gen (8.16 TeV), combined at plot stage
 #
 # Usage: NTHREAD=25 ./theory.sh <DOPP> <DOPPB> <DOPBP>
+#   DOSCAN=1 ./theory.sh <DOPP> <DOPPB> <DOPBP>  # scan track pT bins
 
 set -euo pipefail
 
 DOPP=$1
 DOPPB=$2
 DOPBP=$3
+DOSCAN=${DOSCAN:-0}
 
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 
@@ -18,10 +20,17 @@ export CUT_PARALLELISM=${CUT_PARALLELISM:-1}
 export NTHREAD=${NTHREAD:-25}
 
 CONFIG=$(mktemp /tmp/kdeverea/theory_config_XXXXXX.sh)
-cat > "$CONFIG" <<'EOF'
+if [ "$DOSCAN" == "1" ]; then
+    cat > "$CONFIG" <<'EOF'
+ZPT_RANGES=("0_500")
+PT_RANGES=("0.5_2" "2_4" "4_15")
+EOF
+else
+    cat > "$CONFIG" <<'EOF'
 ZPT_RANGES=("0_500")
 PT_RANGES=("0.5_15")
 EOF
+fi
 export CONFIG_FILE="$CONFIG"
 
 TAG_PP="_${OFFICIAL_TAG_PP}"

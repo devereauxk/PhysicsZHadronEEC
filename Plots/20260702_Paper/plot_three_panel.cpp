@@ -1,0 +1,479 @@
+#include <TFile.h>
+#include <TH1D.h>
+#include <TH2D.h>
+#include <TTree.h>
+#include <TCanvas.h>
+#include <TPad.h>
+#include <TLegend.h>
+#include <TLatex.h>
+#include <TLine.h>
+#include <TGraph.h>
+#include <TGraphErrors.h>
+#include <TGraphAsymmErrors.h>
+#include <TSystem.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cmath>
+
+using namespace std;
+
+#include "KylesPlotting.h"
+#include "CommandLine.h"
+
+// ── Utility functions (same as plot_central_combined.cpp) ──────────────
+
+struct ResultProjectionWindow {
+    int DeltaPhiXFirst = 0, DeltaPhiXLast = 0;
+    int DeltaEtaYFirst = 1, DeltaEtaYLast = 1;
+};
+void SetModified12x12ProjectionWindow(ResultProjectionWindow &w) {
+    w.DeltaPhiXFirst = 7; w.DeltaPhiXLast = 12;
+    w.DeltaEtaYFirst = 4; w.DeltaEtaYLast = 6;
+}
+
+void Symmetrize2DFourfold(TH2D *h) {
+    if (!h || h->GetNbinsX() != 12 || h->GetNbinsY() != 12) return;
+    TH2D *c = (TH2D*)h->Clone("_s2d"); c->SetDirectory(nullptr);
+    for (int i = 1; i <= 12; ++i) {
+        int mi = 13 - i;
+        for (int j = 1; j <= 12; ++j) {
+            int mj = (j <= 6) ? (7 - j) : (19 - j);
+            h->SetBinContent(i, j, 0.25*(c->GetBinContent(i,j)+c->GetBinContent(mi,j)
+                +c->GetBinContent(i,mj)+c->GetBinContent(mi,mj)));
+            h->SetBinError(i, j, 0.25*sqrt(pow(c->GetBinError(i,j),2)+pow(c->GetBinError(mi,j),2)
+                +pow(c->GetBinError(i,mj),2)+pow(c->GetBinError(mi,mj),2)));
+        }
+    }
+    delete c;
+}
+void Symmetrize1DEta(TH1D *h) {
+    if (!h) return;
+    int n = h->GetNbinsX();
+    for (int i = 0; i < n/2; ++i) {
+        int mi = n-1-i;
+        double v = 0.5*(h->GetBinContent(i+1)+h->GetBinContent(mi+1));
+        double e = 0.5*sqrt(pow(h->GetBinError(i+1),2)+pow(h->GetBinError(mi+1),2));
+        h->SetBinContent(i+1, v); h->SetBinError(i+1, e);
+        h->SetBinContent(mi+1, v); h->SetBinError(mi+1, e);
+    }
+}
+void Symmetrize1DPhi(TH1D *h) {
+    if (!h || h->GetNbinsX() != 12) return;
+    for (int j = 0; j < 3; ++j) {
+        int mj = 5-j;
+        double v = 0.5*(h->GetBinContent(j+1)+h->GetBinContent(mj+1));
+        double e = 0.5*sqrt(pow(h->GetBinError(j+1),2)+pow(h->GetBinError(mj+1),2));
+        h->SetBinContent(j+1, v); h->SetBinError(j+1, e);
+        h->SetBinContent(mj+1, v); h->SetBinError(mj+1, e);
+    }
+    for (int j = 6; j < 9; ++j) {
+        int mj = 17-j;
+        double v = 0.5*(h->GetBinContent(j+1)+h->GetBinContent(mj+1));
+        double e = 0.5*sqrt(pow(h->GetBinError(j+1),2)+pow(h->GetBinError(mj+1),2));
+        h->SetBinContent(j+1, v); h->SetBinError(j+1, e);
+        h->SetBinContent(mj+1, v); h->SetBinError(mj+1, e);
+    }
+}
+
+TH1D *LoadSystHist(const string &fn, const string &hn, const string &cn) {
+    TFile f(fn.c_str(), "READ");
+    if (f.IsZombie()) return nullptr;
+    TH1D *h = (TH1D*)f.Get(hn.c_str());
+    if (!h) return nullptr;
+    h = (TH1D*)h->Clone(cn.c_str());
+    h->SetDirectory(nullptr);
+    return h;
+}
+
+struct JKContrib {
+    double SignalNZ = 0, MixNZ = 0;
+    vector<float> SignalEta, MixEta, SignalPhi, MixPhi;
+};
+
+void AppendJK(TFile *f, const string &tree, vector<JKContrib> &out) {
+    if (!f) return;
+    TTree *t = (TTree*)f->Get(tree.c_str());
+    if (!t) return;
+    double sNZ = 0, mNZ = 0;
+    vector<float> *sE = nullptr, *mE = nullptr, *sP = nullptr, *mP = nullptr;
+    t->SetBranchAddress("SignalNZ", &sNZ); t->SetBranchAddress("MixNZ", &mNZ);
+    t->SetBranchAddress("SignalEta", &sE); t->SetBranchAddress("MixEta", &mE);
+    t->SetBranchAddress("SignalPhi", &sP); t->SetBranchAddress("MixPhi", &mP);
+    for (Long64_t i = 0; i < t->GetEntries(); ++i) {
+        t->GetEntry(i);
+        out.push_back({sNZ, mNZ, *sE, *mE, *sP, *mP});
+    }
+}
+
+vector<double> ComputeJKSigma(const vector<JKContrib> &ev, const TH1D *h, bool useEta) {
+    int nb = h->GetNbinsX();
+    vector<double> sigma(nb, 0);
+    if (ev.size() < 2) return sigma;
+    double tSNZ = 0, tMNZ = 0;
+    vector<double> fS(nb, 0), fM(nb, 0);
+    for (auto &e : ev) {
+        tSNZ += e.SignalNZ; tMNZ += e.MixNZ;
+        for (int i = 0; i < nb; ++i) {
+            fS[i] += (useEta ? e.SignalEta[i] : e.SignalPhi[i]);
+            fM[i] += (useEta ? e.MixEta[i] : e.MixPhi[i]);
+        }
+    }
+    int valid = 0;
+    for (auto &e : ev)
+        if (tSNZ - e.SignalNZ > 0 && tMNZ - e.MixNZ > 0) valid++;
+    if (valid < 2) return sigma;
+    for (int i = 0; i < nb; ++i) {
+        double full = fS[i]/tSNZ - fM[i]/tMNZ;
+        double var = 0;
+        for (auto &e : ev) {
+            if (tSNZ - e.SignalNZ <= 0 || tMNZ - e.MixNZ <= 0) continue;
+            double sv = (fS[i] - (useEta ? e.SignalEta[i] : e.SignalPhi[i])) / (tSNZ - e.SignalNZ);
+            double mv = (fM[i] - (useEta ? e.MixEta[i] : e.MixPhi[i])) / (tMNZ - e.MixNZ);
+            double d = sv - mv - full;
+            var += d*d;
+        }
+        sigma[i] = sqrt((valid-1.0)/valid * var);
+    }
+    return sigma;
+}
+
+void ApplyJKErrors(TH1D *hEta, TH1D *hPhi, const vector<JKContrib> &ev) {
+    if (ev.size() < 2) return;
+    auto sE = ComputeJKSigma(ev, hEta, true);
+    auto sP = ComputeJKSigma(ev, hPhi, false);
+    for (int i = 1; i <= hEta->GetNbinsX(); ++i) hEta->SetBinError(i, sE[i-1]);
+    for (int i = 1; i <= hPhi->GetNbinsX(); ++i) hPhi->SetBinError(i, sP[i-1]);
+}
+
+void ApplyCombinedJKErrors(TH1D *hEta, TH1D *hPhi,
+    const vector<JKContrib> &evPPb, const vector<JKContrib> &evPbP,
+    double NZ_pPb, double NZ_PbP) {
+    double tot = NZ_pPb + NZ_PbP;
+    double w1 = NZ_pPb/tot, w2 = NZ_PbP/tot;
+    auto eE1 = ComputeJKSigma(evPPb, hEta, true);
+    auto eP1 = ComputeJKSigma(evPPb, hPhi, false);
+    auto eE2 = ComputeJKSigma(evPbP, hEta, true);
+    auto eP2 = ComputeJKSigma(evPbP, hPhi, false);
+    for (int i = 1; i <= hEta->GetNbinsX(); ++i)
+        hEta->SetBinError(i, sqrt(w1*w1*eE1[i-1]*eE1[i-1] + w2*w2*eE2[i-1]*eE2[i-1]));
+    for (int i = 1; i <= hPhi->GetNbinsX(); ++i)
+        hPhi->SetBinError(i, sqrt(w1*w1*eP1[i-1]*eP1[i-1] + w2*w2*eP2[i-1]*eP2[i-1]));
+}
+
+// ── Data loading per track-pT bin ──────────────────────────────────────
+
+struct PanelData {
+    TH1D *hPhi_pp = nullptr, *hPhi_pPb = nullptr;
+    TH1D *hEta_pp = nullptr, *hEta_pPb = nullptr;
+    TH1D *topSystPhi_pp = nullptr, *topSystPhi_pPb = nullptr;
+    TH1D *topSystEta_pp = nullptr, *topSystEta_pPb = nullptr;
+    TH1D *diffSystPhi = nullptr, *diffSystEta = nullptr;
+    string trkLabel;
+};
+
+PanelData LoadPanel(const string &trkPt, const string &zPt,
+    const string &baseDir, const string &systDir,
+    const string &ppTag, const string &pPbTag,
+    const string &ppSystTag, const string &pPbSystTag) {
+
+    PanelData pd;
+    size_t p = trkPt.find('_');
+    string lo = trkPt.substr(0, p), hi = trkPt.substr(p+1);
+    pd.trkLabel = Form("%s < p_{T}^{ch} < %s GeV", lo.c_str(), hi.c_str());
+
+    // pp
+    string ppFile = Form("%s/pp_trkResidual_%s_ZPT%s", baseDir.c_str(), ppTag.c_str(), zPt.c_str());
+    TFile *fpp = TFile::Open(Form("%s-result.root", ppFile.c_str()), "READ");
+    if (!fpp || fpp->IsZombie()) { cerr << "Cannot open pp " << ppFile << endl; return pd; }
+
+    TH1D *phiPP = (TH1D*)fpp->Get(Form("DeltaPhi_Result%s", trkPt.c_str()));
+    TH1D *etaPP = (TH1D*)fpp->Get(Form("DeltaEta_Result%s", trkPt.c_str()));
+    if (!phiPP || !etaPP) { cerr << "Missing pp hists for " << trkPt << endl; return pd; }
+    phiPP = (TH1D*)phiPP->Clone(Form("pp_phi_%s", trkPt.c_str())); phiPP->SetDirectory(nullptr);
+    etaPP = (TH1D*)etaPP->Clone(Form("pp_eta_%s", trkPt.c_str())); etaPP->SetDirectory(nullptr);
+
+    vector<JKContrib> jkPP;
+    AppendJK(fpp, Form("JackknifeProjection%s", trkPt.c_str()), jkPP);
+    if (jkPP.size() >= 2) {
+        ApplyJKErrors(etaPP, phiPP, jkPP);
+        for (int i = 1; i <= etaPP->GetNbinsX(); ++i) etaPP->SetBinError(i, etaPP->GetBinError(i)/etaPP->GetBinWidth(i));
+        for (int i = 1; i <= phiPP->GetNbinsX(); ++i) phiPP->SetBinError(i, phiPP->GetBinError(i)/phiPP->GetBinWidth(i));
+    }
+    phiPP->Scale(0.5); etaPP->Scale(0.5);
+    if (etaPP->GetNbinsX() == 12) { Symmetrize1DEta(etaPP); Symmetrize1DPhi(phiPP); }
+
+    // pPb + PbP combine
+    string pPbFile = Form("%s/pPb_trkResidual_%s_ZPT%s", baseDir.c_str(), pPbTag.c_str(), zPt.c_str());
+    string PbPFile = Form("%s/PbP_trkResidual_%s_ZPT%s", baseDir.c_str(), pPbTag.c_str(), zPt.c_str());
+
+    TFile *fpPb = TFile::Open(Form("%s-nosub.root", pPbFile.c_str()), "READ");
+    TFile *fPbP = TFile::Open(Form("%s-nosub.root", PbPFile.c_str()), "READ");
+    if (!fpPb || fpPb->IsZombie() || !fPbP || fPbP->IsZombie()) {
+        cerr << "Cannot open pPb/PbP nosub for " << trkPt << endl; return pd;
+    }
+
+    auto load2D = [&](TFile *f, const string &prefix) {
+        TH2D *hD = (TH2D*)((TH2D*)f->Get(Form("hData_%s", trkPt.c_str())))->Clone(Form("%s_D_%s", prefix.c_str(), trkPt.c_str()));
+        TH2D *hM = (TH2D*)((TH2D*)f->Get(Form("hMixData_%s", trkPt.c_str())))->Clone(Form("%s_M_%s", prefix.c_str(), trkPt.c_str()));
+        TH1D *nD = (TH1D*)((TH1D*)f->Get(Form("hNZData_%s", trkPt.c_str())))->Clone(Form("%s_nD_%s", prefix.c_str(), trkPt.c_str()));
+        TH1D *nM = (TH1D*)((TH1D*)f->Get(Form("hNZMixData_%s", trkPt.c_str())))->Clone(Form("%s_nM_%s", prefix.c_str(), trkPt.c_str()));
+        hD->SetDirectory(nullptr); hM->SetDirectory(nullptr);
+        nD->SetDirectory(nullptr); nM->SetDirectory(nullptr);
+        hD->Scale(nD->GetBinContent(1));
+        hM->Scale(nM->GetBinContent(1));
+        return make_tuple(hD, hM, nD, nM);
+    };
+
+    auto [dPPb, mPPb, nPPb, nmPPb] = load2D(fpPb, "pPb");
+    auto [dPbP, mPbP, nPbP, nmPbP] = load2D(fPbP, "PbP");
+
+    vector<JKContrib> jkPPb, jkPbP;
+    AppendJK(fpPb, Form("JackknifeProjection%s", trkPt.c_str()), jkPPb);
+    AppendJK(fPbP, Form("JackknifeProjection%s", trkPt.c_str()), jkPbP);
+
+    TH2D *S = (TH2D*)dPPb->Clone(Form("S_%s", trkPt.c_str())); S->Add(dPbP);
+    double SNZ = nPPb->GetBinContent(1) + nPbP->GetBinContent(1);
+    S->Scale(1.0/SNZ);
+    TH2D *B = (TH2D*)mPPb->Clone(Form("B_%s", trkPt.c_str())); B->Add(mPbP);
+    double BNZ = nmPPb->GetBinContent(1) + nmPbP->GetBinContent(1);
+    B->Scale(1.0/BNZ);
+    S->Add(B, -1);
+    Symmetrize2DFourfold(S);
+
+    ResultProjectionWindow pw;
+    SetModified12x12ProjectionWindow(pw);
+    TH1D *projPhi = (TH1D*)S->ProjectionY(Form("projPhi_%s", trkPt.c_str()), pw.DeltaPhiXFirst, pw.DeltaPhiXLast);
+    TH1D *projEta = (TH1D*)S->ProjectionX(Form("projEta_%s", trkPt.c_str()), pw.DeltaEtaYFirst, pw.DeltaEtaYLast);
+    divideByWidth(projPhi); projPhi->Scale(0.5);
+    divideByWidth(projEta); projEta->Scale(0.5);
+    Symmetrize1DPhi(projPhi); Symmetrize1DEta(projEta);
+
+    ApplyCombinedJKErrors(projEta, projPhi, jkPPb, jkPbP,
+        nPPb->GetBinContent(1), nPbP->GetBinContent(1));
+
+    pd.hPhi_pp = phiPP; pd.hPhi_pPb = projPhi;
+    pd.hEta_pp = etaPP; pd.hEta_pPb = projEta;
+
+    // Systematics
+    string ppSystFile = Form("%s/pp_%s_ZPT%s_trkPT%s-systematics.root",
+        systDir.c_str(), ppSystTag.c_str(), zPt.c_str(), trkPt.c_str());
+    string pPbSystFile = Form("%s/pPbPbp_%s_ZPT%s_trkPT%s-systematics.root",
+        systDir.c_str(), pPbSystTag.c_str(), zPt.c_str(), trkPt.c_str());
+
+    pd.topSystPhi_pp = LoadSystHist(ppSystFile, "Total_DeltaPhi", Form("sPhi_pp_%s", trkPt.c_str()));
+    pd.topSystEta_pp = LoadSystHist(ppSystFile, "Total_DeltaEta", Form("sEta_pp_%s", trkPt.c_str()));
+    pd.topSystPhi_pPb = LoadSystHist(pPbSystFile, "Total_DeltaPhi", Form("sPhi_pPb_%s", trkPt.c_str()));
+    pd.topSystEta_pPb = LoadSystHist(pPbSystFile, "Total_DeltaEta", Form("sEta_pPb_%s", trkPt.c_str()));
+    pd.diffSystPhi = LoadSystHist(pPbSystFile, "DifferenceTotal_DeltaPhi", Form("dsPhi_%s", trkPt.c_str()));
+    pd.diffSystEta = LoadSystHist(pPbSystFile, "DifferenceTotal_DeltaEta", Form("dsEta_%s", trkPt.c_str()));
+
+    return pd;
+}
+
+// ── Main ───────────────────────────────────────────────────────────────
+
+int main(int argc, char *argv[]) {
+
+    CommandLine CL(argc, argv);
+    string zPt     = CL.Get("zPtRange", "0_500");
+    string ppTag   = CL.Get("pptag");
+    string pPbTag  = CL.Get("pPbtag");
+    string ppSystTag  = CL.Get("ppSystematicsTag", ppTag);
+    string pPbSystTag = CL.Get("pPbSystematicsTag", pPbTag);
+    string baseDir = CL.Get("BaseDir");
+    string systDir = CL.Get("systematicsDir",
+        "/home/kdeverea/PhysicsZHadronEEC/Systematics/20260329_pPbSystematics/output");
+    string outputFile = CL.Get("output", "plots/three_panel/three_panel_deltaphi.pdf");
+    bool doEta = CL.GetBool("doEta", false);
+
+    gSystem->mkdir(gSystem->DirName(outputFile.c_str()), true);
+
+    string trkBins[] = {"0.5_2", "2_4", "4_15"};
+    PanelData panels[3];
+    for (int i = 0; i < 3; i++) {
+        cout << "Loading trkPT " << trkBins[i] << "..." << endl;
+        panels[i] = LoadPanel(trkBins[i], zPt, baseDir, systDir, ppTag, pPbTag, ppSystTag, pPbSystTag);
+    }
+
+    const char *xTitle, *yTitle;
+    double xmin, xmax, sigLo, sigHi;
+    double yHeadroom;
+    if (doEta) {
+        xTitle = "#Delta y_{ch,Z}";
+        yTitle = "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}";
+        xmin = -3.87; xmax = 3.87; sigLo = 0; sigHi = 4;
+        yHeadroom = 3.0;
+    } else {
+        xTitle = "#Delta#varphi_{ch,Z}";
+        yTitle = "d#LT#DeltaN_{ch}#GT/d#Delta#varphi_{ch,Z}";
+        xmin = -M_PI/2; xmax = 3*M_PI/2; sigLo = 0; sigHi = M_PI;
+        yHeadroom = 1.0;
+    }
+
+    vector<string> labels = {"pp (extrapolated 8.16 TeV)", "pPb (8.16 TeV)"};
+    vector<int> markerColors = {cmsBlue, cmsRed};
+    vector<int> markerStyles = {mSquareFill, mCircleFill};
+    vector<int> lineColors = {cmsBlue, cmsRed};
+    vector<int> lineStyles = {0, 0};
+
+    float resultTextScale = 1.3;
+    int panelModes[] = {1, 2, 3};
+    float centerLeftMargin = 0.13;
+
+    // Sub-pad widths for equal plot areas
+    // PlotCMSDiffResultRegion: borderR=0.02 (right only), TDR rightMargin~0.05
+    // Plot area = 0.98*(1-leftMargin-0.05)
+    double areaLeft = 0.98 * (1 - 0.195 - 0.05);
+    double areaCenter = 0.98 * (1 - centerLeftMargin - 0.05);
+    double overlap = 0.04;
+    // Account for overlap: wLeft + 2*wCenter - 2*overlap = 1.0
+    double wLeft = (1.0 + 2*overlap) / (1.0 + 2.0 * areaLeft / areaCenter);
+    double wCenter = wLeft * areaLeft / areaCenter;
+
+    gStyle->SetLineScalePS(1);
+    TCanvas *c = new TCanvas("c", "c", 1440, 600);
+    TPad *subPads[3];
+    TPad *plotPads[3];
+
+    double totalUsed = wLeft + 2*wCenter - 2*overlap;
+    double scale = 1.0 / totalUsed;
+    double sLeft = wLeft * scale;
+    double sCenter = wCenter * scale;
+    double sOverlap = overlap * scale;
+
+    double x0[] = {0, sLeft - sOverlap, sLeft + sCenter - 2*sOverlap};
+    double x1[] = {sLeft, sLeft + sCenter - sOverlap, sLeft + 2*sCenter - 2*sOverlap};
+
+    for (int i = 0; i < 3; i++) {
+        c->cd();
+        subPads[i] = new TPad(Form("sub%d", i), "", x0[i], 0.0, x1[i], 1.0);
+        subPads[i]->SetFillColor(kWhite);
+        subPads[i]->Draw();
+        subPads[i]->cd();
+
+        PanelData &pd = panels[i];
+        vector<TH1*> hists, topSyst, diffSyst;
+        if (doEta) {
+            hists = {(TH1*)pd.hEta_pp, (TH1*)pd.hEta_pPb};
+            topSyst = {(TH1*)pd.topSystEta_pp, (TH1*)pd.topSystEta_pPb};
+            diffSyst = {nullptr, (TH1*)pd.diffSystEta};
+        } else {
+            hists = {(TH1*)pd.hPhi_pp, (TH1*)pd.hPhi_pPb};
+            topSyst = {(TH1*)pd.topSystPhi_pp, (TH1*)pd.topSystPhi_pPb};
+            diffSyst = {nullptr, (TH1*)pd.diffSystPhi};
+        }
+
+        plotPads[i] = (TPad*)PlotCMSDiffResultRegion(
+            hists, topSyst, diffSyst, Form("p%d", i), labels,
+            lineColors, lineStyles,
+            markerColors, markerStyles,
+            xTitle, xmin, xmax,
+            yTitle, -1, -1,
+            "pPb #minus pp", -1, -1,
+            sigLo, sigHi,
+            0,
+            false, false, true,
+            0.23, resultTextScale, 0.40, yHeadroom,
+            panelModes[i], 0.02
+        );
+
+        // Center/right: increase leftMargin from 0.04 to centerLeftMargin for tick labels
+        if (i > 0) {
+            plotPads[i]->SetLeftMargin(centerLeftMargin);
+            plotPads[i]->Modified();
+            // Find pad2 (bottom) and set its left margin too
+            TIter nextSub(subPads[i]->GetListOfPrimitives());
+            TObject *obj;
+            while ((obj = nextSub())) {
+                if (obj->InheritsFrom("TPad") && obj != plotPads[i]) {
+                    ((TPad*)obj)->SetLeftMargin(centerLeftMargin);
+                    ((TPad*)obj)->Modified();
+                    break;
+                }
+            }
+        }
+
+        plotPads[i]->cd();
+
+        // Track pT label on every panel
+        size_t pos = trkBins[i].find('_');
+        string trkLo = trkBins[i].substr(0, pos), trkHi = trkBins[i].substr(pos+1);
+        TLatex latexR;
+        latexR.SetNDC();
+        latexR.SetTextFont(42);
+        latexR.SetTextAlign(31);
+        latexR.SetTextSize(0.045 * resultTextScale);
+        float rMargin = plotPads[i]->GetRightMargin();
+        latexR.DrawLatex(1 - rMargin - 0.06, 0.80,
+            Form("%s < p_{T}^{ch} < %s GeV", trkLo.c_str(), trkHi.c_str()));
+    }
+
+    float headerSize = plotTextSize * 1.4;
+
+    // Left panel: CMS header (larger font)
+    plotPads[0]->cd();
+    float t = plotPads[0]->GetTopMargin();
+    float l = plotPads[0]->GetLeftMargin();
+    TLatex cmsLatex;
+    cmsLatex.SetNDC();
+    cmsLatex.SetTextFont(42);
+    cmsLatex.SetTextAlign(11);
+    cmsLatex.SetTextSize(headerSize);
+    cmsLatex.DrawLatex(l, 1 - t + 0.015,
+        "#font[61]{#scale[1.25]{CMS}} #font[52]{Preliminary}");
+
+    // Right panel: lumi header (larger font)
+    plotPads[2]->cd();
+    float t2 = plotPads[2]->GetTopMargin();
+    float r2 = plotPads[2]->GetRightMargin();
+    TLatex lumiLatex;
+    lumiLatex.SetNDC();
+    lumiLatex.SetTextFont(42);
+    lumiLatex.SetTextAlign(31);
+    lumiLatex.SetTextSize(headerSize);
+    lumiLatex.DrawLatex(1 - r2, 1 - t2 + 0.015,
+        "pPb (pp) 8.16 TeV  174 nb^{-1} (301 pb^{-1})");
+
+    if (doEta) {
+        TLegend *legRefl = new TLegend(0.62, 0.07, 0.92, 0.19);
+        legRefl->SetBorderSize(0);
+        legRefl->SetFillStyle(0);
+        legRefl->SetTextFont(42);
+        legRefl->SetTextSize(0.030 * resultTextScale);
+        TGraph *gRefPP = new TGraph(1);
+        gRefPP->SetMarkerColor(cmsBlue); gRefPP->SetMarkerStyle(25);
+        gRefPP->SetMarkerSize(resultTextScale); gRefPP->SetLineColor(cmsBlue);
+        legRefl->AddEntry(gRefPP, "pp reflected", "p");
+        TGraph *gRefPPb = new TGraph(1);
+        gRefPPb->SetMarkerColor(cmsRed); gRefPPb->SetMarkerStyle(24);
+        gRefPPb->SetMarkerSize(resultTextScale); gRefPPb->SetLineColor(cmsRed);
+        legRefl->AddEntry(gRefPPb, "pPb reflected", "p");
+        legRefl->Draw("SAME");
+    }
+
+    // "inclusive pTZ" on all panels; yCM line only on left
+    for (int ip = 0; ip < 3; ip++) {
+        plotPads[ip]->cd();
+        TLatex latex;
+        latex.SetNDC();
+        latex.SetTextFont(42);
+        latex.SetTextAlign(11);
+        latex.SetTextSize(0.045 * resultTextScale);
+        float lm = plotPads[ip]->GetLeftMargin();
+        float labelY = 0.80;
+        latex.DrawLatex(lm + 0.05, labelY, "inclusive p_{T}^{Z}");
+        if (ip == 0) {
+            labelY -= 0.08;
+            if (doEta)
+                latex.DrawLatex(lm + 0.05, labelY, "|y_{CM}| < 1.935, |#Delta#varphi_{ch,Z}| < #frac{#pi}{2}");
+            else
+                latex.DrawLatex(lm + 0.05, labelY, "|y_{CM}| < 1.935");
+        }
+    }
+
+    c->Update();
+    c->SaveAs(outputFile.c_str());
+    cout << "Saved: " << outputFile << endl;
+    return 0;
+}
