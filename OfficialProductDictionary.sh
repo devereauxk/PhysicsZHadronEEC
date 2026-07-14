@@ -120,6 +120,16 @@ export OFFICIAL_PBP_PU_PREFIX OFFICIAL_PBP_MUVAR0_PREFIX OFFICIAL_PBP_MUVAR1_PRE
 export OFFICIAL_PBP_MUVAR2_PREFIX OFFICIAL_PBP_MUVAR3_PREFIX
 export OFFICIAL_PBP_TC0P976_PREFIX OFFICIAL_PBP_TC1P024_PREFIX
 
+# ── Theory prediction gen-level prefixes (for result overlay plots) ─────────
+# pp Pythia8+MadGraph gen, energy-extrapolated to 8.16 TeV via EE weight
+# Usage: ${PREFIX}_ZPT<range>-{result,nosub}.root  (ZPT: 0_500, 0_30, 30_500)
+# Each file contains DeltaPhi/DeltaEta_Result{0.5_2,2_4,4_15} histograms
+OFFICIAL_PP_THEORY_PREFIX="${OFFICIAL_RESULT_DIR}/pythiaMC_Gen_EExtrapolation_${OFFICIAL_TAG_PP}"
+# pPb/PbP Powheg+EPOS gen at 8.16 TeV (combined at plot stage)
+OFFICIAL_PPB_THEORY_PREFIX="${OFFICIAL_RESULT_DIR}/pPbMC_Gen_nominal_${OFFICIAL_TAG_PPB}"
+OFFICIAL_PBP_THEORY_PREFIX="${OFFICIAL_RESULT_DIR}/PbPMC_Gen_nominal_${OFFICIAL_TAG_PPB}"
+export OFFICIAL_PP_THEORY_PREFIX OFFICIAL_PPB_THEORY_PREFIX OFFICIAL_PBP_THEORY_PREFIX
+
 # ── pp 5.02 TeV native-energy results (no EE weight) ────────────────────────
 # Side-check comparison: same VZ/Z/residual corrections, no --EnergyExtraFile.
 OFFICIAL_PP_5TEV_TAG="5tev_ZV10_trkV29_nmix10"

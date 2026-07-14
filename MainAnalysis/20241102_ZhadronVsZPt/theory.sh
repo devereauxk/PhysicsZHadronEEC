@@ -19,17 +19,14 @@ export SKIP_CLEAN=1
 export CUT_PARALLELISM=${CUT_PARALLELISM:-1}
 export NTHREAD=${NTHREAD:-25}
 
+ZPT_OVERRIDE="${ZPT_OVERRIDE:-0_500}"
 CONFIG=$(mktemp /tmp/kdeverea/theory_config_XXXXXX.sh)
 if [ "$DOSCAN" == "1" ]; then
-    cat > "$CONFIG" <<'EOF'
-ZPT_RANGES=("0_500")
-PT_RANGES=("0.5_2" "2_4" "4_15")
-EOF
+    echo "ZPT_RANGES=(${ZPT_OVERRIDE// / })" > "$CONFIG"
+    echo 'PT_RANGES=("0.5_2" "2_4" "4_15")' >> "$CONFIG"
 else
-    cat > "$CONFIG" <<'EOF'
-ZPT_RANGES=("0_500")
-PT_RANGES=("0.5_15")
-EOF
+    echo "ZPT_RANGES=(${ZPT_OVERRIDE// / })" > "$CONFIG"
+    echo 'PT_RANGES=("0.5_15")' >> "$CONFIG"
 fi
 export CONFIG_FILE="$CONFIG"
 

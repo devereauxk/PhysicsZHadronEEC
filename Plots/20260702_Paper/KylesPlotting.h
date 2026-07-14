@@ -1034,7 +1034,8 @@ TPad* PlotCMSDiffResultRegion(
     double signalXMin, double signalXMax,
     int baseline = 0, bool logx = false, bool logy = false, bool errorBars = true, float xLegend = 0.55,
     float textScale = 1.0, float yLegend = -1, float yHeadroom = 1.0,
-    int panelMode = 0, double borderOverride = -1)
+    int panelMode = 0, double borderOverride = -1, double borderTopOverride = -1,
+    bool showLegend = true)
 {
     SetTDRStyle();
 
@@ -1043,7 +1044,7 @@ TPad* PlotCMSDiffResultRegion(
     double borderR = (borderOverride >= 0) ? borderOverride : border;
     float leftMargin = isLeftOrStandalone ? 0.15 * textScale : 0.04;
     double splitGap = (borderOverride >= 0) ? 0.0075 : 0;
-    double borderT = (borderOverride >= 0) ? 0.02 : border;
+    double borderT = (borderTopOverride >= 0) ? borderTopOverride : ((borderOverride >= 0) ? 0.02 : border);
     TPad *pad1 = new TPad(title, title, 0, 0.25 + border + splitGap, 1.0 - borderR, 1.0 - borderT);
     pad1->SetTickx(1);
     pad1->SetTicky(1);
@@ -1067,7 +1068,7 @@ TPad* PlotCMSDiffResultRegion(
     leg->SetBorderSize(0);
     leg->SetFillStyle(0);
     leg->SetTextFont(42);
-    leg->SetTextSize(0.030 * textScale);
+    leg->SetTextSize((borderOverride >= 0 ? 0.034 : 0.030) * textScale);
 
     // Auto Y-range
     double global_min = 1e30, global_max = -1e30;
@@ -1234,7 +1235,7 @@ TPad* PlotCMSDiffResultRegion(
 
             hDiff->GetXaxis()->SetTitle(xTitle);
             hDiff->GetXaxis()->SetTitleSize((borderOverride >= 0 ? 0.11 : 0.1) * textScale);
-            hDiff->GetXaxis()->SetLabelSize(0.08 * textScale);
+            hDiff->GetXaxis()->SetLabelSize(0.095 * textScale);
             hDiff->GetXaxis()->SetTitleOffset(1.0);
             hDiff->GetYaxis()->SetTitle(isLeftOrStandalone ? rTitle : "");
             hDiff->GetYaxis()->CenterTitle(true);
@@ -1245,6 +1246,8 @@ TPad* PlotCMSDiffResultRegion(
             hDiff->GetYaxis()->SetTitleSize(isLeftOrStandalone ? 0.11 * textScale : 0);
             hDiff->GetYaxis()->SetLabelSize((borderOverride >= 0 ? 0.088 : 0.06) * textScale);
             hDiff->GetYaxis()->SetTitleOffset(borderOverride >= 0 ? 0.65 : 0.6);
+            if (borderOverride >= 0)
+                hDiff->GetYaxis()->SetNdivisions(505);
             hDiff->SetLineColor(linecolors[i]);
             hDiff->SetLineStyle(linestyles[i] == 0 ? 1 : (linestyles[i] >= 10 ? linestyles[i] - 10 : linestyles[i]));
             hDiff->SetMarkerColor(markercolors[i]);
@@ -1343,7 +1346,7 @@ TPad* PlotCMSDiffResultRegion(
         zeroLine->SetLineStyle(1);
         zeroLine->Draw("SAME");
     }
-    if (isLeftOrStandalone) {
+    if (isLeftOrStandalone && showLegend) {
         leg->Draw("SAME");
         if (borderOverride < 0)
             AddCMSHeader(pad1, "Preliminary", false);
