@@ -121,14 +121,28 @@ export OFFICIAL_PBP_MUVAR2_PREFIX OFFICIAL_PBP_MUVAR3_PREFIX
 export OFFICIAL_PBP_TC0P976_PREFIX OFFICIAL_PBP_TC1P024_PREFIX
 
 # ── Theory prediction gen-level prefixes (for result overlay plots) ─────────
+# Naming convention: files with scan track-pT bins (0.5_2, 2_4, 4_15) carry
+# "_scan" in the tag; inclusive track-pT (0.5_15) files omit it.
+# Non-scan (inclusive): ZPT 0_500 only.  Scan: ZPT 0_500, 0_30, 30_500.
+#
 # pp Pythia8+MadGraph gen, energy-extrapolated to 8.16 TeV via EE weight
-# Usage: ${PREFIX}_ZPT<range>-{result,nosub}.root  (ZPT: 0_500, 0_30, 30_500)
-# Each file contains DeltaPhi/DeltaEta_Result{0.5_2,2_4,4_15} histograms
+# Usage: ${PREFIX}_ZPT<range>-{result,nosub}.root  (ZPT: 0_500)
+# Inclusive files contain DeltaPhi/DeltaEta_Result0.5_15 histograms
 OFFICIAL_PP_THEORY_PREFIX="${OFFICIAL_RESULT_DIR}/pythiaMC_Gen_EExtrapolation_${OFFICIAL_TAG_PP}"
 # pPb/PbP Powheg+EPOS gen at 8.16 TeV (combined at plot stage)
 OFFICIAL_PPB_THEORY_PREFIX="${OFFICIAL_RESULT_DIR}/pPbMC_Gen_nominal_${OFFICIAL_TAG_PPB}"
 OFFICIAL_PBP_THEORY_PREFIX="${OFFICIAL_RESULT_DIR}/PbPMC_Gen_nominal_${OFFICIAL_TAG_PPB}"
 export OFFICIAL_PP_THEORY_PREFIX OFFICIAL_PPB_THEORY_PREFIX OFFICIAL_PBP_THEORY_PREFIX
+# Theory prediction scan prefixes (scan track pT bins: 0.5_2, 2_4, 4_15)
+# Usage: ${PREFIX}_ZPT<range>-{result,nosub}.root  (ZPT: 0_500, 0_30, 30_500)
+OFFICIAL_PP_THEORY_PREFIX_SCAN="${OFFICIAL_RESULT_DIR}/pythiaMC_Gen_EExtrapolation_${OFFICIAL_TAG_PP}_scan"
+OFFICIAL_PPB_THEORY_PREFIX_SCAN="${OFFICIAL_RESULT_DIR}/pPbMC_Gen_nominal_${OFFICIAL_TAG_PPB}_scan"
+OFFICIAL_PBP_THEORY_PREFIX_SCAN="${OFFICIAL_RESULT_DIR}/PbPMC_Gen_nominal_${OFFICIAL_TAG_PPB}_scan"
+export OFFICIAL_PP_THEORY_PREFIX_SCAN OFFICIAL_PPB_THEORY_PREFIX_SCAN OFFICIAL_PBP_THEORY_PREFIX_SCAN
+# JEWEL gen-level predictions (vacuum pp, medium pPb; inclusive only, ZPT 0_500)
+OFFICIAL_JEWEL_PP_8160_PREFIX="${OFFICIAL_RESULT_DIR}/jewelPP8160signed"
+OFFICIAL_JEWEL_PP_5020_PREFIX="${OFFICIAL_RESULT_DIR}/jewelPP5020signed"
+export OFFICIAL_JEWEL_PP_8160_PREFIX OFFICIAL_JEWEL_PP_5020_PREFIX
 
 # ── pp 5.02 TeV native-energy results (no EE weight) ────────────────────────
 # Side-check comparison: same VZ/Z/residual corrections, no --EnergyExtraFile.
@@ -188,9 +202,6 @@ export OFFICIAL_PPB_BIN12_NTHREAD40_PREFIX="${OFFICIAL_RESULT_DIR}/pPb_trkResidu
 export OFFICIAL_PBP_BIN12_NTHREAD40_PREFIX="${OFFICIAL_RESULT_DIR}/PbP_trkResidual_${OFFICIAL_TAG_PPB}_12x12_nthread40"
 export OFFICIAL_PPB_BIN12_NTHREAD60_PREFIX="${OFFICIAL_RESULT_DIR}/pPb_trkResidual_${OFFICIAL_TAG_PPB}_12x12_nthread60"
 export OFFICIAL_PBP_BIN12_NTHREAD60_PREFIX="${OFFICIAL_RESULT_DIR}/PbP_trkResidual_${OFFICIAL_TAG_PPB}_12x12_nthread60"
-# Study 13: 20-bin (default 20x20) sideband production
-export OFFICIAL_PPB_BIN20_PREFIX="${OFFICIAL_RESULT_DIR}/pPb_trkResidual_${OFFICIAL_TAG_PPB}_20bin"
-export OFFICIAL_PBP_BIN20_PREFIX="${OFFICIAL_RESULT_DIR}/PbP_trkResidual_${OFFICIAL_TAG_PPB}_20bin"
 # Study 12: Pbp with 2D Z (yCM, phi) correction applied
 export OFFICIAL_PBP_BIN12_ZCORR_PREFIX="${OFFICIAL_RESULT_DIR}/PbP_trkResidual_${OFFICIAL_TAG_PPB}_12x12_zcorr"
 # Study 17: Option A — CM-frame signed comparison (asymmetric acceptance |eta_cm|<1.935)

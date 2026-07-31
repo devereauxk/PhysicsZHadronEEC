@@ -19,19 +19,28 @@ export SKIP_CLEAN=1
 export CUT_PARALLELISM=${CUT_PARALLELISM:-1}
 export NTHREAD=${NTHREAD:-25}
 
-ZPT_OVERRIDE="${ZPT_OVERRIDE:-0_500}"
+if [ "$DOSCAN" == "1" ]; then
+    ZPT_OVERRIDE="${ZPT_OVERRIDE:-0_500 0_30 30_500}"
+else
+    ZPT_OVERRIDE="${ZPT_OVERRIDE:-0_500}"
+fi
 CONFIG=$(mktemp /tmp/kdeverea/theory_config_XXXXXX.sh)
 if [ "$DOSCAN" == "1" ]; then
-    echo "ZPT_RANGES=(${ZPT_OVERRIDE// / })" > "$CONFIG"
+    echo "ZPT_RANGES=(${ZPT_OVERRIDE})" > "$CONFIG"
     echo 'PT_RANGES=("0.5_2" "2_4" "4_15")' >> "$CONFIG"
 else
-    echo "ZPT_RANGES=(${ZPT_OVERRIDE// / })" > "$CONFIG"
+    echo "ZPT_RANGES=(${ZPT_OVERRIDE})" > "$CONFIG"
     echo 'PT_RANGES=("0.5_15")' >> "$CONFIG"
 fi
 export CONFIG_FILE="$CONFIG"
 
-TAG_PP="_${OFFICIAL_TAG_PP}"
-TAG_PPB="_${OFFICIAL_TAG_PPB}"
+if [ "$DOSCAN" == "1" ]; then
+    TAG_PP="_${OFFICIAL_TAG_PP}_scan"
+    TAG_PPB="_${OFFICIAL_TAG_PPB}_scan"
+else
+    TAG_PP="_${OFFICIAL_TAG_PP}"
+    TAG_PPB="_${OFFICIAL_TAG_PPB}"
+fi
 
 SIGNED_COMMON=(
     --ResultDEtaBins 12 --ResultDPhiBins 12

@@ -343,15 +343,13 @@ int main(int argc, char *argv[]) {
     bool includeMC = CL.GetBool("includeMC", true);
     string ppMCPrefix = CL.Get("ppMCPrefix", "pythiaMC_Gen_EExtrapolation");
     bool useSystematics = CL.GetBool("UseSystematics", true);
-    bool useShifted10x10 = CL.GetBool("UseShifted10x10", false);
-    bool useModified12x12 = CL.GetBool("UseModified12x12", true);
-    if(useShifted10x10 == true && useModified12x12 == true) {
-        std::cerr << "Error: UseShifted10x10 and UseModified12x12 cannot both be true." << std::endl;
-        return 1;
-    }
     string collisionType = CL.Get("collisionType", "pPb");
+    string ppJewelFile = CL.Get("ppJewelFile", "");
+    string ppJewelLabel = CL.Get("ppJewelLabel", "JEWEL");
+    string pPbJewelFile = CL.Get("pPbJewelFile", "");
+    string pPbJewelLabel = CL.Get("pPbJewelLabel", "JEWEL");
     int panelMode = CL.GetInt("panelMode", 0);
-    string outputBase = CL.Get("outputBase", "plots/central_combined");
+    string outputBase = CL.Get("outputBase", "plots/inclusive");
     string systematicsDir = CL.Get("systematicsDir",
         "/home/kdeverea/PhysicsZHadronEEC/Systematics/20260329_pPbSystematics/output");
     string baseDir = CL.Get("BaseDir",
@@ -420,7 +418,7 @@ int main(int argc, char *argv[]) {
     hDeltaPhi_pp->Scale(1. / 2);
     hDeltaEta_pp->Scale(1. / 2);
 
-    if (useModified12x12 && hDeltaEta_pp->GetNbinsX() == 12) {
+    if (hDeltaEta_pp->GetNbinsX() == 12) {
         Symmetrize1DEta(hDeltaEta_pp);
         Symmetrize1DPhi(hDeltaPhi_pp);
     }
@@ -453,12 +451,16 @@ int main(int argc, char *argv[]) {
 
         // read results
         TH2D* this_hData = (TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str()));
-        this_hData->SetName(Form("hData_%s", input_ZPT.c_str()));
         TH2D* this_hMixData = (TH2D*)fin->Get(Form("hMixData_%s", trkPtRange.c_str()));
-        this_hMixData->SetName(Form("hMixData_%s", input_ZPT.c_str()));
         TH1D* this_hNZData = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
-        this_hNZData->SetName(Form("hNZData_%s", input_ZPT.c_str()));
         TH1D* this_hNZMixData = (TH1D*)fin->Get(Form("hNZMixData_%s", trkPtRange.c_str()));
+        if (!this_hData || !this_hMixData || !this_hNZData || !this_hNZMixData) {
+            cerr << "Warning: Missing pPb histograms for trkPt " << trkPtRange << " in " << input_ZPT << "-nosub.root, skipping." << endl;
+            continue;
+        }
+        this_hData->SetName(Form("hData_%s", input_ZPT.c_str()));
+        this_hMixData->SetName(Form("hMixData_%s", input_ZPT.c_str()));
+        this_hNZData->SetName(Form("hNZData_%s", input_ZPT.c_str()));
         this_hNZMixData->SetName(Form("hNZMixData_%s", input_ZPT.c_str()));
 
         // undo NZ normalization
@@ -492,12 +494,16 @@ int main(int argc, char *argv[]) {
 
         // read results
         TH2D* this_hData = (TH2D*)fin->Get(Form("hData_%s", trkPtRange.c_str()));
-        this_hData->SetName(Form("hData_pbp_%s", input_ZPT.c_str()));
         TH2D* this_hMixData = (TH2D*)fin->Get(Form("hMixData_%s", trkPtRange.c_str()));
-        this_hMixData->SetName(Form("hMixData_pbp_%s", input_ZPT.c_str()));
         TH1D* this_hNZData = (TH1D*)fin->Get(Form("hNZData_%s", trkPtRange.c_str()));
-        this_hNZData->SetName(Form("hNZData_pbp_%s", input_ZPT.c_str()));
         TH1D* this_hNZMixData = (TH1D*)fin->Get(Form("hNZMixData_%s", trkPtRange.c_str()));
+        if (!this_hData || !this_hMixData || !this_hNZData || !this_hNZMixData) {
+            cerr << "Warning: Missing PbP histograms for trkPt " << trkPtRange << " in " << input_ZPT << "-nosub.root, skipping." << endl;
+            continue;
+        }
+        this_hData->SetName(Form("hData_pbp_%s", input_ZPT.c_str()));
+        this_hMixData->SetName(Form("hMixData_pbp_%s", input_ZPT.c_str()));
+        this_hNZData->SetName(Form("hNZData_pbp_%s", input_ZPT.c_str()));
         this_hNZMixData->SetName(Form("hNZMixData_pbp_%s", input_ZPT.c_str()));
 
         // undo NZ normalization
@@ -548,26 +554,14 @@ int main(int argc, char *argv[]) {
         cout<<"combined S-B integral: "<<S_combined->Integral()<<endl;
         cout<<"SUBTRACTION EFFICIENCY: "<<S_combined->Integral() / B_combined->Integral()<<endl;
 
-        if(useModified12x12)
-            Symmetrize2DFourfold(S_combined);
+        Symmetrize2DFourfold(S_combined);
 
         ResultProjectionWindow projectionWindow;
-        if(useModified12x12 == true) {
-            if(ValidateModified12x12Histogram(S_combined) == false) {
-                std::cerr << "Error: combined modified 12x12 histogram validation failed." << std::endl;
-                return make_pair((TH1D*)nullptr, (TH1D*)nullptr);
-            }
-            SetModified12x12ProjectionWindow(projectionWindow);
+        if(ValidateModified12x12Histogram(S_combined) == false) {
+            std::cerr << "Error: 12x12 histogram validation failed." << std::endl;
+            return make_pair((TH1D*)nullptr, (TH1D*)nullptr);
         }
-        else if(useShifted10x10 == true) {
-            if(ValidateShifted10x10Histogram(S_combined) == false) {
-                std::cerr << "Error: combined shifted 10x10 histogram validation failed." << std::endl;
-                return make_pair((TH1D*)nullptr, (TH1D*)nullptr);
-            }
-            SetShifted10x10ProjectionWindow(projectionWindow);
-        }
-        else
-            SetOfficial20BinProjectionWindow(projectionWindow);
+        SetModified12x12ProjectionWindow(projectionWindow);
 
         TH1D* hProjY = (TH1D*) S_combined->ProjectionY(Form("DeltaPhi_Result%i",i),
             projectionWindow.DeltaPhiXFirst, projectionWindow.DeltaPhiXLast);
@@ -578,10 +572,8 @@ int main(int argc, char *argv[]) {
         hProjY->Scale(1./2);
         divideByWidth(hProjX);
         hProjX->Scale(1./2);
-        if (useModified12x12) {
-            Symmetrize1DEta(hProjX);
-            Symmetrize1DPhi(hProjY);
-        }
+        Symmetrize1DEta(hProjX);
+        Symmetrize1DPhi(hProjY);
         return make_pair(hProjX, hProjY);
     };
 
@@ -621,7 +613,7 @@ int main(int argc, char *argv[]) {
                 hDeltaEta_ppMC->SetDirectory(nullptr);
                 hDeltaPhi_ppMC->Scale(1. / 2);
                 hDeltaEta_ppMC->Scale(1. / 2);
-                if (useModified12x12 && hDeltaEta_ppMC->GetNbinsX() == 12) {
+                if (hDeltaEta_ppMC->GetNbinsX() == 12) {
                     Symmetrize1DEta(hDeltaEta_ppMC);
                     Symmetrize1DPhi(hDeltaPhi_ppMC);
                 }
@@ -639,7 +631,7 @@ int main(int argc, char *argv[]) {
     // ============================
     // pPb/PbP MC (Powheg+EPOS gen)
     // ============================
-    if (includeMC && input_ZPT_files.size() > 1) {
+    if (includeMC && hData_ppb.size() > 1 && hData_pbp.size() > 1) {
         auto [hProjX, hProjY] = ProcessCombinedHI(1);
         if (hProjX && hProjY) {
             hDeltaPhi_combined.push_back(hProjY);
@@ -649,8 +641,82 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    // ============================
+    // Jewel pp (optional overlay)
+    // ============================
+    bool ppJewelLoaded = false;
+    if (!ppJewelFile.empty()) {
+        TFile *fin_jewel_pp = TFile::Open(Form("%s-result.root", ppJewelFile.c_str()), "READ");
+        if (fin_jewel_pp && !fin_jewel_pp->IsZombie()) {
+            TH1D *hDPhi_jewel = (TH1D*)fin_jewel_pp->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
+            TH1D *hDEta_jewel = (TH1D*)fin_jewel_pp->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
+            if (hDPhi_jewel && hDEta_jewel) {
+                hDPhi_jewel = (TH1D*)hDPhi_jewel->Clone("hDeltaPhi_jewelPP");
+                hDEta_jewel = (TH1D*)hDEta_jewel->Clone("hDeltaEta_jewelPP");
+                hDPhi_jewel->SetDirectory(nullptr);
+                hDEta_jewel->SetDirectory(nullptr);
+                hDPhi_jewel->Scale(1. / 2);
+                hDEta_jewel->Scale(1. / 2);
+                if (hDEta_jewel->GetNbinsX() == 12) {
+                    Symmetrize1DEta(hDEta_jewel);
+                    Symmetrize1DPhi(hDPhi_jewel);
+                }
+                for (int ib = 1; ib <= hDEta_jewel->GetNbinsX(); ++ib)
+                    hDEta_jewel->SetBinError(ib, 0);
+                for (int ib = 1; ib <= hDPhi_jewel->GetNbinsX(); ++ib)
+                    hDPhi_jewel->SetBinError(ib, 0);
+                hDeltaPhi_combined.push_back(hDPhi_jewel);
+                hDeltaEta_combined.push_back(hDEta_jewel);
+                ppJewelLoaded = true;
+                cout << "Jewel pp DeltaPhi integral: " << hDPhi_jewel->Integral() << endl;
+                cout << "Jewel pp DeltaEta integral: " << hDEta_jewel->Integral() << endl;
+            } else {
+                cerr << "Warning: Missing Jewel pp histograms in " << ppJewelFile << endl;
+            }
+        } else {
+            cerr << "Warning: Unable to open Jewel pp file " << ppJewelFile << "-result.root" << endl;
+        }
+    }
+
+    // ============================
+    // Jewel pPb (optional overlay, forthcoming)
+    // ============================
+    bool pPbJewelLoaded = false;
+    if (!pPbJewelFile.empty()) {
+        TFile *fin_jewel_pPb = TFile::Open(Form("%s-result.root", pPbJewelFile.c_str()), "READ");
+        if (fin_jewel_pPb && !fin_jewel_pPb->IsZombie()) {
+            TH1D *hDPhi_jewel_pPb = (TH1D*)fin_jewel_pPb->Get(Form("DeltaPhi_Result%s", trkPtRange.c_str()));
+            TH1D *hDEta_jewel_pPb = (TH1D*)fin_jewel_pPb->Get(Form("DeltaEta_Result%s", trkPtRange.c_str()));
+            if (hDPhi_jewel_pPb && hDEta_jewel_pPb) {
+                hDPhi_jewel_pPb = (TH1D*)hDPhi_jewel_pPb->Clone("hDeltaPhi_jewelPPb");
+                hDEta_jewel_pPb = (TH1D*)hDEta_jewel_pPb->Clone("hDeltaEta_jewelPPb");
+                hDPhi_jewel_pPb->SetDirectory(nullptr);
+                hDEta_jewel_pPb->SetDirectory(nullptr);
+                hDPhi_jewel_pPb->Scale(1. / 2);
+                hDEta_jewel_pPb->Scale(1. / 2);
+                if (hDEta_jewel_pPb->GetNbinsX() == 12) {
+                    Symmetrize1DEta(hDEta_jewel_pPb);
+                    Symmetrize1DPhi(hDPhi_jewel_pPb);
+                }
+                for (int ib = 1; ib <= hDEta_jewel_pPb->GetNbinsX(); ++ib)
+                    hDEta_jewel_pPb->SetBinError(ib, 0);
+                for (int ib = 1; ib <= hDPhi_jewel_pPb->GetNbinsX(); ++ib)
+                    hDPhi_jewel_pPb->SetBinError(ib, 0);
+                hDeltaPhi_combined.push_back(hDPhi_jewel_pPb);
+                hDeltaEta_combined.push_back(hDEta_jewel_pPb);
+                pPbJewelLoaded = true;
+                cout << "Jewel pPb DeltaPhi integral: " << hDPhi_jewel_pPb->Integral() << endl;
+                cout << "Jewel pPb DeltaEta integral: " << hDEta_jewel_pPb->Integral() << endl;
+            } else {
+                cerr << "Warning: Missing Jewel pPb histograms in " << pPbJewelFile << endl;
+            }
+        } else {
+            cerr << "Warning: Unable to open Jewel pPb file " << pPbJewelFile << "-result.root" << endl;
+        }
+    }
+
     // build labels and style arrays based on what was loaded
-    // ordering: [0]=pp data, [1]=pPb data, [2]=pp MC (if loaded), [3]=pPb MC (if loaded)
+    // ordering: [0]=pp data, [1]=pPb data, [2]=pp MC (if loaded), [3]=pPb MC (if loaded), [4+]=Jewel (if loaded)
     vector<string> labels = {
         "pp (extrapolated 8.16 TeV)",
         Form("%s (8.16 TeV)", collisionType.c_str())
@@ -672,6 +738,20 @@ int main(int argc, char *argv[]) {
         markerStyles.push_back(0);
         lineColors.push_back(cmsYellow);
         lineStyles.push_back(11);
+    }
+    if (ppJewelLoaded) {
+        labels.push_back(ppJewelLabel);
+        markerColors.push_back(kOrange+7);
+        markerStyles.push_back(0);
+        lineColors.push_back(kOrange+7);
+        lineStyles.push_back(2);
+    }
+    if (pPbJewelLoaded) {
+        labels.push_back(pPbJewelLabel);
+        markerColors.push_back(kOrange+7);
+        markerStyles.push_back(0);
+        lineColors.push_back(kOrange+7);
+        lineStyles.push_back(2);
     }
 
     // ===========================================
@@ -715,8 +795,6 @@ int main(int argc, char *argv[]) {
     string lumiLabel = doCombine ? "pPb, pp" : Form("%s, pp", collisionType.c_str());
 
     string deltaEtaProjectionLabel = "0 < #Delta#varphi_{ch,Z} < #frac{#pi}{2}";
-    if(useShifted10x10 == true)
-        deltaEtaProjectionLabel = "0 < #Delta#varphi_{ch,Z} < #pi";
 
     float resultTextScale = 1.3;
 
@@ -727,7 +805,7 @@ int main(int argc, char *argv[]) {
         hDeltaEta_combined, topSystematicsEta, differenceSystematicsEta, "", labels,
         lineColors, lineStyles,
         markerColors, markerStyles,
-        "#Delta y_{ch,Z}", useModified12x12 ? -3.87 : -4, useModified12x12 ? 3.87 : 4,
+        "#Delta y_{ch,Z}", -3.87, 3.87,
         "d#LT#DeltaN_{ch}#GT/d#Delta y_{ch,Z}", -1, -1,
         differenceLabel.c_str(), -1, -1,
         0, 4,
@@ -811,7 +889,7 @@ int main(int argc, char *argv[]) {
         hDeltaPhi_combined, topSystematicsPhi, differenceSystematicsPhi, "", labelsPhi,
         lineColors, lineStyles,
         markerColors, markerStyles,
-        "#Delta#varphi_{ch,Z}", useShifted10x10 ? -3 * M_PI / 5 : -1.5707, useShifted10x10 ? 7 * M_PI / 5 : 4.7123,
+        "#Delta#varphi_{ch,Z}", -1.5707, 4.7123,
         "d#LT#DeltaN_{ch}#GT/d#Delta#varphi_{ch,Z}", -1, -1,
         differenceLabel.c_str(), -1, -1,
         0, M_PI,

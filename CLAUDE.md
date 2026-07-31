@@ -188,6 +188,13 @@ up existing products, source the dictionary and use the exported variables.
   the dictionary. Current V0.3 campaign uses `EEV6_ZV10_trkV29_nmix10` (pp) and
   `ZV10_trkV29_nmix10` (pPb/PbP). Never invent ad hoc descriptive suffixes
   (`newVZFix`, `skimVZOff`, etc.); if physics changes, increment `ZV*` / `trkV*`.
+- **Scan naming convention**: files containing scan track-pT bins (0.5_2, 2_4, 4_15)
+  carry `_scan` in the tag; files containing inclusive track-pT (0.5_15) omit it.
+  This applies uniformly to data and MC alike. Non-scan (inclusive) outputs exist at
+  ZPT 0_500 only. Scan outputs exist at ZPT 0_500, 0_30, 30_500. Runners that
+  produce scan bins (`central-scan.sh`, `systematics-scan.sh`, `theory.sh DOSCAN=1`)
+  append `_scan` automatically. Plotter scripts use `_scan`-suffixed tags for both
+  data and MC when reading scan bins.
 - **Official product dictionary**: source `OfficialProductDictionary.sh` (after
   `OfficialWeightDictionary.sh`) to get canonical ROOT file prefixes for note-facing
   products. Exports: `OFFICIAL_RESULT_DIR` (the `plots/` output dir of
@@ -200,8 +207,11 @@ up existing products, source the dictionary and use the exported variables.
   systematic prefixes `OFFICIAL_{PP,PPB,PBP}_{LOOSE,TIGHT,MUTAGFALSE,PU,...}_PREFIX`,
   systematic family arrays `OFFICIAL_{INCLUSIVE,SCAN}_SYST_FAMILIES_{PP,HI}` and
   `OFFICIAL_SCAN_ZPT_RANGES` for programmatic iteration, pp 5 TeV native-energy
-  prefixes `OFFICIAL_PP_5TEV_RESULT_PREFIX{,_SCAN}`, and helper
-  `assert_product_exists()` to abort if a production ROOT file is missing.
+  prefixes `OFFICIAL_PP_5TEV_RESULT_PREFIX{,_SCAN}`, theory gen-level prefixes
+  `OFFICIAL_{PP,PPB,PBP}_THEORY_PREFIX` (inclusive) and
+  `OFFICIAL_{PP,PPB,PBP}_THEORY_PREFIX_SCAN` (scan), JEWEL gen-level prefixes
+  `OFFICIAL_JEWEL_PP_{8160,5020}_PREFIX`, and helper `assert_product_exists()` to
+  abort if a production ROOT file is missing.
   Usage pattern: `${OFFICIAL_PPB_RESULT_PREFIX}_ZPT0_500-nosub.root`.
   Systematic pattern: `${OFFICIAL_PP_RESULT_PREFIX}_${FAMILY}_ZPT0_500-result.root`.
 
@@ -247,8 +257,18 @@ up existing products, source the dictionary and use the exported variables.
   removed from the codebase. Any new production must use signed-convention flags.
 - **Canonical runners**: maintained entrypoints are `closure-VZ.sh`, `closure-Z.sh`,
   `closure-trk.sh`, `central.sh`, `systematics.sh`, `central-scan.sh`,
-  `systematics-scan.sh`, `run-scan-production.sh`, `rerun-trackcorrection.sh`.
+  `systematics-scan.sh`, `run-scan-production.sh`, `rerun-trackcorrection.sh`,
+  `theory.sh`, `jewel-signed.sh`.
   Fix bugs in these directly rather than creating `*-newVZFix.sh` variants.
+- **Theory runner** (`theory.sh`): produces gen-level MC theory overlays.
+  `DOSCAN=0` (default) → inclusive (trkPT 0.5_15, ZPT 0_500, no `_scan` in tag).
+  `DOSCAN=1` → scan bins (trkPT 0.5_2/2_4/4_15, ZPT 0_500/0_30/30_500, `_scan`
+  appended to tag). pp leg uses Pythia8+MadGraph Gen with EE extrapolation;
+  pPb/PbP legs use Powheg+EPOS Gen. Usage:
+  `NTHREAD=30 ./theory.sh <DOPP> <DOPPB> <DOPBP>`.
+- **Jewel runner** (`jewel-signed.sh`): produces JEWEL vacuum pp gen-level overlays
+  at ZPT 0_500. Output at `plots/jewelPP{8160,5020}signed_ZPT0_500-{result,nosub}.root`.
+  Uses `--IsJewel true --UseEventWeight true`.
 - **Signed common-CM convention** (`central.sh`, `systematics.sh`):
   the signed convention expresses pPb and Pbp in a common signed longitudinal frame
   before combination. Key parameters: `--FillSigned true`, `--DEtaRange 3.87`,
@@ -588,6 +608,20 @@ up existing products, source the dictionary and use the exported variables.
   default PDF includes a bottom ratio panel. Top panel keeps the data/simulation
   overlay, ratio baseline is data; show at least the scaled `MC Reco / data` ratio
   in `0.5–1.5` y-range (scaled `MC Gen / data` may appear alongside).
+
+### Paper plotter (20260702_Paper)
+- **Overview**: `Plots/20260702_Paper/` is the current result plotter, superseding
+  `20260213_Central` for note/paper result PDFs. Contains `plot_central_combined.cpp`
+  (`ExecuteResultPlot`), `plot_composite.cpp` (`ExecuteComposite`), and shell
+  drivers `plot-central-combined.sh`, `plot-scan.sh`, `plot-composite.sh`.
+- **Scan plots**: `plot-scan.sh` uses `_scan`-suffixed tags for both data and MC.
+  Output to `plots/scan/`. `INCLUDE_MC` defaults to `false`.
+- **Composite plots**: `plot-composite.sh` produces 3×3 grid PDFs
+  (rows: ZPT 0_500/0_30/30_500; cols: trkPT 0.5_2/2_4/4_15) for DeltaPhi and
+  DeltaEta. Output to `plots/composite/`. `INCLUDE_MC` defaults to `false`.
+- **Inclusive result**: `plot-central-combined.sh` with defaults runs inclusive
+  (ZPT 0_500, trkPT 0.5_15). `INCLUDE_JEWEL=1` adds JEWEL overlay.
+  `PLOT_INCLUDE_MC=true` enables Pythia+MadGraph and Powheg+EPOS curves.
 
 ### Diagnostic / temp study (20260216_temp)
 - **Setup**: `MainAnalysis/20260216_temp/` sources the dictionary, uses official pp

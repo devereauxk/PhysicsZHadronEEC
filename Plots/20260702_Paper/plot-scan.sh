@@ -8,13 +8,13 @@ cd "$THISDIR"
 source /home/kdeverea/PhysicsZHadronEEC/OfficialWeightDictionary.sh
 source /home/kdeverea/PhysicsZHadronEEC/OfficialProductDictionary.sh
 
-make ExecuteResultPlot
+make ExecuteInclusive
 
 PP_TAG="${OFFICIAL_TAG_PP}_scan"
-PP_MC_TAG="${OFFICIAL_TAG_PP}"
+PP_MC_TAG="${OFFICIAL_TAG_PP}_scan"
 PP_SYSTEMATICS_TAG="${OFFICIAL_TAG_PP}_scan"
 PPB_TAG="${OFFICIAL_TAG_PPB}_scan"
-PPB_MC_TAG="${OFFICIAL_TAG_PPB}"
+PPB_MC_TAG="${OFFICIAL_TAG_PPB}_scan"
 PPB_SYSTEMATICS_TAG="${OFFICIAL_TAG_PPB}_scan"
 INCLUDE_MC="${INCLUDE_MC:-false}"
 
@@ -29,7 +29,7 @@ for TRKPT in 0.5_2 2_4 4_15; do
         THIS_PANEL=0
     fi
     echo "=== Running trkPT $TRKPT (panelMode=$THIS_PANEL) ==="
-    ./ExecuteResultPlot \
+    ./ExecuteInclusive \
         --zPtRange 0_500 --trkPtRange "$TRKPT" \
         --pPbtag "$PPB_TAG" \
         --pPbMCTag "$PPB_MC_TAG" \

@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
     string baseDir = CL.Get("BaseDir");
     string systDir = CL.Get("systematicsDir",
         "/home/kdeverea/PhysicsZHadronEEC/Systematics/20260329_pPbSystematics/output");
-    string outputFile = CL.Get("output", "plots/three_panel/three_panel_deltaphi.pdf");
+    string outputFile = CL.Get("output", "plots/composite/composite_deltaphi.pdf");
     bool doEta = CL.GetBool("doEta", false);
     bool includeMC = CL.GetBool("includeMC", true);
     string ppMCPrefix = CL.Get("ppMCPrefix", "pythiaMC_Gen_EExtrapolation");
