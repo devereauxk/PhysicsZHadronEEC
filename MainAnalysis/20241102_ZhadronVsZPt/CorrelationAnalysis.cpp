@@ -238,6 +238,8 @@ bool trackSelection(ZHadronMessenger *b, const Parameters &par, int j,
    if ((*b->trackPt)[j] > par.MaxTrackPT) return false;
    if ((*b->trackPt)[j] < par.MinTrackPT) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
+   // Jewel skims store all final-state particles; keep charged only
+   if (par.isJewel && j < (int)b->trackCharge->size() && (*b->trackCharge)[j] == 0) return false;
    if ((*b->trackEta)[j] > par.TrackEtaMax) return false;
    if ((*b->trackEta)[j] < par.TrackEtaMin) return false;
    return true;
@@ -250,6 +252,8 @@ bool trackSelectionNoPt(ZHadronMessenger *b, const Parameters &par, int j,
    const pair<int, int> &closestMuonTracks = {-1, -1}) {
    if (rejectMuonMatchedTrack(b, par, j, closestMuonTracks)) return false;
    if ((!par.includeHole) && (*b->trackWeight)[j] < 0) return false;
+   // Jewel skims store all final-state particles; keep charged only
+   if (par.isJewel && j < (int)b->trackCharge->size() && (*b->trackCharge)[j] == 0) return false;
    if ((*b->trackEta)[j] > par.TrackEtaMax) return false;
    if ((*b->trackEta)[j] < par.TrackEtaMin) return false;
    return true;
@@ -754,8 +758,12 @@ double getDphi(ZHadronMessenger *MZSignal, ZHadronMessenger *MMix,
                   this_trackWeight *= (*MZSignal->trackWeight)[j];
                }
                this_trackWeight *= par.TrackExtraWeight;
+               if (par.isJewel && !par.isPP) {
+                  float rawTrkW = par.mix ? (*MMix->trackWeight)[j] : (*MZSignal->trackWeight)[j];
+                  this_trackWeight *= (1 - 0.33 * (rawTrkW < 0));
+               }
             }
-            
+
             // track residual weight
             float this_residualWeight = 1;
             if(par.useResidualWeight) {

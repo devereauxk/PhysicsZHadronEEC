@@ -2,16 +2,10 @@ COMMON = /home/kdeverea/PhysicsZHadronEEC/CommonCode
 ROOTFLAGS = $(shell root-config --cflags --glibs)
 MESSENGER = $(COMMON)/library/Messenger.o
 
-default: ExecuteJewelComparison ExecuteJewelZPt ExecuteJewelScanPanel
+default: ExecuteJewelComposite
 
-ExecuteJewelComparison: plot_jewel_comparison.cpp
-	g++ plot_jewel_comparison.cpp -O3 -I$(COMMON)/include -o ExecuteJewelComparison $(ROOTFLAGS) $(MESSENGER)
-
-ExecuteJewelZPt: plot_jewel_zpt.cpp
-	g++ plot_jewel_zpt.cpp -O3 -I$(COMMON)/include -o ExecuteJewelZPt $(ROOTFLAGS) $(MESSENGER)
-
-ExecuteJewelScanPanel: plot_jewel_scan_panel.cpp
-	g++ plot_jewel_scan_panel.cpp -O3 -I$(COMMON)/include -o ExecuteJewelScanPanel $(ROOTFLAGS) $(MESSENGER)
+ExecuteJewelComposite: plot_jewel_composite.cpp
+	g++ plot_jewel_composite.cpp -O3 -I$(COMMON)/include -o ExecuteJewelComposite $(ROOTFLAGS) $(MESSENGER)
 
 clean:
-	rm -f ExecuteJewelComparison ExecuteJewelZPt ExecuteJewelScanPanel
+	rm -f ExecuteJewelComposite

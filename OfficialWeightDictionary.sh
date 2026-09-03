@@ -222,3 +222,24 @@ export RWeightFile_PP_Tight RWeightFile_PPb_Tight RWeightFile_PbP_Tight
 export RWeightFile_PP_IsMuTaggedFalse RWeightFile_PPb_IsMuTaggedFalse RWeightFile_PbP_IsMuTaggedFalse
 export EEWeightFile_PP EEWeightFile_PP_PRIVATE
 export PRIVATE_PP_5020_INPUT PRIVATE_PP_8160_INPUT
+
+# ============================================================================
+# Z-tagged EEC (PhysicsZTaggedEEC): HF ensemble-matching weights for the
+# four-term background subtraction. Applied per MB event in the BxB (single),
+# SBxBp (partner), and BxBp (both) terms via --HFWeightFile.
+# Derived by MainAnalysis/20260629_ZTaggedEEC/deriveHFWeights.C (2026-08-07).
+OFFICIAL_HF_WEIGHT_FILE_PPB="/home/kdeverea/PhysicsZTaggedEEC/MainAnalysis/20260629_ZTaggedEEC/hfweight/hf_weight_pPb.root"
+OFFICIAL_HF_WEIGHT_FILE_PBP="/home/kdeverea/PhysicsZTaggedEEC/MainAnalysis/20260629_ZTaggedEEC/hfweight/hf_weight_PbP.root"
+HFWeightFile_PPb="${HF_WEIGHT_FILE_PPB:-${OFFICIAL_HF_WEIGHT_FILE_PPB}}"
+HFWeightFile_PbP="${HF_WEIGHT_FILE_PBP:-${OFFICIAL_HF_WEIGHT_FILE_PBP}}"
+export OFFICIAL_HF_WEIGHT_FILE_PPB OFFICIAL_HF_WEIGHT_FILE_PBP
+export HFWeightFile_PPb HFWeightFile_PbP
+OFFICIAL_HF_WEIGHT_FILE_PP="/home/kdeverea/PhysicsZTaggedEEC/MainAnalysis/20260629_ZTaggedEEC/hfweight/hf_weight_PP.root"
+HFWeightFile_PP="${HF_WEIGHT_FILE_PP:-${OFFICIAL_HF_WEIGHT_FILE_PP}}"
+export OFFICIAL_HF_WEIGHT_FILE_PP HFWeightFile_PP
+# EE-weighted variant: f_S weighted by the EEV6 energy-extrapolation factor
+# so the matched MB ensemble tracks the extrapolated Z ensemble. Used by the
+# energy-extrapolated pp production (USE_EE=1 in central.sh, 2026-08-31).
+OFFICIAL_HF_WEIGHT_FILE_PP_EEV6="/home/kdeverea/PhysicsZTaggedEEC/MainAnalysis/20260629_ZTaggedEEC/hfweight/hf_weight_PP_EEV6.root"
+HFWeightFile_PP_EEV6="${HF_WEIGHT_FILE_PP_EEV6:-${OFFICIAL_HF_WEIGHT_FILE_PP_EEV6}}"
+export OFFICIAL_HF_WEIGHT_FILE_PP_EEV6 HFWeightFile_PP_EEV6

@@ -1,0 +1,286 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\setbeamersize{text margin left=0.4cm, text margin right=0.4cm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{}
+
+\title{JEWEL 2.4.0-2D-MOD $Z$+hadron in pPb at 8.16 TeV}
+\subtitle{Pipeline corrections $\cdot$ v4 hydro results $\cdot$ quenching-magnitude diagnosis $\cdot$ proposed fixes}
+\date{}
+
+\newcommand{\good}[1]{{\color{green!50!black}#1}}
+\newcommand{\bad}[1]{{\color{red!70!black}#1}}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Setup: samples and analysis chain}
+  \textbf{Samples} (500k $Z$+jet events each, PPZJ, ptmin $=0$, WEXPO 1.4):
+  \begin{itemize}
+    \item \texttt{jewel\_pp8160v3\_MOD\_500k.root} --- pp vacuum, ptmin $=0$
+    \item \texttt{jewel\_pp8160v4\_MOD\_500k.root} --- pp vacuum, ptmin $=15$ (high-$p_T^Z$ validation)
+    \item \texttt{jewel\_pPb\_v4\_MOD\_500k.root} --- pPb, Trajectum 2D hydro, all generator fixes + multiplicity-weighted profile ensemble
+  \end{itemize}
+  \vspace{0.5em}
+  \textbf{Baseline}: Pythia8+MadGraph gen-level (official theory prefix, EE-extrapolated)
+  \vspace{0.5em}
+  \begin{itemize}
+    \item Signed common-CM convention: 12$\times$12, $\Delta\eta$ range 3.87, symmetrized, $\times$0.5 norm
+    \item Analysis: \texttt{--IsJewel true}, event weights on, $n_\mathrm{mix}=10$, $|\eta_\mathrm{trk}|<1.935$
+    \item Differential grid: $p_T^Z$ \{0--500, 0--30, 30--500\} $\times$ $p_T^\mathrm{ch}$ \{0.5--2, 2--4, 4--15\} GeV
+  \end{itemize}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Two generator-level mismatches must be corrected before comparing}
+  \begin{columns}[T]
+    \begin{column}{0.55\textwidth}
+      \textbf{1. Neutral contamination}
+      \begin{itemize}
+        \item JEWEL skims store \emph{all} final-state particles: 41\% (pp) -- 59\% (pPb) neutrals ($\gamma$, $\pi^0$, $K^0$, $n$)
+        \item Fix: charged-only cut in the analysis, gated on \texttt{--IsJewel} (all other datasets unaffected)
+      \end{itemize}
+      \vspace{0.4em}
+      \textbf{2. $Z$ $p_T$ spectrum shape}
+      \begin{itemize}
+        \item LO $Z$+jet ME, no Sudakov resummation: spectrum rises monotonically toward $p_T^Z \to 0$ instead of turning over at $\sim$4 GeV
+        \item Fix: shape-normalized reweight $f_\mathrm{MG}/f_\mathrm{JEWEL}$ per event (range $\approx$ [0.2, 3.0]; pp and pPb weights nearly identical)
+        \item Validated by independent ptmin $=15$ generation at $p_T^Z > 30$ GeV
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.43\textwidth}
+      \centering
+      \includegraphics[height=0.78\textheight]{../plots/jewel_zpt_spectra.pdf}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{pp validation: JEWEL vacuum reproduces Pythia8+MG after corrections}
+  \begin{columns}[T]
+    \begin{column}{0.40\textwidth}
+      \vspace{1.0em}
+      \begin{itemize}
+        \item Four curves: Pythia8+MG, JEWEL ptmin $=0$ raw, JEWEL $Z\,p_T$-reweighted, JEWEL ptmin $=15$
+        \item After reweighting: away-side yields agree with Pythia8+MG within $\sim$4\% for $p_T^\mathrm{ch} > 2$ GeV in every $p_T^Z$ bin
+        \item Residual $\sim$10--14\% excess only in the soft 0.5--2 GeV bin (fragmentation-level difference)
+        \item $\Rightarrow$ medium effects quoted as JEWEL pPb / JEWEL pp, cancelling this residual
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../plots/jewel_pp_composite_deltaphi_verification.pdf}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Generator fixes in jewel-2.4.0-2D-MOD (all in the v4 sample)}
+  \begin{enumerate}
+    \item \textbf{MSTP(125)=2 restricted to PPJJ}: was suppressing the parton shower entirely for $Z$+jet processes (splittings $0 \to 2.3$, scatterings $0 \to 19$ in medium)
+    \item \textbf{PTMIN $=$ 3 GeV clamp removed for $Z/W$+jet}: the $Z$ mass regulates the cross section; the clamp silently cut the low-$p_T^Z$ spectrum
+    \item \textbf{PICKVTX vertex sampling}: switched to \texttt{ncollpDist} with 1-based indexing --- previously 5--27\% of vertices landed at the fireball center $(0,0)$
+    \item \textbf{READNCOLL hardening}: \texttt{nint()} conversions and \texttt{.lt.}\ loop bound (latent one-past-end read of uninitialized memory)
+    \item \textbf{Multiplicity-weighted ensemble}: 100 sample directories $=$ 57 unique Trajectum events (11$\times$3, 21$\times$2, 25$\times$1); hard-event allocation $\propto$ mult $\times N_\mathrm{coll}$ instead of dropping duplicates
+  \end{enumerate}
+  \vspace{0.5em}
+  \good{$\Rightarrow$ the results shown next are from the fully corrected pipeline}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{pPb specifics: holes and medium response}
+  \textbf{Recoils}: KEEPRECOILS $=$ T --- thermal partons kicked by the shower are kept and hadronized (medium response included in the observable)
+  \vspace{0.6em}
+
+  \textbf{Holes}: thermal momenta removed from the medium, stored as tracks with weight $-1$
+  \begin{itemize}
+    \item Skim marks them with sentinel \texttt{trackCharge}$\,=999$ $\Rightarrow$ they pass the charged-only cut
+    \item They are partons (58\% $g$, 42\% $u$): their momentum represents the \emph{full} medium response, but we measure charged particles only
+    \item Analysis scales hole weight to $-0.67$ $=$ charged share of final-state momentum\\
+          (measured 0.60--0.67 in the soft region of the JEWEL pPb sample itself)
+  \end{itemize}
+  \vspace{0.6em}
+  \textbf{$Z\,p_T$ reweighting for pPb}: derived same as pp, weight range [0.23, 2.97]\\
+  (nearly identical to pp --- the unresummed LO shape is common to vacuum and medium)
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Result: $\Delta\varphi_{\mathrm{ch},Z}$, JEWEL pPb hydro vs pp vs Pythia8+MG}
+  \begin{columns}[T]
+    \begin{column}{0.40\textwidth}
+      \vspace{1.2em}
+      \begin{itemize}
+        \item Rows: inclusive, $p_T^Z<30$, $p_T^Z>30$ GeV
+        \item Columns: $p_T^\mathrm{ch}$ 0.5--2, 2--4, 4--15 GeV
+        \item \good{Green}: JEWEL pp ($Z\,p_T$ rw)
+        \item {\color{blue}Blue}: JEWEL pPb hydro ($Z\,p_T$ rw, hole $\times$0.67, charged-only)
+      \end{itemize}
+      \vspace{0.8em}
+      Clear medium ordering:\\ soft enhancement, hard suppression,\\ crossing in the 2--4 GeV bin
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \centering
+      \includegraphics[height=0.92\textheight]{../plots/jewel_pPb_composite_deltaphi_3row.pdf}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Quantified: away-side yields, JEWEL pPb / JEWEL pp}
+  Away side $=$ $\Delta\varphi \in [\pi/2, 3\pi/2]$; both curves $Z\,p_T$-reweighted, so generator-level residuals cancel:
+  \vspace{0.4em}
+  \begin{center}
+  \begin{tabular}{lccc}
+    \toprule
+    $p_T^Z$ & $p_T^\mathrm{ch}$ 0.5--2 & 2--4 & 4--15 GeV \\
+    \midrule
+    $>30$ GeV     & \bad{$1.37 \pm 0.02$} & $1.11 \pm 0.02$ & \bad{$0.79 \pm 0.01$} \\
+    $<30$ GeV     & $1.00 \pm 0.03$       & $0.89 \pm 0.03$ & \bad{$0.72 \pm 0.03$} \\
+    inclusive     & $1.13 \pm 0.02$       & $1.00 \pm 0.02$ & $0.77 \pm 0.01$ \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.5em}
+  \textbf{Textbook quenching pattern}:
+  \begin{itemize}
+    \item High $p_T^Z$: away parton loses energy --- 4--15 GeV fragments suppressed 21\%, energy reappears as $+37\%$ soft medium response
+    \item Low $p_T^Z$: soft recoil parton --- quenched fragments fall below 0.5 GeV or out of acceptance: suppression (28\%) with no visible compensation
+  \end{itemize}
+  \vspace{0.3em}
+  \bad{But: a 20--30\% away-side modification in pPb far exceeds experimental limits on small-system quenching. Why so large?}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Cross-check: $Z$-tagged nuclear modification ratio $R_\mathrm{pPb}$}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      {\small $R_\mathrm{pPb}$ $=$ per-$Z$ charged spectra ratio pPb/pp, both $Z\,p_T$-reweighted; main-analysis event/track selection; $p_T > 0.5$ GeV, $|\eta| < 1.965$, log bins}
+      \vspace{0.3em}
+      \begin{itemize}
+        \item $< 0.6$ GeV: recoil enhancement (1.17 incl., 1.23 at $p_T^Z > 30$)
+        \item $\sim$1 GeV: hole-subtraction dip (0.59 incl.; shallower, 0.86, at high $p_T^Z$ --- larger jet yield underneath)
+        \item 6--20 GeV: \textbf{energy-loss plateau 0.76--0.79, identical for inclusive and $p_T^Z > 30$}; matches the away-side 4--15 GeV suppression (0.77)
+        \item $> 40$ GeV: recovery toward unity
+      \end{itemize}
+      \vspace{0.2em}
+      {\small Not one-to-one vs Trajectum MB $R_\mathrm{pPb}$ (percent-level): $Z$-tagging is 2--3$\times$ more sensitive}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \includegraphics[height=0.88\textheight]{../RAA/plots/jewel_pPb_raa.pdf}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Diagnosis I: what is verified \emph{not} to be the problem}
+  Checked directly in the production log, the MOD source, and the unpacked hydro profiles:
+  \vspace{0.4em}
+  \begin{itemize}
+    \item \good{Units}: $T$ in GeV --- $T_\mathrm{max} = 0.17$--$0.33$ GeV, physical scaling with $N_\mathrm{coll}$
+    \item \good{Time evolution}: $\tau_0 = 0.616$ fm/$c$, $\sim$0.1 fm steps out to per-event freezeout (0.9--4.1 fm/$c$); cooling and interpolation correct
+    \item \good{Transverse flow}: $u_\mathrm{max} = 0.6$--$0.75$, density boost applied
+    \item \good{Geometry}: collision positions within $|x|,|y| \lesssim 1.6$ fm in every bin checked --- genuinely compact pPb (the \texttt{208 X 208} file header is a cosmetic mislabel)
+    \item \good{$N_\mathrm{coll}$ counts}: integer-valued in all 100 files (\texttt{nint()} exact)
+    \item \good{Vertex sampling / ensemble code}: all fixes verified in the regenerated sample
+  \end{itemize}
+  \vspace{0.5em}
+  $\Rightarrow$ no units error, no stuck-hot medium, no indexing scramble.\\
+  The remaining magnitude must come from the \textbf{ensemble} and the \textbf{model assumptions}.
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Diagnosis II: the profile ensemble is centrality-biased at the source}
+  \textbf{Leading fixable mechanism} --- it lives in the Trajectum sample, not our code:
+  \vspace{0.3em}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item 100-slot ensemble: only \bad{10 slots at $N_\mathrm{coll} \le 3$}\\
+              vs $\sim$35--40 expected for MB pPb ($\sigma_{NN}=72$ mb)
+        \item $\langle N_\mathrm{coll}\rangle_\mathrm{MB} = 10.8$ vs $\sim$7 expected
+        \item Hard-weighted: $\langle N_\mathrm{coll}\rangle = 13.5$ vs $\sim$10--11
+        \item Likely origin: \textbf{hydro-survivor bias} --- $N_\mathrm{coll}=1$ droplets barely reach $T_c$ (0.174, 0.209 GeV); events never crossing $T_c$ leave no usable profile and drop out
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Consequences for hard probes}:
+      \begin{itemize}
+        \item $\sim$20--25\% more medium per $Z$ event
+        \item $\sim$8--10\% of $Z$ events that should sit in essentially unquenched sub-$T_c$ events are missing entirely
+      \end{itemize}
+      \vspace{0.4em}
+      \bad{Combined: inflates the quenching magnitude by $\sim$25--35\%}
+      \vspace{0.4em}
+
+      Note: the multiplicity-weight fix \emph{raised} $\langle N_\mathrm{coll}\rangle$ (12.3 $\to$ 13.5) --- the duplicated slots are central-heavy
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Diagnosis III: the remaining mechanisms}
+  \textbf{2. The hard-weighted droplets are near-peripheral-PbPb media} (measured from the profiles):
+  \begin{itemize}
+    \item $N_\mathrm{coll} \ge 10$ class: $T_0 \approx 0.32$--0.33 GeV, $r(T>T_c) \approx 2.0$--2.4 fm, lifetime 3.2--4.1 fm/$c$
+    \item Away parton from the $N_\mathrm{coll}$-weighted core crosses $\sim$2--2.5 fm of QGP $\approx$ 60--70\% central PbPb, where 20\% fragment suppression is standard JEWEL physics
+    \item Driven by Trajectum's wide energy deposition (nucleon width $\sim$1 fm) --- model content, not a bug
+  \end{itemize}
+  \vspace{0.4em}
+  \textbf{3. Boost-invariant midrapidity slab} ($|\eta_s| < 3.1$, flat): overstates p-going side, understates Pb-going; partially cancels over the symmetric acceptance $\Rightarrow$ $\sim$10--30\% inflation, not dominant
+  \vspace{0.4em}
+
+  \textbf{4. The OO $R_{AA}$ yardstick does not transfer}: inclusive $R_{AA}$ converts $\sim$1--2\% energy loss into $\sim$5\% suppression via the spectrum lever arm; $Z$-tagged moderate-$z$ fragments measure the redistribution directly (2--3$\times$ more sensitive, no surface bias) $\Rightarrow$ 15--25\% here coexists with $\sim$5\% there
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Proposed solutions}
+  \begin{enumerate}
+    \item \textbf{Reweight the ensemble to minimum bias} (generation script only):\\
+          allocate $\propto P_\mathrm{MB}(N_\mathrm{coll}) \times N_\mathrm{coll}$ from a Glauber $P(N_\mathrm{coll})$, and represent the missing sub-$T_c$ events as explicit vacuum (no-medium) slots with their MB weight
+    \item \textbf{Per-$N_\mathrm{coll}$-class analysis} from the per-bin HepMC files:\\
+          convert $N_\mathrm{coll} \le 3$, 8--12, $\ge 17$ classes separately $\to$ suppression vs $N_\mathrm{coll}$; verifies the mechanism and provides a post-hoc reweighting kernel without regeneration
+    \item \textbf{Confirm provenance} with the Trajectum sample producer:\\
+          was there a minimum-entropy / multiplicity condition for running hydro?
+    \item \textbf{Bounding runs} for the longitudinal model: \texttt{BOOST F} (flow off) and reduced $\eta_\mathrm{max}$
+  \end{enumerate}
+  \vspace{0.6em}
+  \textbf{Expectation after fix 1}: away-side suppression relaxes from 21--28\% to $\sim$15--20\% ---\\
+  the honest JEWEL+Trajectum prediction under its own maximal assumption\\
+  (every surviving hydro event quenches)
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Solution 2 executed: quenching is flat in $N_\mathrm{coll}$ --- ensemble bias refuted}
+  \vspace{-0.2em}
+  {\footnotesize
+  \begin{itemize}\setlength{\itemsep}{0.05em}
+    \item Away side 4--15 GeV, $p_T^Z > 30$, by profile class $N_\mathrm{coll} \le 3$ / 8--12 / $\ge 17$: \bad{0.85, 0.79, 0.78} --- even $T \approx T_c$, $r < 1.5$ fm droplets quench; soft enhancement \emph{largest} for the smallest class (1.51 $\pm$ 0.07)
+    \item Glauber MB reweighting moves every bin by $\le 0.03$; \textbf{any} weighting of these profiles lands in [0.78, 0.85] --- no ensemble fix reaches $R \sim 0.95$
+    \item Medium reader fully vetted: units, $\tau$ evolution, flow, vertex sampling, ensemble weights, and the $T_c$ cutoff (\emph{identical} to stock JEWEL, \texttt{medium-2D.f:799}) --- the flatness is a genuine property of JEWEL energy loss + response on small droplets, plausibly first-scattering / recoil-response dominance
+    \item Next: bring the comparison package to the JEWEL-2D and Trajectum authors (draft: \texttt{jewel\_email.md})
+  \end{itemize}}
+  \vspace{-0.3em}
+  \centering
+  \includegraphics[width=0.70\textwidth]{../Solution2/plots/away_ratio_vs_ncoll.pdf}
+\end{frame}
+
+% ------------------------------------------------------------------
+\begin{frame}[t]{Summary}
+  \begin{itemize}
+    \item Fair JEWEL--Pythia8+MG comparison requires two generator-level corrections: \textbf{charged-only selection} and \textbf{$Z\,p_T$ spectrum reweighting}; pp vacuum then agrees within $\sim$4\% (away side, $p_T^\mathrm{ch}>2$ GeV)
+    \item The v4 pPb sample includes all generator fixes (parton shower, PTMIN clamp, vertex sampling, ensemble multiplicity weights) and the hole $\times$0.67 charged-share treatment
+    \item JEWEL pPb / pp shows a \textbf{textbook quenching pattern}: $+37\%$ soft enhancement and $-21\%$ hard suppression at $p_T^Z > 30$ GeV; $-28\%$ without compensation at $p_T^Z < 30$ GeV
+    \item The $Z$-tagged $R_\mathrm{pPb}$ cross-check shows the same energy-loss plateau (0.76--0.79 at 6--20 GeV, independent of $p_T^Z$ selection); the low-$p_T$ structure is pure medium response (recoils $-$ holes)
+    \item The ensemble centrality bias is real but \textbf{refuted as the driver}: quenching is nearly flat in $N_\mathrm{coll}$ (0.85/0.79/0.78) and MB reweighting moves the prediction by $\le 0.03$
+    \item The medium reader is fully vetted (units, $\tau$ evolution, flow, sampling, weights, $T_c$ cutoff identical to stock): the size-independent modification is intrinsic to JEWEL on small droplets --- comparison package ready for the JEWEL-2D and Trajectum authors, and \textbf{our measured pPb correlations have the precision to discriminate}
+  \end{itemize}
+\end{frame}
+
+\end{document}

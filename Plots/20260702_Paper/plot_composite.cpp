@@ -430,13 +430,18 @@ int main(int argc, char *argv[]) {
 
     gStyle->SetLineScalePS(1);
 
+    double outerLeftFrac = 0.04;
+    double outerTopFrac  = 0.03;
+
     double topRowBorderT = 0.02;
     double otherRowBorderT = 0.003;
     double singleRowH = 600.0;
     double topRowPx = singleRowH;
     double otherRowPx = singleRowH * (1.0 - topRowBorderT + otherRowBorderT);
-    int canvasH = (int)(topRowPx + (nRows-1) * otherRowPx);
-    TCanvas *c = new TCanvas("c", "c", 1440, canvasH);
+    int gridH = (int)(topRowPx + (nRows-1) * otherRowPx);
+    int canvasH = (int)(gridH / (1.0 - outerTopFrac));
+    int canvasW = (int)(1440 / (1.0 - outerLeftFrac));
+    TCanvas *c = new TCanvas("c", "c", canvasW, canvasH);
 
     double totalUsed = wLeft + 2*wCenter - 2*overlap;
     double scale = 1.0 / totalUsed;
@@ -444,22 +449,27 @@ int main(int argc, char *argv[]) {
     double sCenter = wCenter * scale;
     double sOverlap = overlap * scale;
 
-    double x0[] = {0, sLeft - sOverlap, sLeft + sCenter - 2*sOverlap};
-    double x1[] = {sLeft, sLeft + sCenter - sOverlap, sLeft + 2*sCenter - 2*sOverlap};
+    double gx0[] = {0, sLeft - sOverlap, sLeft + sCenter - 2*sOverlap};
+    double gx1[] = {sLeft, sLeft + sCenter - sOverlap, sLeft + 2*sCenter - 2*sOverlap};
+    for (int i = 0; i < 3; ++i) {
+        gx0[i] = outerLeftFrac + gx0[i] * (1.0 - outerLeftFrac);
+        gx1[i] = outerLeftFrac + gx1[i] * (1.0 - outerLeftFrac);
+    }
 
     double topFrac = topRowPx / canvasH;
     double otherFrac = otherRowPx / canvasH;
+    double gridTop = 1.0 - outerTopFrac;
     TPad *subPads[3][3];
     TPad *plotPads[3][3];
 
     for (int r = 0; r < nRows; r++) {
-        double yhi = (r == 0) ? 1.0 : 1.0 - topFrac - (r-1)*otherFrac;
+        double yhi = (r == 0) ? gridTop : gridTop - topFrac - (r-1)*otherFrac;
         double ylo = max(0.0, yhi - ((r == 0) ? topFrac : otherFrac));
 
         for (int col = 0; col < nCols; col++) {
             c->cd();
             subPads[r][col] = new TPad(Form("sub%d_%d", r, col), "",
-                x0[col], ylo, x1[col], yhi);
+                gx0[col], ylo, gx1[col], yhi);
             subPads[r][col]->SetFillColor(kWhite);
             subPads[r][col]->Draw();
             subPads[r][col]->cd();
@@ -655,6 +665,47 @@ int main(int argc, char *argv[]) {
                 } else
                     latex.DrawLatex(lm + 0.05, labelY, "|y_{CM}| < 1.935");
             }
+        }
+    }
+
+    // Outer column labels (track pT) above the grid
+    {
+        string colLabels[] = {
+            "0.5 < p_{T}^{ch} < 2 GeV",
+            "2 < p_{T}^{ch} < 4 GeV",
+            "4 < p_{T}^{ch} < 15 GeV"
+        };
+        c->cd();
+        TLatex colTex;
+        colTex.SetNDC();
+        colTex.SetTextFont(42);
+        colTex.SetTextAlign(21);
+        colTex.SetTextSize(0.022);
+        for (int col = 0; col < nCols; col++) {
+            double cx = 0.5 * (gx0[col] + gx1[col]);
+            colTex.DrawLatex(cx, gridTop + 0.008, colLabels[col].c_str());
+        }
+    }
+
+    // Outer row labels (Z pT) to the left of the grid, rotated 90 degrees
+    {
+        string rowLabels[] = {
+            "inclusive p_{T}^{Z}",
+            "p_{T}^{Z} < 30 GeV",
+            "p_{T}^{Z} > 30 GeV"
+        };
+        c->cd();
+        TLatex rowTex;
+        rowTex.SetNDC();
+        rowTex.SetTextFont(42);
+        rowTex.SetTextAlign(22);
+        rowTex.SetTextAngle(90);
+        rowTex.SetTextSize(0.022);
+        for (int r = 0; r < nRows; r++) {
+            double ryhi = (r == 0) ? gridTop : gridTop - topFrac - (r-1)*otherFrac;
+            double rylo = max(0.0, ryhi - ((r == 0) ? topFrac : otherFrac));
+            double cy = 0.5 * (rylo + ryhi);
+            rowTex.DrawLatex(outerLeftFrac * 0.4, cy, rowLabels[r].c_str());
         }
     }
 
